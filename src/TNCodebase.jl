@@ -43,18 +43,26 @@ export dmrg_sweep
 include(joinpath(@__DIR__, "Algorithms", "tdvp.jl"))
 export tdvp_sweep
 
-include(joinpath(@__DIR__, "Runners", "run_TNsim.jl"))
-export build_solver_from_config,build_options_from_config,run_simulation_from_config
-
-include(joinpath(@__DIR__, "Runners", "run_Observable.jl"))
-export run_observable_calculation_from_config
-
 include(joinpath(@__DIR__, "Database", "database_utils.jl"))
 export load_mps_sweep, load_mps_at_time, list_times
 
 include(joinpath(@__DIR__, "Database", "database_observables_utils.jl"))
 export load_observable_sweep, load_all_observable_results, find_observables_for_simulation, 
         observable_already_calculated, find_observable_runs_by_config, get_latest_observable_run_for_config
+
+include(joinpath(@__DIR__, "Database", "database_catalog.jl"))
+# Internal functions, no exports
+
+include(joinpath(@__DIR__, "Database", "query_catalog.jl"))
+export query_catalog, display_results, display_results_compact,
+       get_run_ids, get_run_dirs, load_config,
+       list_available_models, list_available_algorithms, catalog_summary
+
+include(joinpath(@__DIR__, "Runners", "run_TNsim.jl"))
+export build_solver_from_config,build_options_from_config,run_simulation_from_config
+
+include(joinpath(@__DIR__, "Runners", "run_Observable.jl"))
+export run_observable_calculation_from_config
 
 include(joinpath(@__DIR__, "Analysis", "contractions.jl"))
 include(joinpath(@__DIR__, "Analysis", "core.jl"))

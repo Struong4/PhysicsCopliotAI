@@ -15,7 +15,7 @@ function build_solver_from_config(config)
         krylov_dim = solver_config["krylov_dim"]
         tol = get(solver_config, "tol", 1e-8)
         evol_type = solver_config["evol_type"]
-        return KrylovExponential(krylov_dim, tol,evol_type)
+        return KrylovExponential(krylov_dim, tol, evol_type)
         
     else
         error("Unknown solver type: $solver_type. Use 'lanczos' or 'krylov_exponential'")
@@ -64,7 +64,7 @@ Builds:
 4. Runs algorithm with specified solver and options
 """
 
-function run_simulation_from_config(config; base_dir="data",force_rerun=false)
+function run_simulation_from_config(config; base_dir="data", force_rerun=false)
     println("="^70)
     println("Starting Simulation from Config")
     println("="^70)
@@ -73,7 +73,7 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
     # DEDUPLICATION CHECK (before anything else!)
     # ════════════════════════════════════════════════════════════════════════
     
-    println("\n[0/5] Checking for existing runs...")
+    println("\n[0/6] Checking for existing runs...")
     
     if !force_rerun
         existing = _get_completed_run(config, base_dir=base_dir)
@@ -97,28 +97,10 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
     end
     
     # ════════════════════════════════════════════════════════════════════════
-    # DATABASE SETUP (NEW!)
+    # DATABASE SETUP
     # ════════════════════════════════════════════════════════════════════════
     
-    println("\n[0/5] Setting up database...")
-    
-    # Check if already run
-    #if config_already_run(config, base_dir)
-    #    println("⚠️  WARNING: This config was already run!")
-        
-    #    runs = find_runs_by_config(config, base_dir)
-    #    println("\nExisting runs:")
-    #    for run in runs
-    #        println("  - $(run["run_id"]) at $(run["timestamp"])")
-    #    end
-        
-    #    print("\nContinue anyway? [y/N]: ")
-    #    response = readline()
-    #    if lowercase(strip(response)) != "y"
-    #        println("Aborted by user")
-    #        return nothing
-    #    end
-    #end
+    println("\n[1/6] Setting up database...")
     
     # Setup run directory and initialize database
     run_id, run_dir = _setup_run_directory(config, base_dir=base_dir)
@@ -126,10 +108,10 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
     println("  ✓ Data directory: $run_dir")
     
     # ────────────────────────────────────────────────────────────────────────
-    # Build System Components (unchanged)
+    # Build System Components
     # ────────────────────────────────────────────────────────────────────────
     
-    println("\n[1/5] Building system components...")
+    println("\n[2/6] Building system components...")
         
     # Build Hamiltonian (MPO)
     ham = build_mpo_from_config(config)
@@ -144,10 +126,10 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
     println("  ✓ MPSState created")
     
     # ────────────────────────────────────────────────────────────────────────
-    # Parse Algorithm Configuration (unchanged)
+    # Parse Algorithm Configuration
     # ────────────────────────────────────────────────────────────────────────
     
-    println("\n[2/5] Parsing algorithm configuration...")
+    println("\n[3/6] Parsing algorithm configuration...")
         
     # Build solver
     solver = build_solver_from_config(config)
@@ -162,10 +144,10 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
     println("  Sweeps: $n_sweeps")
     
     # ────────────────────────────────────────────────────────────────────────
-    # Run Simulation (MODIFIED - now saves data!)
+    # Run Simulation
     # ────────────────────────────────────────────────────────────────────────
     
-    println("\n[3/5] Running simulation...")
+    println("\n[4/6] Running simulation...")
     println("="^70)
     
     try
@@ -176,22 +158,30 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
             _run_tdvp_simulation(state, solver, options, n_sweeps, run_dir)
             
         else
-            error("Unknown algorithm: $algorithm_type")
+            error("Unknown algorithm: $(config["algorithm"]["type"])")
         end
         
         # ────────────────────────────────────────────────────────────────────
-        # Finalize Database (NEW!)
+        # Finalize Database
         # ────────────────────────────────────────────────────────────────────
         
         println("="^70)
-        println("[4/5] Finalizing database...")
+        println("[5/6] Finalizing database...")
         _finalize_run(run_dir, status="completed")
         println("  ✓ Run marked as completed")
         
+        # ────────────────────────────────────────────────────────────────────
+        # Append to Catalog
+        # ────────────────────────────────────────────────────────────────────
+        
+        println("\n[6/6] Updating catalog...")
+        _append_to_catalog(config, run_id, "completed", run_dir, base_dir=base_dir)
+        
     catch e
-        # If simulation fails, mark as failed
+        # If simulation fails, mark as failed and update catalog
         println("\n❌ Simulation failed!")
         _finalize_run(run_dir, status="failed")
+        _append_to_catalog(config, run_id, "failed", run_dir, base_dir=base_dir)
         rethrow(e)
     end
     
@@ -199,7 +189,7 @@ function run_simulation_from_config(config; base_dir="data",force_rerun=false)
     # Finish
     # ────────────────────────────────────────────────────────────────────────
     
-    println("\n[5/5] Simulation complete!")
+    println("\nSimulation complete!")
     println("  Data saved in: $run_dir")
     println("="^70)
     
@@ -223,15 +213,17 @@ function _run_dmrg_simulation(state, solver, options, n_sweeps, run_dir)
         # Left sweep
         energy_left = dmrg_sweep(state, solver, options, :left)
         push!(energies, energy_left)
+        
         # ────────────────────────────────────────────────────────────────────
         # Compute observables
         # ────────────────────────────────────────────────────────────────────
+        
         # Get bond dimensions
         bond_dims = [size(tensor, 1) for tensor in state.mps.tensors]
         max_bond_dim = maximum(bond_dims)
         
         # ────────────────────────────────────────────────────────────────────
-        # Save data (NEW!)
+        # Save data
         # ────────────────────────────────────────────────────────────────────
         
         extra_data = Dict(
@@ -279,20 +271,13 @@ function _run_tdvp_simulation(state, solver, options, n_sweeps, run_dir)
         bond_dims = [size(tensor, 1) for tensor in state.mps.tensors]
         max_bond_dim = maximum(bond_dims)
         
-        # Optionally compute energy (can be expensive)
-        # energy = compute_expectation(state.mps, state.mpo)
-        
-        #IMPORTANT: CALCULATE THE LIST OF SINGULAR VALUES HERE AND ADD IN EXTRA DATA
-
         # ────────────────────────────────────────────────────────────────────
-        # Save data (NEW!)
+        # Save data
         # ────────────────────────────────────────────────────────────────────
         
         extra_data = Dict(
-            "time" => current_time,           # Critical for TDVP!
+            "time" => current_time,
             "max_bond_dim" => max_bond_dim,
-            #"bond_dims" => bond_dims
-            # "energy" => energy  # Uncomment if you compute it
         )
         
         _save_mps_sweep(state, run_dir, sweep; extra_data=extra_data)
@@ -301,7 +286,7 @@ function _run_tdvp_simulation(state, solver, options, n_sweeps, run_dir)
         # Print progress
         # ────────────────────────────────────────────────────────────────────
         
-        if sweep % 10 == 0  # Print every 10 sweeps for TDVP
+        if sweep % 10 == 0
             println("Sweep $sweep: t = $current_time, χ_max = $max_bond_dim")
         end
     end
