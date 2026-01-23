@@ -1,0 +1,44 @@
+{
+  "system": {
+    "type": "spin",
+    "dtype": "ComplexF64",
+    "N": 8,
+    "S": 0.5
+  },
+  "model": {
+    "name": "long_range_ising",
+    "params": {
+      "dtype": "Float64",
+      "N": 8,
+      "J": 1,
+      "h": 0.5,
+      "alpha": 1.5,
+      "n_exp": 3,
+      "coupling_dir": "Z",
+      "field_dir": "X"
+    }
+  },
+  "state": {
+    "type": "random",
+    "params": {
+      "bond_dim": 5
+    }
+  },
+  "algorithm": {
+    "type": "dmrg",
+    "solver": {
+      "type": "lanczos",
+      "krylov_dim": 4,
+      "max_iter": 14
+    },
+    "options": {
+      "chi_max": 100,
+      "cutoff": 1e-8,
+      "local_dim": 2
+    },
+    "run": {
+      "n_sweeps": 10
+    }
+  },
+  "description": "dmrg test config"
+}

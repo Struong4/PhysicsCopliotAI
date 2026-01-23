@@ -56,7 +56,8 @@ include(joinpath(@__DIR__, "Database", "database_catalog.jl"))
 include(joinpath(@__DIR__, "Database", "query_catalog.jl"))
 export query_catalog, display_results, display_results_compact,
        get_run_ids, get_run_dirs, load_config,
-       list_available_models, list_available_algorithms, catalog_summary
+       list_available_models, list_available_algorithms, 
+       catalog_summary, open_query_browser, open_query_builder
 
 include(joinpath(@__DIR__, "Runners", "run_TNsim.jl"))
 export build_solver_from_config,build_options_from_config,run_simulation_from_config
