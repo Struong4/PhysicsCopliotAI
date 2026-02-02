@@ -22,17 +22,21 @@
 #
 # DIRECTORY STRUCTURE:
 #   data/
-#   ├── runs_index.json              ← Master index (hash → runs)
+#   ├── runs_index.json
 #   ├── dmrg/
+#   │   └── {run_id}/ ...
+#   ├── tdvp/
+#   │   └── {run_id}/ ...
+#   ├── ed_spectrum/
 #   │   └── {run_id}/
 #   │       ├── config.json
 #   │       ├── metadata.json
-#   │       └── mps_sweep_*.jld2
-#   └── tdvp/
+#   │       └── results.jld2
+#   └── ed_time_evolution/
 #       └── {run_id}/
 #           ├── config.json
-#           ├── metadata.json (includes dt)
-#           └── mps_sweep_*.jld2
+#           ├── metadata.json
+#           └── state_step_*.jld2
 #
 # PATH STRATEGY:
 #   - Index stores only: run_id, timestamp (NO run_dir)
@@ -242,14 +246,31 @@ function _setup_run_directory(config::Dict; base_dir::String="data")
         "algorithm" => algorithm,
         "start_time" => string(now()),
         "status" => "running",
-        "sweeps_completed" => 0,
-        "last_update" => string(now()),
-        "sweep_data" => []  # Will fill during simulation
+        "last_update" => string(now())
     )
-    
-    # Store dt for TDVP (enables time-based queries with simple arithmetic)
-    if algorithm == "tdvp"
+
+    # Algorithm-specific metadata
+    if algorithm == "dmrg"
+        metadata["sweeps_completed"] = 0
+        metadata["sweep_data"] = []
+        
+    elseif algorithm == "tdvp"
+        metadata["sweeps_completed"] = 0
+        metadata["sweep_data"] = []
         metadata["dt"] = config["algorithm"]["options"]["dt"]
+        
+    elseif algorithm == "ed_spectrum"
+        # Results populated after solve by _save_ed_spectrum()
+        
+    elseif algorithm == "ed_time_evolution"
+        metadata["steps_completed"] = 0
+        metadata["step_data"] = []
+        metadata["dt"] = config["algorithm"]["dt"]
+        metadata["n_steps"] = config["algorithm"]["n_steps"]
+        
+    else
+        metadata["sweeps_completed"] = 0
+        metadata["sweep_data"] = []
     end
 
     metadata_path = joinpath(run_dir, "metadata.json")
@@ -739,4 +760,253 @@ function list_times(run_dir::String)
     end
     
     return times
+end
+
+# ============================================================================
+# PART ED-2: SAVING - Spectrum Results
+# ============================================================================
+
+"""
+    _save_ed_spectrum(energies::Vector, states::Matrix, run_dir::String; 
+                      extra_data::Dict=Dict())
+
+Save ED spectrum results (all eigenvalues and eigenstates).
+
+# Arguments
+- `energies::Vector{Float64}`: All eigenvalues (ascending order)
+- `states::Matrix`: Eigenvectors as columns
+- `run_dir::String`: Path to run directory
+- `extra_data::Dict`: Additional data to save
+
+# Files created/updated
+- `results.jld2`: Binary file with energies and states
+- `metadata.json`: Updated with summary (ground_energy, gap, n_states)
+"""
+function _save_ed_spectrum(energies::Vector, states::AbstractMatrix, 
+                           run_dir::String; extra_data::Dict=Dict())
+    # ════════════════════════════════════════════════════════════════════════
+    # 1. Save to binary file
+    # ════════════════════════════════════════════════════════════════════════
+    
+    filepath = joinpath(run_dir, "results.jld2")
+    
+    jldsave(filepath;
+            energies=energies,
+            states=Matrix(states),
+            extra_data=extra_data)
+    
+    # ════════════════════════════════════════════════════════════════════════
+    # 2. Update metadata with summary
+    # ════════════════════════════════════════════════════════════════════════
+    
+    metadata_path = joinpath(run_dir, "metadata.json")
+    metadata = JSON.parsefile(metadata_path)
+    
+    metadata["last_update"] = string(now())
+    metadata["n_states"] = length(energies)
+    metadata["hilbert_dim"] = size(states, 1)
+    metadata["ground_energy"] = energies[1]
+    
+    if length(energies) >= 2
+        metadata["spectral_gap"] = energies[2] - energies[1]
+    end
+    
+    # Store energies for quick access (without loading full results)
+    metadata["energies"] = energies
+    
+    open(metadata_path, "w") do f
+        JSON.print(f, metadata, 2)
+    end
+end
+
+# ============================================================================
+# PART ED-3: SAVING - Time Evolution Steps
+# ============================================================================
+
+"""
+    _save_ed_step(psi::Vector, run_dir::String, step::Int; extra_data::Dict=Dict())
+
+Save ED state vector at a specific time step.
+Parallel to _save_mps_sweep() for TDVP.
+
+# Arguments
+- `psi::Vector`: State vector at this step
+- `run_dir::String`: Path to run directory
+- `step::Int`: Step number (1, 2, 3, ...)
+- `extra_data::Dict`: Must include "time" for time-based queries
+"""
+function _save_ed_step(psi::AbstractVector, run_dir::String, step::Int; 
+                       extra_data::Dict=Dict())
+    # ════════════════════════════════════════════════════════════════════════
+    # 1. Save state to binary file
+    # ════════════════════════════════════════════════════════════════════════
+    
+    filename = @sprintf("state_step_%d.jld2", step)
+    filepath = joinpath(run_dir, filename)
+    
+    jldsave(filepath;
+            state=Vector(psi),
+            extra_data=extra_data,
+            step=step)
+    
+    # ════════════════════════════════════════════════════════════════════════
+    # 2. Update metadata
+    # ════════════════════════════════════════════════════════════════════════
+    
+    metadata_path = joinpath(run_dir, "metadata.json")
+    metadata = JSON.parsefile(metadata_path)
+    
+    metadata["steps_completed"] = step
+    metadata["last_update"] = string(now())
+    
+    # Add to step history
+    step_info = merge(
+        Dict("step" => step, "filename" => filename),
+        extra_data
+    )
+    push!(metadata["step_data"], step_info)
+    
+    open(metadata_path, "w") do f
+        JSON.print(f, metadata, 2)
+    end
+end
+
+# ============================================================================
+# PART ED-4: LOADING - Spectrum Results
+# ============================================================================
+
+"""
+    load_ed_spectrum(run_dir::String) -> (energies, states, extra_data)
+
+Load ED spectrum results.
+
+# Returns
+- `energies::Vector{Float64}`: Eigenvalues
+- `states::Matrix`: Eigenvectors as columns
+- `extra_data::Dict`: Additional saved data
+"""
+function load_ed_spectrum(run_dir::String)
+    filepath = joinpath(run_dir, "results.jld2")
+    
+    if !isfile(filepath)
+        error("Results file not found: $filepath")
+    end
+    
+    data = load(filepath)
+    
+    return data["energies"], data["states"], get(data, "extra_data", Dict())
+end
+
+# ============================================================================
+# PART ED-5: LOADING - Time Evolution Steps
+# ============================================================================
+
+"""
+    load_ed_step(run_dir::String, step::Int) -> (psi, extra_data)
+
+Load ED state vector at a specific step.
+"""
+function load_ed_step(run_dir::String, step::Int)
+    filename = @sprintf("state_step_%d.jld2", step)
+    filepath = joinpath(run_dir, filename)
+    
+    if !isfile(filepath)
+        error("State file not found: $filepath\n" *
+              "Step $step may not have been saved.")
+    end
+    
+    data = load(filepath)
+    
+    return data["state"], data["extra_data"]
+end
+
+"""
+    load_ed_at_time(run_dir::String; time::Float64, tol::Float64=1e-9) 
+        -> (psi, extra_data, actual_time)
+
+Load ED state vector at a specific time.
+"""
+function load_ed_at_time(run_dir::String; time::Float64, tol::Float64=1e-9)
+    metadata_path = joinpath(run_dir, "metadata.json")
+    
+    if !isfile(metadata_path)
+        error("Metadata file not found: $metadata_path")
+    end
+    
+    metadata = JSON.parsefile(metadata_path)
+    
+    if !haskey(metadata, "dt")
+        error("This is not a time evolution run (no dt in metadata).\n" *
+              "Use load_ed_spectrum(run_dir) for spectrum runs.")
+    end
+    
+    if !haskey(metadata, "step_data") || isempty(metadata["step_data"])
+        error("No step data found in metadata")
+    end
+    
+    # Find closest time
+    available = [(s["step"], s["time"]) for s in metadata["step_data"] if haskey(s, "time")]
+    
+    if isempty(available)
+        error("No time information in step_data")
+    end
+    
+    closest_step, closest_time = available[1]
+    min_diff = abs(available[1][2] - time)
+    
+    for (step, t) in available
+        diff = abs(t - time)
+        if diff < min_diff
+            min_diff = diff
+            closest_step = step
+            closest_time = t
+        end
+    end
+    
+    if min_diff > tol
+        @warn "Requested time $time not found. Loading closest: $closest_time"
+    end
+    
+    psi, extra_data = load_ed_step(run_dir, closest_step)
+    
+    return psi, extra_data, closest_time
+end
+
+"""
+    list_ed_times(run_dir::String) -> Vector{Tuple{Int, Float64}}
+
+List available (step, time) pairs for ED time evolution.
+"""
+function list_ed_times(run_dir::String)
+    metadata_path = joinpath(run_dir, "metadata.json")
+    
+    if !isfile(metadata_path)
+        return Tuple{Int, Float64}[]
+    end
+    
+    metadata = JSON.parsefile(metadata_path)
+    
+    if !haskey(metadata, "step_data")
+        return Tuple{Int, Float64}[]
+    end
+    
+    return [(s["step"], s["time"]) for s in metadata["step_data"] if haskey(s, "time")]
+end
+
+# ============================================================================
+# PART ED-6: UTILITY FUNCTIONS
+# ============================================================================
+
+"""
+    is_ed_algorithm(algo_type::String) -> Bool
+"""
+function is_ed_algorithm(algo_type::String)
+    return algo_type in ["ed_spectrum", "ed_time_evolution"]
+end
+
+"""
+    is_tn_algorithm(algo_type::String) -> Bool
+"""
+function is_tn_algorithm(algo_type::String)
+    return algo_type in ["dmrg", "tdvp"]
 end

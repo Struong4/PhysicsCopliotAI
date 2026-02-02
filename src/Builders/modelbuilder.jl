@@ -265,7 +265,7 @@ function _get_channels_from_config(config)
         )
         system = (type="spin", N=params["N"], dtype=dtype)
         
-    elseif name == "ising_dickie"
+    elseif name == "ising_dicke"
         channels = _get_spinboson_ising_dikie_channels(
             params["N_spins"],
             params["J"],
@@ -279,7 +279,7 @@ function _get_channels_from_config(config)
         system = (type="spinboson", N=params["N_spins"]+1, 
                  nmax=params["nmax"], dtype=dtype)
                  
-    elseif name == "long_range_ising_dickie"
+    elseif name == "long_range_ising_dicke"
         channels = _get_spinboson_longrange_ising_dikie_channels(
             params["N_spins"],
             params["J"],

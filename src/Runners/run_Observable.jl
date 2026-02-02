@@ -1,216 +1,218 @@
 # ============================================================================
-# OBSERVABLE CALCULATION RUNNER
+# UNIFIED OBSERVABLE CALCULATION RUNNER
 # ============================================================================
 #
-# This module provides functionality for calculating observables on saved
-# MPS data from tensor network simulations.
+# Single entry point for calculating observables on ALL simulation types:
+# TN (DMRG/TDVP) and ED (ed_spectrum/ed_time_evolution).
 #
-# RESPONSIBILITIES:
-# - Extract simulation config and find simulation data via hash
-# - Load MPS for specified sweeps
-# - Calculate requested observables
-# - Save results using database functions
-# - Detect and skip duplicate calculations (unless force_recalculate=true)
+# The engine automatically detects algorithm type from config and dispatches.
 #
-# CONFIG STRUCTURE (Analysis):
+# USAGE:
+#   config = JSON.parsefile("analysis_config.json")
+#   obs_run_id, obs_run_dir = run_observable_calculation_from_config(config)
+#
+# CONFIG STRUCTURE:
 # {
-#   "simulation": {
-#     "system": { ... },
-#     "model": { ... },
-#     "state": { ... },
-#     "algorithm": { ... }
-#   },
+#   "simulation": { ... },      ← Identifies which simulation data to use
 #   "analysis": {
-#     "sweeps": { "selection": "all", ... },
-#     "observable": { "type": "...", "params": { ... } }
-#   },
-#   "description": "..."
+#     "sweeps": { ... },        ← For TN (or "steps" for ED time evolution)
+#     "states": { ... },        ← For ED spectrum (which eigenstates to analyze)
+#     "observable": { ... }     ← What to calculate
+#   }
 # }
 #
-# DATABASE/SAVING:
-# - Uses Database_observable_utils.jl functions for saving
+# UNIFIED OBSERVABLE TYPES (work for both TN and ED):
+#   "single_site_expectation"    - Local ⟨Oᵢ⟩
+#   "subsystem_expectation_sum"  - Sum ⟨Σᵢ Oᵢ⟩ over range [l,m]
+#   "two_site_expectation"       - Two-point ⟨OᵢPⱼ⟩ (different operators)
+#   "correlation_function"       - Two-point ⟨OᵢOⱼ⟩ (same operator)
+#   "connected_correlation"      - Connected ⟨OᵢOⱼ⟩ - ⟨Oᵢ⟩⟨Oⱼ⟩
+#   "entanglement_entropy"       - von Neumann / Renyi entropy
+#   "entanglement_spectrum"      - Schmidt values
+#   "energy_expectation"         - ⟨H⟩
+#   "energy_variance"            - ⟨H²⟩ - ⟨H⟩²
 #
 # ============================================================================
 
 using JSON
 using JLD2
 using LinearAlgebra
+using SparseArrays
 
 # ============================================================================
-# PART 1: Operator Builders
+# PART 1: TN Operator Builder
 # ============================================================================
 
 """
-    _build_operator_from_config(op_config) → Matrix
+    _build_tn_operator(op_config) → Matrix
 
-Convert operator specification to actual matrix.
-
-# Arguments
-- `op_config`: Either a string ("Sx", "Sy", "Sz", "Sp", "Sm") or a matrix
-
-# Returns
-- Matrix representation of the operator
-
-# Example
-```julia
-Sz = _build_operator_from_config("Sz")
-custom_op = _build_operator_from_config([[0.5, 0], [0, -0.5]])
-```
+Convert operator specification to matrix for TN observables (spin-1/2).
 """
-function _build_operator_from_config(op_config)
-    # If already a matrix, return it
+function _build_tn_operator(op_config)
     if op_config isa AbstractArray
         return op_config
     end
     
-    # Otherwise, build from string
-    if op_config == "Sz"
+    if op_config == "Sz" || op_config == "Z"
         return [0.5 0.0; 0.0 -0.5]
-    elseif op_config == "Sx"
+    elseif op_config == "Sx" || op_config == "X"
         return [0.0 0.5; 0.5 0.0]
-    elseif op_config == "Sy"
+    elseif op_config == "Sy" || op_config == "Y"
         return [0.0 -0.5im; 0.5im 0.0]
-    elseif op_config == "Sp"
+    elseif op_config == "Sp" || op_config == "+"
         return [0.0 1.0; 0.0 0.0]
-    elseif op_config == "Sm"
+    elseif op_config == "Sm" || op_config == "-"
         return [0.0 0.0; 1.0 0.0]
     else
-        error("Unknown operator: $op_config. Use 'Sx', 'Sy', 'Sz', 'Sp', 'Sm' or provide matrix")
+        error("Unknown TN operator: $op_config. Use 'X/Sx', 'Y/Sy', 'Z/Sz', 'Sp/+', 'Sm/-' or provide matrix")
+    end
+end
+
+# Alias for backward compatibility
+const _build_operator_from_config = _build_tn_operator
+
+# ============================================================================
+# PART 2: ED Operator Builder
+# ============================================================================
+
+"""
+    _build_ed_operator(op_config, S) → Matrix
+
+Build ED operator matrix for given spin S using spin_matrices.
+"""
+function _build_ed_operator(op_config, S::Real=0.5)
+    if op_config isa AbstractArray
+        return op_config
+    end
+    
+    # Use ED spin_matrices function
+    ops = spin_matrices(S)
+    
+    # Map common names to symbols
+    op_map = Dict(
+        "X" => :X, "Sx" => :X,
+        "Y" => :Y, "Sy" => :Y,
+        "Z" => :Z, "Sz" => :Z,
+        "Sp" => :Sp, "+" => :Sp,
+        "Sm" => :Sm, "-" => :Sm
+    )
+    
+    if haskey(op_map, op_config)
+        return ops[op_map[op_config]]
+    elseif haskey(ops, Symbol(op_config))
+        return ops[Symbol(op_config)]
+    else
+        error("Unknown ED operator: $op_config. Use 'X', 'Y', 'Z', 'Sp', 'Sm' or provide matrix")
     end
 end
 
 # ============================================================================
-# PART 2: Sweep Selection
+# PART 3: Sweep/Step Selection
 # ============================================================================
 
 """
     _get_sweeps_to_process(sweep_config, run_dir) → Vector{Int}
 
-Determine which sweeps to process based on sweep selection config.
-
-# Arguments
-- `sweep_config::Dict`: Sweep selection configuration
-- `run_dir::String`: Path to simulation run directory
-
-# Returns
-- Vector of sweep numbers to process
-
-# Sweep Selection Types
-- "all": Process all available sweeps
-- "range": Process sweeps in [start, end]
-- "specific": Process specific list of sweeps
-- "time_range": For TDVP, process sweeps in time range (converts to sweep numbers)
-
-# Example
-```json
-{"selection": "all"}
-{"selection": "range", "range": [1, 50]}
-{"selection": "specific", "list": [1, 10, 20, 50]}
-{"selection": "time_range", "time_range": [0.0, 1.0]}  // TDVP only
-```
+Determine which sweeps/steps to process based on selection config.
+Works for both TN sweeps and ED steps.
 """
 function _get_sweeps_to_process(sweep_config::Dict, run_dir::String)
     selection = sweep_config["selection"]
     
-    # Load metadata to get available sweeps
     metadata_path = joinpath(run_dir, "metadata.json")
     metadata = JSON.parsefile(metadata_path)
     
-    available_sweeps = [entry["sweep"] for entry in metadata["sweep_data"]]
+    # Detect data structure: sweep_data (TN) or step_data (ED)
+    if haskey(metadata, "sweep_data")
+        data_key = "sweep_data"
+        index_key = "sweep"
+    elseif haskey(metadata, "step_data")
+        data_key = "step_data"
+        index_key = "step"
+    else
+        error("No sweep_data or step_data found in metadata")
+    end
+    
+    available_indices = [entry[index_key] for entry in metadata[data_key]]
     
     if selection == "all"
-        return available_sweeps
+        return available_indices
         
     elseif selection == "range"
-        start_sweep, end_sweep = sweep_config["range"]
-        return filter(s -> start_sweep <= s <= end_sweep, available_sweeps)
+        start_idx, end_idx = sweep_config["range"]
+        return filter(s -> start_idx <= s <= end_idx, available_indices)
         
     elseif selection == "specific"
         requested = sweep_config["list"]
-        return filter(s -> s in requested, available_sweeps)
+        return filter(s -> s in requested, available_indices)
         
     elseif selection == "time_range"
-        # Only for TDVP runs
         if !haskey(metadata, "dt")
-            error("time_range selection only valid for TDVP runs")
+            error("time_range selection only valid for time evolution runs (TDVP or ed_time_evolution)")
         end
         
         t_start, t_end = sweep_config["time_range"]
-
-        # Get available time range from sweep_data
+        
         available_times = Float64[]
-        for entry in metadata["sweep_data"]
+        for entry in metadata[data_key]
             if haskey(entry, "time")
                 push!(available_times, entry["time"])
             end
         end
         
         if isempty(available_times)
-            error("No time information found in sweep_data")
+            error("No time information found in $data_key")
         end
         
-        t_min_available = minimum(available_times)
-        t_max_available = maximum(available_times)
+        t_min = minimum(available_times)
+        t_max = maximum(available_times)
         
-        # Validate requested range
-        if t_start > t_max_available
-            error("Requested time range [$t_start, $t_end] starts after available data ends at t=$t_max_available")
+        if t_start > t_max
+            error("Requested time range [$t_start, $t_end] starts after available data (max t=$t_max)")
         end
         
-        if t_end > t_max_available
-            @warn "Requested end time $t_end exceeds available data (max t=$t_max_available). Using t=$t_max_available instead."
-            t_end = t_max_available
+        if t_end > t_max
+            @warn "Requested end time $t_end exceeds available data (max t=$t_max). Using t=$t_max."
+            t_end = t_max
         end
         
-        if t_end < t_min_available
-            error("Requested time range [$t_start, $t_end] ends before available data starts at t=$t_min_available")
-        end
-            
-        # Filter sweeps by time
-        selected_sweeps = Int[]
-        for entry in metadata["sweep_data"]
+        selected = Int[]
+        for entry in metadata[data_key]
             if haskey(entry, "time")
                 t = entry["time"]
                 if t_start <= t <= t_end
-                    push!(selected_sweeps, entry["sweep"])
+                    push!(selected, entry[index_key])
                 end
             end
         end
         
-        return selected_sweeps
+        return selected
         
     else
-        error("Unknown sweep selection: $selection. Use 'all', 'range', 'specific', or 'time_range'")
+        error("Unknown selection: $selection. Use 'all', 'range', 'specific', or 'time_range'")
     end
 end
 
 # ============================================================================
-# PART 3: Observable Calculation Dispatcher
+# PART 4: TN Observable Dispatcher
 # ============================================================================
 
 """
-    _calculate_observable(obs_type, params, mps, ham) → value
+    _calculate_tn_observable(obs_type, params, mps, ham) → value
 
-Dispatch to appropriate observable function based on type.
-
-# Arguments
-- `obs_type::String`: Observable type (matches function names in Analysis/)
-- `params::Dict`: Observable-specific parameters
-- `mps::Vector`: MPS tensors
-- `ham::Vector`: Hamiltonian MPO (optional, only for energy observables)
-
-# Returns
-- Calculated observable value (type depends on observable)
+Calculate observable for TN (MPS) state.
 """
-function _calculate_observable(obs_type::String, params::Dict, mps::Vector{<:AbstractArray{T1,3}}, ham::Union{Vector{<:AbstractArray{T2,4}},Nothing}=nothing) where {T1,T2}
+function _calculate_tn_observable(obs_type::String, params::Dict, 
+                                   mps::Vector{<:AbstractArray{T1,3}}, 
+                                   ham::Union{Vector{<:AbstractArray{T2,4}},Nothing}=nothing) where {T1,T2}
     
     if obs_type == "single_site_expectation"
         site = params["site"]
-        operator = _build_operator_from_config(params["operator"])
+        operator = _build_tn_operator(params["operator"])
         return single_site_expectation(site, operator, mps)
         
     elseif obs_type == "subsystem_expectation_sum"
-        operator = _build_operator_from_config(params["operator"])
+        operator = _build_tn_operator(params["operator"])
         l = params["l"]
         m = params["m"]
         return subsystem_expectation_sum(operator, mps, l, m)
@@ -218,20 +220,20 @@ function _calculate_observable(obs_type::String, params::Dict, mps::Vector{<:Abs
     elseif obs_type == "two_site_expectation"
         site_i = params["site_i"]
         site_j = params["site_j"]
-        op_i = _build_operator_from_config(params["operator_i"])
-        op_j = _build_operator_from_config(params["operator_j"])
+        op_i = _build_tn_operator(params["operator_i"])
+        op_j = _build_tn_operator(params["operator_j"])
         return two_site_expectation(site_i, op_i, site_j, op_j, mps)
         
     elseif obs_type == "correlation_function"
         site_i = params["site_i"]
         site_j = params["site_j"]
-        operator = _build_operator_from_config(params["operator"])
+        operator = _build_tn_operator(params["operator"])
         return correlation_function(site_i, site_j, operator, mps)
         
     elseif obs_type == "connected_correlation"
         site_i = params["site_i"]
         site_j = params["site_j"]
-        operator = _build_operator_from_config(params["operator"])
+        operator = _build_tn_operator(params["operator"])
         return connected_correlation(site_i, site_j, operator, mps)
         
     elseif obs_type == "entanglement_spectrum"
@@ -257,112 +259,359 @@ function _calculate_observable(obs_type::String, params::Dict, mps::Vector{<:Abs
         return energy_variance(mps, ham)
         
     else
-        error("Unknown observable type: $obs_type")
+        error("Unknown TN observable type: $obs_type\n" *
+              "Available: single_site_expectation, subsystem_expectation_sum, two_site_expectation,\n" *
+              "  correlation_function, connected_correlation, entanglement_entropy,\n" *
+              "  entanglement_spectrum, energy_expectation, energy_variance")
+    end
+end
+
+# Alias for backward compatibility
+const _calculate_observable = _calculate_tn_observable
+
+# ============================================================================
+# PART 5: ED Observable Dispatcher (TN-Compatible Names)
+# ============================================================================
+
+"""
+    _calculate_ed_observable(obs_type, params, psi, system_config; H=nothing) → value
+
+Calculate observable for ED state vector.
+Uses same obs_type names as TN for unified config experience.
+"""
+function _calculate_ed_observable(obs_type::String, params::Dict, 
+                                   psi::AbstractVector, system_config::Dict;
+                                   H::Union{AbstractMatrix, Nothing}=nothing)
+    
+    system_type = system_config["type"]
+    S = get(system_config, "S", 0.5)
+    d = Int(2S + 1)
+    
+    if system_type == "spin"
+        N = system_config["N"]
+        nmax = nothing
+        d_boson = nothing
+    elseif system_type == "spinboson"
+        N = system_config["N_spins"]
+        nmax = system_config["nmax"]
+        d_boson = nmax + 1
+    else
+        error("Unknown system type: $system_type")
+    end
+    
+    # ════════════════════════════════════════════════════════════════════════
+    # LOCAL EXPECTATION VALUES (TN-compatible names)
+    # ════════════════════════════════════════════════════════════════════════
+    
+    if obs_type == "single_site_expectation"
+        # TN: single_site_expectation(site, operator, mps)
+        # ED: single_site_expectation(site, operator, psi, N, S)
+        site = params["site"]
+        op = _build_ed_operator(params["operator"], S)
+        
+        if system_type == "spin"
+            return single_site_expectation(site, op, psi, N, S)
+        else
+            return single_site_expectation_sb(site, op, psi, N, nmax, S)
+        end
+        
+    elseif obs_type == "subsystem_expectation_sum"
+        # TN: subsystem_expectation_sum(operator, mps, l, m)
+        # ED: subsystem_expectation_sum(operator, psi, l, m, N, S)
+        op = _build_ed_operator(params["operator"], S)
+        l = params["l"]
+        m = params["m"]
+        
+        if system_type == "spin"
+            return subsystem_expectation_sum(op, psi, l, m, N, S)
+        else
+            return subsystem_expectation_sum_sb(op, psi, l, m, N, nmax, S)
+        end
+        
+    elseif obs_type == "expectation_all_sites"
+        # ED-only: returns vector of all local expectations
+        op = _build_ed_operator(params["operator"], S)
+        
+        if system_type == "spin"
+            return expectation_value_all_sites(op, psi, N, S)
+        else
+            return expectation_value_all_sites_sb(op, psi, N, nmax, S)
+        end
+        
+    # ════════════════════════════════════════════════════════════════════════
+    # CORRELATION FUNCTIONS (TN-compatible names)
+    # ════════════════════════════════════════════════════════════════════════
+    
+    elseif obs_type == "two_site_expectation"
+        # TN: two_site_expectation(site_i, op_i, site_j, op_j, mps)
+        # ED: two_site_expectation(site_i, op_i, site_j, op_j, psi, N, S)
+        site_i = params["site_i"]
+        site_j = params["site_j"]
+        op_i = _build_ed_operator(params["operator_i"], S)
+        op_j = _build_ed_operator(params["operator_j"], S)
+        
+        if system_type == "spin"
+            return two_site_expectation(site_i, op_i, site_j, op_j, psi, N, S)
+        else
+            return two_site_expectation_sb(site_i, op_i, site_j, op_j, psi, N, nmax, S)
+        end
+        
+    elseif obs_type == "correlation_function"
+        # TN: correlation_function(site_i, site_j, operator, mps)
+        # ED: correlation_function(site_i, site_j, operator, psi, N, S)
+        site_i = params["site_i"]
+        site_j = params["site_j"]
+        op = _build_ed_operator(params["operator"], S)
+        
+        if system_type == "spin"
+            return correlation_function(site_i, site_j, op, psi, N, S)
+        else
+            return correlation_function_sb(site_i, site_j, op, psi, N, nmax, S)
+        end
+        
+    elseif obs_type == "connected_correlation"
+        # TN: connected_correlation(site_i, site_j, operator, mps)
+        # ED: connected_correlation(site_i, site_j, operator, psi, N, S)
+        site_i = params["site_i"]
+        site_j = params["site_j"]
+        op = _build_ed_operator(params["operator"], S)
+        
+        if system_type == "spin"
+            return connected_correlation(site_i, site_j, op, psi, N, S)
+        else
+            return connected_correlation_sb(site_i, site_j, op, psi, N, nmax, S)
+        end
+        
+    elseif obs_type == "correlation_matrix"
+        # ED-only: full N×N correlation matrix
+        op = _build_ed_operator(params["operator"], S)
+        
+        if system_type == "spin"
+            return correlation_matrix(op, psi, N, S)
+        else
+            return correlation_matrix_sb(op, psi, N, nmax, S)
+        end
+        
+    # ════════════════════════════════════════════════════════════════════════
+    # ENTANGLEMENT (TN-compatible names)
+    # ════════════════════════════════════════════════════════════════════════
+    
+    elseif obs_type == "entanglement_entropy"
+        # TN: entanglement_entropy(bond, mps; alpha=1)
+        # ED: entanglement_entropy(cut, psi, N, d; alpha=1)
+        # Accept both "cut" and "bond" for compatibility
+        cut = get(params, "cut", get(params, "bond", N ÷ 2))
+        alpha = get(params, "alpha", 1)
+        
+        if system_type == "spin"
+            return entanglement_entropy(cut, psi, N, d, alpha=alpha)
+        else
+            return entanglement_entropy_sb(cut, psi, N, d, d_boson, alpha=alpha)
+        end
+        
+    elseif obs_type == "entanglement_spectrum"
+        # TN: entanglement_spectrum(bond, mps; n_values=nothing)
+        # ED: entanglement_spectrum(cut, psi, N, d; n_values=nothing)
+        cut = get(params, "cut", get(params, "bond", N ÷ 2))
+        n_values = get(params, "n_values", nothing)
+        
+        if system_type == "spin"
+            return entanglement_spectrum(cut, psi, N, d, n_values=n_values)
+        else
+            return entanglement_spectrum_sb(cut, psi, N, d, d_boson, n_values=n_values)
+        end
+        
+    # ════════════════════════════════════════════════════════════════════════
+    # ENERGY (TN-compatible names, requires Hamiltonian)
+    # ════════════════════════════════════════════════════════════════════════
+    
+    elseif obs_type == "energy_expectation"
+        # TN: energy_expectation(mps, ham)
+        # ED: energy_expectation(psi, H)
+        if H === nothing
+            error("energy_expectation requires Hamiltonian. Rebuild H or pass via extra params.")
+        end
+        return energy_expectation(psi, H)
+        
+    elseif obs_type == "energy_variance"
+        # TN: energy_variance(mps, ham)
+        # ED: energy_variance(psi, H)
+        if H === nothing
+            error("energy_variance requires Hamiltonian. Rebuild H or pass via extra params.")
+        end
+        return energy_variance(psi, H)
+        
+    # ════════════════════════════════════════════════════════════════════════
+    # BOSON-SPECIFIC (spin-boson only)
+    # ════════════════════════════════════════════════════════════════════════
+    
+    elseif obs_type == "boson_number"
+        if system_type != "spinboson"
+            error("boson_number only valid for spinboson systems")
+        end
+        return boson_number(psi, N, nmax, S)
+        
+    elseif obs_type == "boson_distribution"
+        if system_type != "spinboson"
+            error("boson_distribution only valid for spinboson systems")
+        end
+        return boson_distribution(psi, N, nmax, S)
+        
+    elseif obs_type == "boson_field"
+        if system_type != "spinboson"
+            error("boson_field only valid for spinboson systems")
+        end
+        return boson_field_expectation(psi, N, nmax, S)
+        
+    elseif obs_type == "boson_spin_entanglement"
+        if system_type != "spinboson"
+            error("boson_spin_entanglement only valid for spinboson systems")
+        end
+        alpha = get(params, "alpha", 1)
+        return boson_spin_entanglement(psi, N, d, d_boson, alpha=alpha)
+        
+    # ════════════════════════════════════════════════════════════════════════
+    # STATE PROPERTIES & DYNAMICS
+    # ════════════════════════════════════════════════════════════════════════
+    
+    elseif obs_type == "inner_product"
+        return inner_product(psi)
+        
+    elseif obs_type == "fidelity"
+        psi_ref = params["psi_ref"]
+        return fidelity(psi_ref, psi)
+        
+    elseif obs_type == "survival_probability"
+        psi0 = params["psi0"]
+        return survival_probability(psi0, psi)
+        
+    elseif obs_type == "loschmidt_echo"
+        psi0 = params["psi0"]
+        return loschmidt_echo(psi0, psi, N)
+        
+    elseif obs_type == "state_norm"
+        return sqrt(inner_product(psi))
+        
+    # ════════════════════════════════════════════════════════════════════════
+    # LEGACY ALIASES (backward compatibility with old config files)
+    # ════════════════════════════════════════════════════════════════════════
+    
+    elseif obs_type == "local_expectation"
+        # Old name → redirect to unified name
+        return _calculate_ed_observable("single_site_expectation", params, psi, system_config, H=H)
+        
+    elseif obs_type == "two_point_correlation"
+        # Old name → redirect to unified name
+        return _calculate_ed_observable("correlation_function", params, psi, system_config, H=H)
+        
+    elseif obs_type == "bipartite_entanglement_entropy"
+        # Old name → redirect to unified name
+        return _calculate_ed_observable("entanglement_entropy", params, psi, system_config, H=H)
+        
+    elseif obs_type == "total_magnetization"
+        # Old name → convert to subsystem_expectation_sum over full system
+        direction = get(params, "direction", "Z")
+        new_params = Dict("operator" => direction, "l" => 1, "m" => N)
+        return _calculate_ed_observable("subsystem_expectation_sum", new_params, psi, system_config, H=H)
+        
+    else
+        error("Unknown ED observable type: $obs_type\n" *
+              "Available (TN-compatible):\n" *
+              "  single_site_expectation, subsystem_expectation_sum, two_site_expectation,\n" *
+              "  correlation_function, connected_correlation, entanglement_entropy,\n" *
+              "  entanglement_spectrum, energy_expectation, energy_variance\n" *
+              "Available (ED-only):\n" *
+              "  expectation_all_sites, correlation_matrix, boson_number, boson_distribution,\n" *
+              "  boson_field, boson_spin_entanglement, inner_product, fidelity,\n" *
+              "  survival_probability, loschmidt_echo, state_norm\n" *
+              "Legacy (redirected):\n" *
+              "  local_expectation, two_point_correlation, bipartite_entanglement_entropy, total_magnetization")
     end
 end
 
 # ============================================================================
-# PART 4: Main Observable Runner (With Database Integration)
+# PART 6: Main Observable Runner (UNIFIED)
 # ============================================================================
 
 """
     run_observable_calculation_from_config(config; base_dir="data", obs_base_dir="observables", force_recalculate=false)
-        -> (String, String)
 
-Main entry point for observable calculations with automatic saving.
+Unified entry point for observable calculations. Automatically detects TN vs ED
+and dispatches to appropriate handler.
 
 # Arguments
 - `config::Dict`: Analysis configuration with "simulation" and "analysis" sections
-- `base_dir::String`: Base directory for simulation data (default: "data")
-- `obs_base_dir::String`: Base directory for observable data (default: "observables")
-- `force_recalculate::Bool`: If true, recalculate even if already exists (default: false)
+- `base_dir::String`: Simulation data directory (default: "data")
+- `obs_base_dir::String`: Observable output directory (default: "observables")
+- `force_recalculate::Bool`: If true, recalculate even if results exist
 
 # Returns
-- `(obs_run_id, obs_run_dir)`: Observable run identifier and directory
+- `(obs_run_id, obs_run_dir)`: Observable run identifier and path
 
 # Config Structure
 ```json
 {
   "simulation": {
-    "system": { ... },
-    "model": { ... },
-    "state": { ... },
-    "algorithm": { ... }
+    "system": { "type": "spin", "N": 20, "S": 0.5 },
+    "model": { "type": "tfi", "J": 1.0, "h": 0.5 },
+    "algorithm": { "type": "dmrg", ... }
   },
   "analysis": {
     "sweeps": { "selection": "all" },
-    "observable": { "type": "...", "params": { ... } }
-  },
-  "description": "..."
+    "observable": {
+      "type": "correlation_function",
+      "params": { "site_i": 1, "site_j": 10, "operator": "Z" }
+    }
+  }
 }
-```
-
-# Workflow
-1. Extract simulation config from "simulation" section
-2. Find simulation run using config hash
-3. Check for existing completed calculation (skip if found, unless force_recalculate=true)
-4. Setup observable directory structure
-5. For each sweep:
-   - Load MPS
-   - Calculate observable
-   - Save immediately
-6. Finalize metadata
-
-# Example
-```julia
-config = JSON.parsefile("configs/analysis_magnetization.json")
-obs_run_id, obs_run_dir = run_observable_calculation_from_config(config)
-
-# Load results later
-results = load_all_observable_results(obs_run_dir)
-
-# Force recalculation
-obs_run_id, obs_run_dir = run_observable_calculation_from_config(config, force_recalculate=true)
 ```
 """
 function run_observable_calculation_from_config(config::Dict; 
-                                                base_dir::String="data",
-                                                obs_base_dir::String="observables",
-                                                force_recalculate::Bool=false)
-    println("="^70)
+                                               base_dir::String="data",
+                                               obs_base_dir::String="observables",
+                                               force_recalculate::Bool=false)
+    
+    println("\n" * "="^70)
     println("Starting Observable Calculation from Config")
     println("="^70)
     
-    # ════════════════════════════════════════════════════════════════════════
-    # STEP 1: Extract Simulation Config (embedded in "simulation" key)
-    # ════════════════════════════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 1: Extract simulation config and detect algorithm type
+    # ═══════════════════════════════════════════════════════════════════════════
     
     println("\n[1/6] Extracting simulation config and finding run...")
     
-    # Simulation config is embedded directly under "simulation" key
     sim_config = config["simulation"]
-    println("  ✓ Extracted embedded simulation config")
+    algorithm = sim_config["algorithm"]["type"]
     
-    # Find runs with this config using simulation hash
+    # Detect TN vs ED
+    if is_tn_algorithm(algorithm)
+        println("  ✓ Algorithm: $algorithm (TN)")
+    elseif is_ed_algorithm(algorithm)
+        println("  ✓ Algorithm: $algorithm (ED)")
+    else
+        error("Unknown algorithm type: $algorithm")
+    end
+    
+    # Find simulation run
     runs = _find_runs_by_config(sim_config, base_dir)
     
     if isempty(runs)
-        error("No simulation data found for this config!\n" *
-              "Run the simulation first with: run_simulation_from_config()")
+        error("No simulation found matching config.\n" *
+              "Run simulation first with run_simulation_from_config()")
     end
     
-    # Select run (use latest if multiple)
-    if length(runs) == 1
-        run_info = runs[1]
-        println("  ✓ Found simulation run: $(run_info["run_id"])")
-    else
-        run_info = _get_latest_run_for_config(sim_config, base_dir=base_dir)
-        println("  ⚠ Multiple runs found, using latest: $(run_info["run_id"])")
-        println("    (Found $(length(runs)) runs total)")
-    end
+    # Use latest run
+    sim_run = runs[end]
+    sim_run_id = sim_run["run_id"]
+    sim_run_dir = sim_run["run_dir"]
     
-    sim_run_id = run_info["run_id"]
-    sim_run_dir = run_info["run_dir"]
-    algorithm = sim_config["algorithm"]["type"]
+    println("  ✓ Found simulation run: $sim_run_id")
+    println("  ✓ Simulation directory: $sim_run_dir")
     
-    # ════════════════════════════════════════════════════════════════════════
-    # STEP 2: Deduplication Check (before setting up new directory!)
-    # ════════════════════════════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 2: Check for existing calculation (deduplication)
+    # ═══════════════════════════════════════════════════════════════════════════
     
     println("\n[2/6] Checking for existing calculations...")
     
@@ -370,174 +619,333 @@ function run_observable_calculation_from_config(config::Dict;
         existing = _get_completed_observable_run(config, sim_run_id, obs_base_dir=obs_base_dir)
         
         if existing !== nothing
-            println("="^70)
-            println("✓ OBSERVABLE ALREADY CALCULATED")
-            println("="^70)
-            println("  Observable type: $(existing["observable_type"])")
-            println("  Run ID: $(existing["obs_run_id"])")
-            println("  Path:   $(existing["obs_run_dir"])")
-            println("")
-            println("  To force recalculation, use: force_recalculate=true")
-            println("")
-            println("  Load existing results with:")
-            println("    load_all_observable_results(\"$(existing["obs_run_dir"])\")")
-            println("="^70)
-            
+            println("  ✓ Found existing completed calculation!")
+            println("  Observable run: $(existing["obs_run_id"])")
+            println("  Directory: $(existing["obs_run_dir"])")
+            println("\n  Use force_recalculate=true to recompute.")
             return existing["obs_run_id"], existing["obs_run_dir"]
         end
-        
-        println("  No completed calculation found. Proceeding...")
-    else
-        println("  force_recalculate=true. Skipping deduplication check...")
     end
     
-    # ════════════════════════════════════════════════════════════════════════
-    # STEP 3: Setup Observable Directory
-    # ════════════════════════════════════════════════════════════════════════
+    println("  No completed calculation found. Proceeding...")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 3: Setup observable directory
+    # ═══════════════════════════════════════════════════════════════════════════
     
     println("\n[3/6] Setting up observable directory...")
     
-    # Pass full config for hashing (simulation + analysis)
-    obs_run_id, obs_run_dir = _setup_observable_directory(config, sim_run_id, algorithm, 
-                                                         obs_base_dir=obs_base_dir)
+    obs_run_id, obs_run_dir = _setup_observable_directory(
+        config, sim_run_id, algorithm, obs_base_dir=obs_base_dir
+    )
     
     println("  ✓ Observable run ID: $obs_run_id")
     println("  ✓ Observable directory: $obs_run_dir")
     
-    # ════════════════════════════════════════════════════════════════════════
-    # STEP 4: Determine Sweeps to Process (from "analysis" section)
-    # ════════════════════════════════════════════════════════════════════════
-    
-    println("\n[4/6] Determining sweeps to process...")
-    
-    # Sweeps config is under "analysis" section
-    sweeps_to_process = _get_sweeps_to_process(config["analysis"]["sweeps"], sim_run_dir)
-    
-    println("  ✓ Sweeps to process: $(length(sweeps_to_process))")
-    println("    Range: $(minimum(sweeps_to_process)) to $(maximum(sweeps_to_process))")
-    
-    # ════════════════════════════════════════════════════════════════════════
-    # STEP 5: Load Hamiltonian if Needed (from "analysis" section)
-    # ════════════════════════════════════════════════════════════════════════
-    
-    println("\n[5/6] Preparing observable calculation...")
-    
-    # Observable config is under "analysis" section
     obs_type = config["analysis"]["observable"]["type"]
-    obs_params = config["analysis"]["observable"]["params"]
     
-    println("  Observable type: $obs_type")
-    
-    # Check if we need the Hamiltonian
-    needs_ham = obs_type in ["energy_expectation", "energy_variance"]
-    
-    ham = nothing
-    if needs_ham
-        println("  Building Hamiltonian (needed for energy observables)...")
-        ham_mpo = build_mpo_from_config(sim_config)
-        ham = ham_mpo.tensors
-        println("  ✓ Hamiltonian loaded")
-    end
-    
-    # ════════════════════════════════════════════════════════════════════════
-    # STEP 6: Calculate and Save Observables for Each Sweep
-    # ════════════════════════════════════════════════════════════════════════
-    
-    println("\n[6/6] Calculating and saving observables...")
-    println("="^70)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 4-6: Dispatch to TN or ED handler
+    # ═══════════════════════════════════════════════════════════════════════════
     
     try
-        for (idx, sweep) in enumerate(sweeps_to_process)
-            # Load MPS for this sweep
-            mps, extra_data = load_mps_sweep(sim_run_dir, sweep)
-            
-            # Calculate observable
-            obs_value = _calculate_observable(obs_type, obs_params, mps.tensors, ham)
-            
-            # Save immediately after calculation
-            _save_observable_sweep(obs_value, obs_run_dir, sweep; extra_data=extra_data)
-            
-            # Print progress
-            if idx % max(1, div(length(sweeps_to_process), 10)) == 0
-                println("  Progress: $idx/$(length(sweeps_to_process)) sweeps")
-            end
+        local n_processed
+        
+        if is_tn_algorithm(algorithm)
+            n_processed = _run_tn_observable_calculation(
+                config, sim_config, sim_run_dir, obs_run_dir
+            )
+        else
+            n_processed = _run_ed_observable_calculation(
+                config, sim_config, sim_run_dir, obs_run_dir, algorithm
+            )
         end
         
-        # ════════════════════════════════════════════════════════════════════
-        # Finalize Observable Run
-        # ════════════════════════════════════════════════════════════════════
-        
+        # Finalize
         println("="^70)
         println("\nFinalizing...")
         _finalize_observable_run(obs_run_dir, status="completed")
         
+        # Summary
+        println("\n" * "="^70)
+        println("Observable Calculation Complete")
+        println("="^70)
+        println("  Simulation run: $sim_run_id")
+        println("  Observable run: $obs_run_id")
+        println("  Observable type: $obs_type")
+        println("  Items processed: $n_processed")
+        println("  Results saved in: $obs_run_dir")
+        println("="^70)
+        
     catch e
-        # If calculation fails, mark as failed
         println("\n❌ Observable calculation failed!")
         _finalize_observable_run(obs_run_dir, status="failed")
         rethrow(e)
     end
     
-    # ════════════════════════════════════════════════════════════════════════
-    # Return Observable Run Info
-    # ════════════════════════════════════════════════════════════════════════
-    
-    println("\n" * "="^70)
-    println("Observable Calculation Summary")
-    println("="^70)
-    println("  Simulation run: $sim_run_id")
-    println("  Observable run: $obs_run_id")
-    println("  Observable type: $obs_type")
-    println("  Sweeps processed: $(length(sweeps_to_process))")
-    println("  Results saved in: $obs_run_dir")
-    println("="^70)
-    
     return obs_run_id, obs_run_dir
 end
 
 # ============================================================================
-# PART 5: Convenience Function for Quick Calculation
+# PART 7: TN Observable Handler
+# ============================================================================
+
+function _run_tn_observable_calculation(config::Dict, sim_config::Dict,
+                                        sim_run_dir::String, obs_run_dir::String)
+    
+    println("\n[4/6] Processing TN observables...")
+    
+    # Get sweeps to process
+    sweeps_to_process = _get_sweeps_to_process(config["analysis"]["sweeps"], sim_run_dir)
+    println("  ✓ Sweeps to process: $(length(sweeps_to_process))")
+    println("    Range: $(minimum(sweeps_to_process)) to $(maximum(sweeps_to_process))")
+    
+    # Observable config
+    obs_type = config["analysis"]["observable"]["type"]
+    obs_params = config["analysis"]["observable"]["params"]
+    println("\n[5/6] Observable type: $obs_type")
+    
+    # Build Hamiltonian if needed
+    needs_ham = obs_type in ["energy_expectation", "energy_variance"]
+    ham = nothing
+    if needs_ham
+        println("  Building Hamiltonian...")
+        ham_mpo = build_mpo_from_config(sim_config)
+        ham = ham_mpo.tensors
+    end
+    
+    # Calculate for each sweep
+    println("\n[6/6] Calculating observables...")
+    println("="^70)
+    
+    for (idx, sweep) in enumerate(sweeps_to_process)
+        mps, extra_data = load_mps_sweep(sim_run_dir, sweep)
+        obs_value = _calculate_tn_observable(obs_type, obs_params, mps.tensors, ham)
+        _save_observable_sweep(obs_value, obs_run_dir, sweep; extra_data=extra_data)
+        
+        if idx % max(1, length(sweeps_to_process) ÷ 10) == 0
+            println("  Progress: $idx/$(length(sweeps_to_process)) sweeps")
+        end
+    end
+    
+    return length(sweeps_to_process)
+end
+
+# ============================================================================
+# PART 8: ED Observable Handler
+# ============================================================================
+
+function _run_ed_observable_calculation(config::Dict, sim_config::Dict,
+                                        sim_run_dir::String, obs_run_dir::String,
+                                        algorithm::String)
+    
+    println("\n[4/6] Processing ED observables...")
+    
+    system_config = sim_config["system"]
+    obs_type = config["analysis"]["observable"]["type"]
+    obs_params = config["analysis"]["observable"]["params"]
+    
+    println("  Observable type: $obs_type")
+    
+    # Build Hamiltonian if energy observable requested
+    needs_ham = obs_type in ["energy_expectation", "energy_variance"]
+    H = nothing
+    if needs_ham
+        println("  Building Hamiltonian for energy observable...")
+        H = build_H_from_config(sim_config)
+        println("  ✓ Hamiltonian built: $(size(H, 1)) × $(size(H, 1))")
+    end
+    
+    if algorithm == "ed_spectrum"
+        return _run_ed_spectrum_observable(config, sim_config, sim_run_dir, obs_run_dir, 
+                                           system_config, obs_type, obs_params, H)
+        
+    elseif algorithm == "ed_time_evolution"
+        return _run_ed_time_evolution_observable(config, sim_config, sim_run_dir, obs_run_dir,
+                                                  system_config, obs_type, obs_params, H)
+    else
+        error("Unknown ED algorithm: $algorithm")
+    end
+end
+
+# ────────────────────────────────────────────────────────────────────────────
+# ED Spectrum Observable
+# ────────────────────────────────────────────────────────────────────────────
+
+function _run_ed_spectrum_observable(config, sim_config, sim_run_dir, obs_run_dir,
+                                     system_config, obs_type, obs_params, H)
+    
+    println("\n[5/6] Loading spectrum results...")
+    energies, states, _ = load_ed_spectrum(sim_run_dir)
+    println("  ✓ Loaded $(length(energies)) eigenstates")
+    
+    # Determine which states to analyze
+    state_selection = get(config["analysis"], "states", Dict("selection" => "ground"))
+    selection = state_selection["selection"]
+    
+    if selection == "ground"
+        state_indices = [1]
+    elseif selection == "range"
+        start_idx, end_idx = state_selection["range"]
+        state_indices = collect(start_idx:min(end_idx, length(energies)))
+    elseif selection == "specific"
+        state_indices = state_selection["list"]
+    elseif selection == "all"
+        state_indices = collect(1:length(energies))
+    else
+        state_indices = [1]
+    end
+    
+    println("  States to analyze: $(length(state_indices))")
+    
+    println("\n[6/6] Calculating observables...")
+    println("="^70)
+    
+    for (idx, state_idx) in enumerate(state_indices)
+        psi = states[:, state_idx]
+        E = energies[state_idx]
+        
+        obs_value = _calculate_ed_observable(obs_type, obs_params, psi, system_config, H=H)
+        
+        extra_data = Dict("energy" => E, "state_index" => state_idx)
+        _save_observable_sweep(obs_value, obs_run_dir, state_idx; extra_data=extra_data)
+        
+        if idx % max(1, length(state_indices) ÷ 10) == 0
+            println("  Progress: $idx/$(length(state_indices)) states")
+        end
+    end
+    
+    return length(state_indices)
+end
+
+# ────────────────────────────────────────────────────────────────────────────
+# ED Time Evolution Observable
+# ────────────────────────────────────────────────────────────────────────────
+
+function _run_ed_time_evolution_observable(config, sim_config, sim_run_dir, obs_run_dir,
+                                           system_config, obs_type, obs_params, H)
+    
+    # Get steps to process (check "steps" first, fallback to "sweeps")
+    step_config = get(config["analysis"], "steps", get(config["analysis"], "sweeps", nothing))
+    if step_config === nothing
+        error("Analysis config must include 'steps' (or 'sweeps') selection for time evolution")
+    end
+    
+    steps_to_process = _get_sweeps_to_process(step_config, sim_run_dir)
+    println("\n[5/6] Steps to process: $(length(steps_to_process))")
+    
+    println("\n[6/6] Calculating observables...")
+    println("="^70)
+    
+    for (idx, step) in enumerate(steps_to_process)
+        psi, extra_data = load_ed_step(sim_run_dir, step)
+        obs_value = _calculate_ed_observable(obs_type, obs_params, psi, system_config, H=H)
+        _save_observable_sweep(obs_value, obs_run_dir, step; extra_data=extra_data)
+        
+        if idx % max(1, length(steps_to_process) ÷ 10) == 0
+            t = get(extra_data, "time", step)
+            println("  Progress: $idx/$(length(steps_to_process)) steps (t = $t)")
+        end
+    end
+    
+    return length(steps_to_process)
+end
+
+# ============================================================================
+# PART 9: Convenience Functions
 # ============================================================================
 
 """
     _calculate_observable_at_sweep(obs_type, params, sim_run_dir, sweep)
 
-Calculate observable for a single sweep (utility function).
-
-# Arguments
-- `obs_type::String`: Observable type
-- `params::Dict`: Observable parameters
-- `sim_run_dir::String`: Path to simulation run directory
-- `sweep::Int`: Sweep number
-
-# Returns
-- Observable value
-
-# Example
-```julia
-obs_value = _calculate_observable_at_sweep(
-    "single_site_expectation",
-    Dict("operator" => "Sz", "site" => 10),
-    "data/tdvp/20241103_142530_a3f5b2c1",
-    50
-)
-```
+Calculate observable for a single sweep/step (utility function).
 """
 function _calculate_observable_at_sweep(obs_type::String, params::Dict, 
-                                       sim_run_dir::String, sweep::Int)
-    # Load MPS
-    mps, extra_data = load_mps_sweep(sim_run_dir, sweep)
+                                        sim_run_dir::String, sweep::Int)
+    # Load config to detect algorithm
+    sim_config = JSON.parsefile(joinpath(sim_run_dir, "config.json"))
+    algorithm = sim_config["algorithm"]["type"]
     
-    # Load Hamiltonian if needed
-    needs_ham = obs_type in ["energy_expectation", "energy_variance"]
-    ham = nothing
-    if needs_ham
-        # Load simulation config to rebuild Hamiltonian
-        sim_config = JSON.parsefile(joinpath(sim_run_dir, "config.json"))
-        ham_mpo = build_mpo_from_config(sim_config)
-        ham = ham_mpo.tensors
+    if is_tn_algorithm(algorithm)
+        mps, extra_data = load_mps_sweep(sim_run_dir, sweep)
+        
+        needs_ham = obs_type in ["energy_expectation", "energy_variance"]
+        ham = nothing
+        if needs_ham
+            ham_mpo = build_mpo_from_config(sim_config)
+            ham = ham_mpo.tensors
+        end
+        
+        return _calculate_tn_observable(obs_type, params, mps.tensors, ham)
+        
+    elseif is_ed_algorithm(algorithm)
+        # Build H if needed
+        needs_ham = obs_type in ["energy_expectation", "energy_variance"]
+        H = nothing
+        if needs_ham
+            H = build_H_from_config(sim_config)
+        end
+        
+        if algorithm == "ed_spectrum"
+            energies, states, _ = load_ed_spectrum(sim_run_dir)
+            psi = states[:, sweep]
+        else
+            psi, _ = load_ed_step(sim_run_dir, sweep)
+        end
+        
+        return _calculate_ed_observable(obs_type, params, psi, sim_config["system"], H=H)
+    else
+        error("Unknown algorithm: $algorithm")
+    end
+end
+
+"""
+    load_observable_timeseries(obs_run_dir) → Dict
+
+Load all observable results as a time series.
+
+# Returns
+Dict with:
+- "indices": Vector of sweep/step/state indices
+- "values": Vector of observable values
+- "times": Vector of times (if available)
+- "energies": Vector of energies (if available, for spectrum)
+"""
+function load_observable_timeseries(obs_run_dir::String)
+    metadata_path = joinpath(obs_run_dir, "metadata.json")
+    metadata = JSON.parsefile(metadata_path)
+    
+    indices = Int[]
+    values = []
+    times = Float64[]
+    energies = Float64[]
+    
+    for sweep_info in metadata["sweep_data"]
+        sweep = sweep_info["sweep"]
+        obs_value, extra_data = load_observable_sweep(obs_run_dir, sweep)
+        
+        push!(indices, sweep)
+        push!(values, obs_value)
+        
+        if haskey(extra_data, "time")
+            push!(times, extra_data["time"])
+        end
+        if haskey(extra_data, "energy")
+            push!(energies, extra_data["energy"])
+        end
     end
     
-    # Calculate and return
-    return _calculate_observable(obs_type, params, mps.tensors, ham)
+    result = Dict{String, Any}(
+        "indices" => indices,
+        "values" => values
+    )
+    
+    if !isempty(times)
+        result["times"] = times
+    end
+    if !isempty(energies)
+        result["energies"] = energies
+    end
+    
+    return result
 end

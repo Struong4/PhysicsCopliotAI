@@ -1,0 +1,2565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNCodebase Config Builder v4</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+        }
+        .form-container {
+            flex: 1;
+            min-width: 550px;
+        }
+        .preview-container {
+            flex: 1;
+            min-width: 400px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4a90d9;
+            color: #4a90d9;
+            font-size: 1.2em;
+        }
+        .section.analysis-section h2 {
+            border-bottom-color: #28a745;
+            color: #28a745;
+        }
+        .section.ed-section h2 {
+            border-bottom-color: #9c27b0;
+            color: #9c27b0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4a90d9;
+            box-shadow: 0 0 0 2px rgba(74,144,217,0.2);
+        }
+        .form-group small {
+            color: #888;
+            font-size: 12px;
+            display: block;
+            margin-top: 3px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #json-preview {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-primary {
+            background: #4a90d9;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #3a7bc8;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .preview-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        .subsection {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .subsection h3 {
+            margin-top: 0;
+            font-size: 1em;
+            color: #666;
+        }
+        
+        /* Top selector styling */
+        .top-selector {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .selector-row {
+            margin-bottom: 15px;
+        }
+        .selector-row:last-child {
+            margin-bottom: 0;
+        }
+        .selector-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .selector-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .selector-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .selector-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .selector-btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+        .selector-btn small {
+            display: block;
+            font-weight: normal;
+            opacity: 0.8;
+            margin-top: 4px;
+            font-size: 11px;
+        }
+        .selector-btn.active small {
+            opacity: 0.7;
+        }
+        
+        /* Algorithm-specific colors */
+        .algo-btn.dmrg.active { background: #27ae60; color: white; border-color: #27ae60; }
+        .algo-btn.tdvp.active { background: #2980b9; color: white; border-color: #2980b9; }
+        .algo-btn.ed-spectrum.active { background: #8e44ad; color: white; border-color: #8e44ad; }
+        .algo-btn.ed-timeevol.active { background: #c0392b; color: white; border-color: #c0392b; }
+
+        /* Info box */
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #4a90d9;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #333;
+            border-radius: 0 4px 4px 0;
+        }
+        .info-box.warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .info-box.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .info-box.ed-info {
+            background: #f3e5f5;
+            border-left-color: #9c27b0;
+        }
+        
+        /* Hilbert space warning */
+        .hilbert-warning {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .hilbert-warning.ok { background: #d4edda; color: #155724; }
+        .hilbert-warning.warn { background: #fff3cd; color: #856404; }
+        .hilbert-warning.danger { background: #f8d7da; color: #721c24; }
+
+        /* Channel builder styles */
+        .channel-block {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .channel-block-inner {
+            background: #f0f4f8;
+            border: 1px solid #c8d4e0;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .channel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .channel-header span {
+            font-weight: 600;
+            color: #4a90d9;
+        }
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-remove:hover {
+            background: #c82333;
+        }
+        .btn-add {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .btn-add:hover {
+            background: #218838;
+        }
+        .btn-add-small {
+            padding: 4px 10px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        /* Collapsible styles */
+        .collapsible-header {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            user-select: none;
+        }
+        .collapsible-header:hover {
+            background: #dee2e6;
+        }
+        .collapsible-header h4 {
+            margin: 0;
+            font-size: 0.95em;
+            color: #495057;
+        }
+        .collapsible-header .arrow {
+            transition: transform 0.2s;
+        }
+        .collapsible-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+        .collapsible-content {
+            padding-left: 10px;
+        }
+        .collapsible-content.collapsed {
+            display: none;
+        }
+        
+        .channel-category {
+            margin-bottom: 20px;
+        }
+        
+        .empty-message {
+            color: #888;
+            font-style: italic;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .inline-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .inline-form .form-group {
+            margin-bottom: 0;
+            min-width: 80px;
+        }
+        .inline-form .form-group.type-select {
+            min-width: 160px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TNCodebase Config Builder</h1>
+    <p class="subtitle">Unified configuration for Tensor Network (DMRG/TDVP) and Exact Diagonalization simulations</p>
+    
+    <div class="container">
+        <div class="form-container">
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 TOP SELECTORS: Mode + Algorithm
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="top-selector">
+                <div class="selector-row">
+                    <span class="selector-label">Mode</span>
+                    <div class="selector-buttons">
+                        <button class="selector-btn active" id="mode-simulation" onclick="setMode('simulation')">
+                            New Simulation
+                            <small>Run a new simulation</small>
+                        </button>
+                        <button class="selector-btn" id="mode-analysis" onclick="setMode('analysis')">
+                            Analysis
+                            <small>Compute observables on existing data</small>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="selector-row">
+                    <span class="selector-label">Algorithm</span>
+                    <div class="selector-buttons">
+                        <button class="selector-btn algo-btn dmrg active" id="algo-dmrg" onclick="setAlgorithm('dmrg')">
+                            DMRG
+                            <small>TN ground state</small>
+                        </button>
+                        <button class="selector-btn algo-btn tdvp" id="algo-tdvp" onclick="setAlgorithm('tdvp')">
+                            TDVP
+                            <small>TN time evolution</small>
+                        </button>
+                        <button class="selector-btn algo-btn ed-spectrum" id="algo-ed_spectrum" onclick="setAlgorithm('ed_spectrum')">
+                            ED Spectrum
+                            <small>Exact eigenstates</small>
+                        </button>
+                        <button class="selector-btn algo-btn ed-timeevol" id="algo-ed_time_evolution" onclick="setAlgorithm('ed_time_evolution')">
+                            ED Dynamics
+                            <small>Exact time evolution</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 SYSTEM SECTION
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section">
+                <h2>System</h2>
+                <div class="form-group">
+                    <label>System Type</label>
+                    <select id="system-type" onchange="onSystemTypeChange()">
+                        <option value="spin">Spin Chain</option>
+                        <option value="spinboson">Spin-Boson</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" id="group-N">
+                        <label>N (number of sites)</label>
+                        <input type="number" id="system-N" value="20" min="2" onchange="onSystemSizeChange()">
+                    </div>
+                    <div class="form-group hidden" id="group-N_spins">
+                        <label>N_spins</label>
+                        <input type="number" id="system-N_spins" value="8" min="1" onchange="onSystemSizeChange()">
+                    </div>
+                    <div class="form-group">
+                        <label>S (spin)</label>
+                        <select id="system-S" onchange="onSystemSizeChange()">
+                            <option value="0.5">1/2 (d=2)</option>
+                            <option value="1.0">1 (d=3)</option>
+                            <option value="1.5">3/2 (d=4)</option>
+                            <option value="2.0">2 (d=5)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group hidden" id="group-nmax">
+                    <label>nmax (boson cutoff)</label>
+                    <input type="number" id="system-nmax" value="4" min="1" onchange="onSystemSizeChange()">
+                    <small>Fock states: |0⟩, |1⟩, ..., |nmax⟩</small>
+                </div>
+                
+                <div id="hilbert-display" class="hilbert-warning ok hidden">
+                    Hilbert space dimension: <span id="hilbert-dim">0</span>
+                </div>
+
+                <div class="form-group">
+                    <label>dtype</label>
+                    <select id="system-dtype" onchange="updatePreview()">
+                        <option value="ComplexF64">ComplexF64</option>
+                        <option value="Float64">Float64</option>
+                    </select>
+                    <small>Use Float64 only if all operators are real (Z couplings, X fields)</small>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 MODEL SECTION
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section">
+                <h2>Model</h2>
+                <div class="form-group">
+                    <label>Model</label>
+                    <select id="model-name" onchange="onModelChange()">
+                        <optgroup label="Spin Models" id="optgroup-spin">
+                            <option value="transverse_field_ising">Transverse Field Ising</option>
+                            <option value="heisenberg">Heisenberg</option>
+                            <option value="long_range_ising">Long-Range Ising</option>
+                            <option value="custom_spin">Custom Spin Model</option>
+                        </optgroup>
+                        <optgroup label="Spin-Boson Models" id="optgroup-spinboson">
+                            <option value="ising_dicke">Ising-Dicke</option>
+                            <option value="long_range_ising_dicke">Long-Range Ising-Dicke</option>
+                            <option value="custom_spinboson">Custom Spin-Boson Model</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- TFI Parameters -->
+                <div id="params-transverse_field_ising" class="subsection">
+                    <h3>H = J Σᵢ σᶻᵢσᶻᵢ₊₁ + h Σᵢ σˣᵢ</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>J (coupling)</label>
+                            <input type="number" id="tfim-J" value="-1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>h (field)</label>
+                            <input type="number" id="tfim-h" value="0.5" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>coupling_dir</label>
+                            <select id="tfim-coupling_dir" onchange="updatePreview()">
+                                <option value="Z" selected>Z</option>
+                                <option value="X">X</option>
+                                <option value="Y">Y</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>field_dir</label>
+                            <select id="tfim-field_dir" onchange="updatePreview()">
+                                <option value="X" selected>X</option>
+                                <option value="Y">Y</option>
+                                <option value="Z">Z</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heisenberg Parameters -->
+                <div id="params-heisenberg" class="subsection hidden">
+                    <h3>H = Σᵢ (Jx σˣᵢσˣᵢ₊₁ + Jy σʸᵢσʸᵢ₊₁ + Jz σᶻᵢσᶻᵢ₊₁) + Σᵢ h·σᵢ</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Jx</label>
+                            <input type="number" id="heis-Jx" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Jy</label>
+                            <input type="number" id="heis-Jy" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Jz</label>
+                            <input type="number" id="heis-Jz" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>hx</label>
+                            <input type="number" id="heis-hx" value="0.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>hy</label>
+                            <input type="number" id="heis-hy" value="0.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>hz</label>
+                            <input type="number" id="heis-hz" value="0.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Long-Range Ising Parameters -->
+                <div id="params-long_range_ising" class="subsection hidden">
+                    <h3>H = J Σᵢ&lt;ⱼ σᶻᵢσᶻⱼ/|i-j|^α + h Σᵢ σˣᵢ</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>J (coupling)</label>
+                            <input type="number" id="lri-J" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>h (field)</label>
+                            <input type="number" id="lri-h" value="0.5" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>α (exponent)</label>
+                            <input type="number" id="lri-alpha" value="1.5" step="0.1" min="0" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row" id="lri-nexp-row">
+                        <div class="form-group">
+                            <label>n_exp (TN only)</label>
+                            <input type="number" id="lri-n_exp" value="8" min="1" onchange="updatePreview()">
+                            <small>FSM sum-of-exponentials approximation. Must be &lt; N/2</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>coupling_dir</label>
+                            <select id="lri-coupling_dir" onchange="updatePreview()">
+                                <option value="Z" selected>Z</option>
+                                <option value="X">X</option>
+                                <option value="Y">Y</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>field_dir</label>
+                            <select id="lri-field_dir" onchange="updatePreview()">
+                                <option value="X" selected>X</option>
+                                <option value="Y">Y</option>
+                                <option value="Z">Z</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ising-Dicke Parameters -->
+                <div id="params-ising_dicke" class="subsection hidden">
+                    <h3>H = J Σᵢ σᶻᵢσᶻᵢ₊₁ + h Σᵢ σᶻᵢ + ω b†b + g(b+b†)Σᵢ σˣᵢ</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>J (spin coupling)</label>
+                            <input type="number" id="id-J" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>h (spin field)</label>
+                            <input type="number" id="id-h" value="0.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ω (boson freq)</label>
+                            <input type="number" id="id-omega" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>g (coupling)</label>
+                            <input type="number" id="id-g" value="0.2" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>spin_coupling_dir</label>
+                            <select id="id-spin_coupling_dir" onchange="updatePreview()">
+                                <option value="Z" selected>Z</option>
+                                <option value="X">X</option>
+                                <option value="Y">Y</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>spin_field_dir</label>
+                            <select id="id-spin_field_dir" onchange="updatePreview()">
+                                <option value="Z" selected>Z</option>
+                                <option value="X">X</option>
+                                <option value="Y">Y</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>boson_coupling_dir</label>
+                            <select id="id-boson_coupling_dir" onchange="updatePreview()">
+                                <option value="X" selected>X</option>
+                                <option value="Y">Y</option>
+                                <option value="Z">Z</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Long-Range Ising-Dicke Parameters -->
+                <div id="params-long_range_ising_dicke" class="subsection hidden">
+                    <h3>H = J Σᵢ&lt;ⱼ σᶻᵢσᶻⱼ/|i-j|^α + h Σᵢ σᶻᵢ + ω b†b + g(b+b†)Σᵢ σˣᵢ</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>J</label>
+                            <input type="number" id="lrid-J" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>h</label>
+                            <input type="number" id="lrid-h" value="0.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>α</label>
+                            <input type="number" id="lrid-alpha" value="1.5" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row" id="lrid-nexp-row">
+                        <div class="form-group">
+                            <label>n_exp (TN only)</label>
+                            <input type="number" id="lrid-n_exp" value="8" min="1" onchange="updatePreview()">
+                            <small>FSM sum-of-exponentials. Must be &lt; N/2</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ω</label>
+                            <input type="number" id="lrid-omega" value="1.0" step="0.1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>g</label>
+                            <input type="number" id="lrid-g" value="0.2" step="0.1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>spin_coupling_dir</label>
+                            <select id="lrid-spin_coupling_dir" onchange="updatePreview()">
+                                <option value="Z" selected>Z</option>
+                                <option value="X">X</option>
+                                <option value="Y">Y</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>spin_field_dir</label>
+                            <select id="lrid-spin_field_dir" onchange="updatePreview()">
+                                <option value="Z" selected>Z</option>
+                                <option value="X">X</option>
+                                <option value="Y">Y</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>boson_coupling_dir</label>
+                            <select id="lrid-boson_coupling_dir" onchange="updatePreview()">
+                                <option value="X" selected>X</option>
+                                <option value="Y">Y</option>
+                                <option value="Z">Z</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Spin Model -->
+                <div id="params-custom_spin" class="subsection hidden">
+                    <h3>Custom Spin Channels</h3>
+                    <div class="info-box">
+                        Build custom Hamiltonian from coupling and field terms.<br>
+                        <strong>Note:</strong> "range" means sites <em>exactly</em> that distance apart (range=1 → nearest-neighbor, range=2 → next-nearest-neighbor).<br>
+                        <span id="custom-spin-format-hint"></span>
+                    </div>
+                    <div id="custom-spin-channels"></div>
+                    <button class="btn-add" onclick="addSpinChannel()">+ Add Channel</button>
+                </div>
+
+                <!-- Custom Spin-Boson Model -->
+                <div id="params-custom_spinboson" class="subsection hidden">
+                    <h3>Custom Spin-Boson Channels</h3>
+                    <div class="info-box">
+                        Build custom spin-boson Hamiltonian with spin, boson, and coupling terms.
+                    </div>
+                    
+                    <!-- Spin Channels Category -->
+                    <div class="channel-category">
+                        <div class="collapsible-header" onclick="toggleCollapse(this)">
+                            <h4>Spin Channels <small>(auto-wrapped with Ib)</small></h4>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div id="spinboson-spin-channels"></div>
+                            <button class="btn-add" onclick="addSpinBosonSpinChannel()">+ Add Spin Channel</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Boson Channels Category -->
+                    <div class="channel-category">
+                        <div class="collapsible-header" onclick="toggleCollapse(this)">
+                            <h4>Boson Channels</h4>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div id="spinboson-boson-channels"></div>
+                            <button class="btn-add" onclick="addBosonChannel()">+ Add Boson Channel</button>
+                        </div>
+                    </div>
+                    
+                    <!-- SpinBoson Coupling Channels Category -->
+                    <div class="channel-category">
+                        <div class="collapsible-header" onclick="toggleCollapse(this)">
+                            <h4>Spin-Boson Coupling Channels</h4>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div id="spinboson-coupling-channels"></div>
+                            <button class="btn-add" onclick="addSpinBosonCouplingChannel()">+ Add Coupling Channel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 STATE SECTION (hidden for ED Spectrum)
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section" id="state-section">
+                <h2>Initial State</h2>
+                <div class="form-group">
+                    <label>State Type</label>
+                    <select id="state-type" onchange="onStateTypeChange()">
+                        <option value="prebuilt">Prebuilt Pattern</option>
+                        <option value="random">Random</option>
+                    </select>
+                </div>
+
+                <!-- Prebuilt state options -->
+                <div id="state-prebuilt-options">
+                    <div class="form-group">
+                        <label>Pattern</label>
+                        <select id="state-name" onchange="onStateNameChange()">
+                            <option value="polarized">Polarized (all same)</option>
+                            <option value="neel">Néel (alternating)</option>
+                            <option value="kink">Kink (domain wall)</option>
+                            <option value="domain">Domain (flipped region)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Spin Direction</label>
+                        <select id="state-spin_direction" onchange="updatePreview()">
+                            <option value="Z" selected>Z</option>
+                            <option value="X">X</option>
+                            <option value="Y">Y</option>
+                        </select>
+                    </div>
+
+                    <!-- Polarized params -->
+                    <div id="state-params-polarized">
+                        <div class="form-group">
+                            <label>Eigenstate</label>
+                            <input type="number" id="state-eigenstate" value="2" min="1" onchange="updatePreview()">
+                            <small>1 = lowest (|↓⟩ for Z), 2 = highest for S=1/2 (|↑⟩ for Z)</small>
+                        </div>
+                    </div>
+
+                    <!-- Neel params -->
+                    <div id="state-params-neel" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Even site state</label>
+                                <input type="number" id="state-even_state" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Odd site state</label>
+                                <input type="number" id="state-odd_state" value="2" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kink params -->
+                    <div id="state-params-kink" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Position</label>
+                                <input type="number" id="state-position" value="10" min="1" onchange="updatePreview()">
+                                <small>Sites 1..position have left_state</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Left state</label>
+                                <input type="number" id="state-left_state" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Right state</label>
+                                <input type="number" id="state-right_state" value="2" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domain params -->
+                    <div id="state-params-domain" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start index</label>
+                                <input type="number" id="state-start_index" value="8" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Domain size</label>
+                                <input type="number" id="state-domain_size" value="5" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Base state</label>
+                                <input type="number" id="state-base_state" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Flip state</label>
+                                <input type="number" id="state-flip_state" value="2" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boson level for spinboson -->
+                    <div id="state-boson-level" class="hidden">
+                        <div class="form-group">
+                            <label>Boson level (initial Fock state |n⟩)</label>
+                            <input type="number" id="state-boson_level" value="0" min="0" onchange="validateBosonLevel(); updatePreview()">
+                            <small>Must be ≤ nmax. 0 = vacuum |0⟩</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Random state options -->
+                <div id="state-random-options" class="hidden">
+                    <div class="form-group" id="random-bond-dim-group">
+                        <label>Bond dimension (TN only)</label>
+                        <input type="number" id="state-bond_dim" value="10" min="1" onchange="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Seed (optional)</label>
+                        <input type="number" id="state-seed" placeholder="Random" onchange="updatePreview()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 ALGORITHM SECTION - DMRG
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section" id="algo-dmrg-section">
+                <h2>DMRG Parameters</h2>
+                <div class="subsection">
+                    <h3>Solver (Lanczos)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>krylov_dim</label>
+                            <input type="number" id="dmrg-krylov_dim" value="20" min="3" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>max_iter</label>
+                            <input type="number" id="dmrg-max_iter" value="10" min="1" onchange="updatePreview()">
+                        </div>
+                    </div>
+                </div>
+                <div class="subsection">
+                    <h3>Options</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>chi_max</label>
+                            <input type="number" id="dmrg-chi_max" value="64" min="1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>cutoff</label>
+                            <input type="number" id="dmrg-cutoff" value="1e-10" step="1e-11" onchange="updatePreview()">
+                        </div>
+                    </div>
+                </div>
+                <div class="subsection">
+                    <h3>Run</h3>
+                    <div class="form-group">
+                        <label>n_sweeps</label>
+                        <input type="number" id="dmrg-n_sweeps" value="20" min="1" onchange="updatePreview()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 ALGORITHM SECTION - TDVP
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section hidden" id="algo-tdvp-section">
+                <h2>TDVP Parameters</h2>
+                <div class="subsection">
+                    <h3>Solver (Krylov Exponential)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>krylov_dim</label>
+                            <input type="number" id="tdvp-krylov_dim" value="30" min="3" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>tol</label>
+                            <input type="number" id="tdvp-tol" value="1e-8" step="1e-9" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>evol_type</label>
+                        <select id="tdvp-evol_type" onchange="updatePreview()">
+                            <option value="real">Real (e^{-iHt})</option>
+                            <option value="imaginary">Imaginary (e^{-Ht})</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="subsection">
+                    <h3>Options</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>dt</label>
+                            <input type="number" id="tdvp-dt" value="0.05" step="0.01" onchange="updateTotalTime(); updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>chi_max</label>
+                            <input type="number" id="tdvp-chi_max" value="64" min="1" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>cutoff</label>
+                            <input type="number" id="tdvp-cutoff" value="1e-10" step="1e-11" onchange="updatePreview()">
+                        </div>
+                    </div>
+                </div>
+                <div class="subsection">
+                    <h3>Run</h3>
+                    <div class="form-group">
+                        <label>n_sweeps</label>
+                        <input type="number" id="tdvp-n_sweeps" value="100" min="1" onchange="updateTotalTime(); updatePreview()">
+                        <small>Total time: <span id="tdvp-total-time">5.0</span></small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 ALGORITHM SECTION - ED SPECTRUM
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section hidden ed-section" id="algo-ed_spectrum-section">
+                <h2>ED Spectrum Parameters</h2>
+                <div class="info-box ed-info">
+                    Exact diagonalization computes eigenvalues and eigenvectors. All states are saved to <code>results.jld2</code>.
+                    Best for small systems (N ≤ 14 for S=1/2).
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>n_states (optional)</label>
+                        <input type="number" id="ed_spectrum-n_states" placeholder="All (full spectrum)" min="1" onchange="updatePreview()">
+                        <small>Leave empty for full diagonalization. Set a number for partial (lowest k states).</small>
+                    </div>
+                    <div class="form-group">
+                        <label>use_sparse</label>
+                        <select id="ed_spectrum-use_sparse" onchange="updatePreview()">
+                            <option value="false" selected>No (full diagonalization)</option>
+                            <option value="true">Yes (Lanczos, partial only)</option>
+                        </select>
+                        <small>Sparse only works with n_states set</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 ALGORITHM SECTION - ED TIME EVOLUTION
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section hidden ed-section" id="algo-ed_time_evolution-section">
+                <h2>ED Time Evolution Parameters</h2>
+                <div class="info-box ed-info">
+                    Exact time evolution via eigendecomposition: |ψ(t)⟩ = Σₙ cₙ e^{-iEₙt} |n⟩
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>dt</label>
+                        <input type="number" id="ed_time_evolution-dt" value="0.1" step="0.01" onchange="updateEDTotalTime(); updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>n_steps</label>
+                        <input type="number" id="ed_time_evolution-n_steps" value="100" min="1" onchange="updateEDTotalTime(); updatePreview()">
+                        <small>Total time: <span id="ed-total-time">10.0</span></small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 ANALYSIS SECTION (Analysis mode only)
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section hidden analysis-section" id="analysis-section">
+                <h2>Analysis Configuration</h2>
+                
+                <!-- Selection subsection -->
+                <div class="subsection">
+                    <h3 id="selection-title">Sweep Selection</h3>
+                    <div class="form-group">
+                        <label>Selection type</label>
+                        <select id="selection-type" onchange="onSelectionTypeChange()">
+                            <option value="all">All</option>
+                            <option value="range">Range</option>
+                            <option value="specific">Specific list</option>
+                            <option value="time_range" id="option-time_range">Time range</option>
+                            <option value="ground" id="option-ground" class="hidden">Ground state only</option>
+                        </select>
+                    </div>
+                    
+                    <div id="selection-range-params" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label id="range-start-label">Start</label>
+                                <input type="number" id="selection-range-start" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label id="range-end-label">End</label>
+                                <input type="number" id="selection-range-end" value="20" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="selection-specific-params" class="hidden">
+                        <div class="form-group">
+                            <label id="list-label">List (comma-separated)</label>
+                            <input type="text" id="selection-list" value="1, 5, 10, 20" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    
+                    <div id="selection-time_range-params" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>t_start</label>
+                                <input type="number" id="selection-time-start" value="0.0" step="0.1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>t_end</label>
+                                <input type="number" id="selection-time-end" value="5.0" step="0.1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observable subsection -->
+                <div class="subsection">
+                    <h3>Observable</h3>
+                    <div class="form-group">
+                        <label>Observable type</label>
+                        <select id="observable-type" onchange="onObservableTypeChange()">
+                            <optgroup label="Local">
+                                <option value="single_site_expectation">Single site ⟨Oᵢ⟩</option>
+                                <option value="subsystem_expectation_sum">Subsystem sum Σᵢ⟨Oᵢ⟩</option>
+                            </optgroup>
+                            <optgroup label="Two-point">
+                                <option value="two_site_expectation">Two-site ⟨OᵢPⱼ⟩</option>
+                                <option value="correlation_function">Correlation ⟨OᵢOⱼ⟩</option>
+                                <option value="connected_correlation">Connected ⟨OᵢOⱼ⟩-⟨Oᵢ⟩⟨Oⱼ⟩</option>
+                            </optgroup>
+                            <optgroup label="Entanglement">
+                                <option value="entanglement_entropy">Entropy S(ρ_A)</option>
+                                <option value="entanglement_spectrum">Spectrum λᵢ</option>
+                            </optgroup>
+                            <optgroup label="Energy">
+                                <option value="energy_expectation">Energy ⟨H⟩</option>
+                                <option value="energy_variance">Variance ⟨H²⟩-⟨H⟩²</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- single_site_expectation params -->
+                    <div id="obs-params-single_site_expectation">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Site</label>
+                                <input type="number" id="obs-site" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Operator</label>
+                                <select id="obs-operator" onchange="updatePreview()">
+                                    <option value="Z" selected>Z</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                    <option value="Sp">S+</option>
+                                    <option value="Sm">S-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- subsystem_expectation_sum params -->
+                    <div id="obs-params-subsystem_expectation_sum" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Operator</label>
+                                <select id="obs-operator-subsystem" onchange="updatePreview()">
+                                    <option value="Z" selected>Z</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>l (start)</label>
+                                <input type="number" id="obs-l" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>m (end)</label>
+                                <input type="number" id="obs-m" value="10" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- two_site_expectation params -->
+                    <div id="obs-params-two_site_expectation" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Site i</label>
+                                <input type="number" id="obs-site_i-two" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Site j</label>
+                                <input type="number" id="obs-site_j-two" value="10" min="1" onchange="updatePreview()">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Operator i</label>
+                                <select id="obs-operator_i" onchange="updatePreview()">
+                                    <option value="Z" selected>Z</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                    <option value="Sp">S+</option>
+                                    <option value="Sm">S-</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Operator j</label>
+                                <select id="obs-operator_j" onchange="updatePreview()">
+                                    <option value="Z" selected>Z</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                    <option value="Sp">S+</option>
+                                    <option value="Sm">S-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- correlation_function params -->
+                    <div id="obs-params-correlation_function" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Site i</label>
+                                <input type="number" id="obs-site_i-corr" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Site j</label>
+                                <input type="number" id="obs-site_j-corr" value="10" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Operator</label>
+                                <select id="obs-operator-corr" onchange="updatePreview()">
+                                    <option value="Z" selected>Z</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- connected_correlation params -->
+                    <div id="obs-params-connected_correlation" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Site i</label>
+                                <input type="number" id="obs-site_i-conn" value="1" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Site j</label>
+                                <input type="number" id="obs-site_j-conn" value="10" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Operator</label>
+                                <select id="obs-operator-conn" onchange="updatePreview()">
+                                    <option value="Z" selected>Z</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- entanglement_entropy params -->
+                    <div id="obs-params-entanglement_entropy" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bond (cut position)</label>
+                                <input type="number" id="obs-bond-entropy" value="10" min="1" onchange="updatePreview()">
+                                <small>Bipartition: [1..bond] | [bond+1..N]</small>
+                            </div>
+                            <div class="form-group">
+                                <label>α (Renyi index)</label>
+                                <input type="number" id="obs-alpha" value="1" step="0.5" min="0" onchange="updatePreview()">
+                                <small>α=1 for von Neumann</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- entanglement_spectrum params -->
+                    <div id="obs-params-entanglement_spectrum" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bond</label>
+                                <input type="number" id="obs-bond-spectrum" value="10" min="1" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>n_values (optional)</label>
+                                <input type="number" id="obs-n_values" placeholder="All" onchange="updatePreview()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- energy params -->
+                    <div id="obs-params-energy_expectation" class="hidden">
+                        <div class="info-box success">No parameters needed. H is rebuilt from config.</div>
+                    </div>
+                    <div id="obs-params-energy_variance" class="hidden">
+                        <div class="info-box success">No parameters needed. H is rebuilt from config.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 DESCRIPTION
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div class="section">
+                <h2>Description (optional)</h2>
+                <div class="form-group">
+                    <textarea id="config-description" rows="2" placeholder="Notes about this configuration..." onchange="updatePreview()"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════════
+             JSON PREVIEW
+             ══════════════════════════════════════════════════════════════════════ -->
+        <div class="preview-container">
+            <div class="section">
+                <div class="preview-header">
+                    <h2>JSON Config</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="copyConfig()">Copy</button>
+                        <button class="btn btn-primary" onclick="downloadConfig()">Download</button>
+                    </div>
+                </div>
+                <pre id="json-preview"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ════════════════════════════════════════════════════════════════════════
+        // GLOBAL STATE
+        // ════════════════════════════════════════════════════════════════════════
+        
+        let currentMode = 'simulation';
+        let currentAlgorithm = 'dmrg';
+        
+        // Custom channel storage
+        let customSpinChannels = [];
+        let spinbosonSpinChannels = [];
+        let spinbosonBosonChannels = [];
+        let spinbosonCouplingChannels = [];
+        
+        const SPIN_OPS = ['X', 'Y', 'Z', 'Sp', 'Sm', 'I'];
+        const BOSON_OPS = ['a', 'adag', 'Bn', 'Ib'];
+        
+        // ExpChannelCoupling only available for TN (not implemented in ED)
+        // AllToAllCoupling only available for ED
+        function getSpinChannelTypes() {
+            if (isTN()) {
+                return ['FiniteRangeCoupling', 'Field', 'PowerLawCoupling', 'ExpChannelCoupling'];
+            } else {
+                return ['FiniteRangeCoupling', 'Field', 'PowerLawCoupling', 'AllToAllCoupling'];
+            }
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // HELPERS
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function isTN() { return currentAlgorithm === 'dmrg' || currentAlgorithm === 'tdvp'; }
+        function isED() { return currentAlgorithm === 'ed_spectrum' || currentAlgorithm === 'ed_time_evolution'; }
+        function isTimeEvol() { return currentAlgorithm === 'tdvp' || currentAlgorithm === 'ed_time_evolution'; }
+        
+        function getLocalDim() {
+            const S = parseFloat(document.getElementById('system-S').value);
+            return Math.floor(2 * S + 1);
+        }
+        
+        function getN() {
+            const systemType = document.getElementById('system-type').value;
+            if (systemType === 'spin') {
+                return parseInt(document.getElementById('system-N').value) || 20;
+            } else {
+                return parseInt(document.getElementById('system-N_spins').value) || 8;
+            }
+        }
+        
+        function getHilbertDim() {
+            const systemType = document.getElementById('system-type').value;
+            const d = getLocalDim();
+            
+            if (systemType === 'spin') {
+                const N = parseInt(document.getElementById('system-N').value) || 1;
+                return Math.pow(d, N);
+            } else {
+                const N_spins = parseInt(document.getElementById('system-N_spins').value) || 1;
+                const nmax = parseInt(document.getElementById('system-nmax').value) || 1;
+                return (nmax + 1) * Math.pow(d, N_spins);
+            }
+        }
+        
+        function toggleCollapse(header) {
+            header.classList.toggle('collapsed');
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // MODE & ALGORITHM SWITCHING
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function setMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('mode-simulation').classList.toggle('active', mode === 'simulation');
+            document.getElementById('mode-analysis').classList.toggle('active', mode === 'analysis');
+            document.getElementById('analysis-section').classList.toggle('hidden', mode === 'simulation');
+            
+            updateSelectionUI();
+            updatePreview();
+        }
+        
+        function setAlgorithm(algo) {
+            currentAlgorithm = algo;
+            
+            // Update buttons
+            ['dmrg', 'tdvp', 'ed_spectrum', 'ed_time_evolution'].forEach(a => {
+                document.getElementById('algo-' + a).classList.toggle('active', a === algo);
+            });
+            
+            // Show/hide algorithm sections
+            document.getElementById('algo-dmrg-section').classList.toggle('hidden', algo !== 'dmrg');
+            document.getElementById('algo-tdvp-section').classList.toggle('hidden', algo !== 'tdvp');
+            document.getElementById('algo-ed_spectrum-section').classList.toggle('hidden', algo !== 'ed_spectrum');
+            document.getElementById('algo-ed_time_evolution-section').classList.toggle('hidden', algo !== 'ed_time_evolution');
+            
+            // State section: hide for ED spectrum (no initial state needed)
+            document.getElementById('state-section').classList.toggle('hidden', algo === 'ed_spectrum');
+            
+            // Random bond dim only for TN
+            document.getElementById('random-bond-dim-group').style.display = isTN() ? '' : 'none';
+            
+            // n_exp fields only for TN
+            document.getElementById('lri-nexp-row').style.display = isTN() ? '' : 'none';
+            document.getElementById('lrid-nexp-row').style.display = isTN() ? '' : 'none';
+            
+            // Hilbert space warning for ED
+            onSystemSizeChange();
+            
+            // Update selection UI for analysis mode
+            updateSelectionUI();
+            
+            // Update custom model hint
+            updateCustomModelHint();
+            
+            // Re-render custom channels (to show/hide n_exp and ExpChannelCoupling)
+            renderCustomSpinChannels();
+            renderSpinBosonSpinChannels();
+            renderCouplingChannels();
+            
+            updatePreview();
+        }
+        
+        function updateCustomModelHint() {
+            const hint = document.getElementById('custom-spin-format-hint');
+            if (hint) {
+                if (isTN()) {
+                    hint.textContent = 'TN: channels format. ExpChannelCoupling available. n_exp needed for power-law.';
+                } else {
+                    hint.textContent = 'ED: terms format. Periodic BC + AllToAllCoupling available. No n_exp needed.';
+                }
+            }
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // SYSTEM CHANGES
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function onSystemTypeChange() {
+            const systemType = document.getElementById('system-type').value;
+            const isSpinBoson = systemType === 'spinboson';
+            
+            document.getElementById('group-N').classList.toggle('hidden', isSpinBoson);
+            document.getElementById('group-N_spins').classList.toggle('hidden', !isSpinBoson);
+            document.getElementById('group-nmax').classList.toggle('hidden', !isSpinBoson);
+            document.getElementById('state-boson-level').classList.toggle('hidden', !isSpinBoson);
+            
+            // Update model dropdown
+            const modelSelect = document.getElementById('model-name');
+            const spinModels = document.getElementById('optgroup-spin');
+            const spinbosonModels = document.getElementById('optgroup-spinboson');
+            
+            // Enable/disable optgroups
+            Array.from(spinModels.children).forEach(opt => opt.disabled = isSpinBoson);
+            Array.from(spinbosonModels.children).forEach(opt => opt.disabled = !isSpinBoson);
+            
+            if (isSpinBoson) {
+                modelSelect.value = 'ising_dicke';
+            } else {
+                modelSelect.value = 'transverse_field_ising';
+            }
+            
+            onModelChange();
+            onSystemSizeChange();
+            validateBosonLevel();
+        }
+        
+        function onSystemSizeChange() {
+            const dim = getHilbertDim();
+            const display = document.getElementById('hilbert-display');
+            const dimSpan = document.getElementById('hilbert-dim');
+            
+            if (isED()) {
+                display.classList.remove('hidden');
+                dimSpan.textContent = dim.toLocaleString();
+                
+                display.classList.remove('ok', 'warn', 'danger');
+                if (dim > 65536) {
+                    display.classList.add('danger');
+                } else if (dim > 4096) {
+                    display.classList.add('warn');
+                } else {
+                    display.classList.add('ok');
+                }
+            } else {
+                display.classList.add('hidden');
+            }
+            
+            validateBosonLevel();
+            updatePreview();
+        }
+        
+        function validateBosonLevel() {
+            const systemType = document.getElementById('system-type').value;
+            if (systemType !== 'spinboson') return;
+            
+            const nmax = parseInt(document.getElementById('system-nmax').value) || 0;
+            const bosonLevelInput = document.getElementById('state-boson_level');
+            const bosonLevel = parseInt(bosonLevelInput.value) || 0;
+            
+            if (bosonLevel > nmax) {
+                bosonLevelInput.value = nmax;
+            }
+            if (bosonLevel < 0) {
+                bosonLevelInput.value = 0;
+            }
+            bosonLevelInput.max = nmax;
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // MODEL CHANGES
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function onModelChange() {
+            const model = document.getElementById('model-name').value;
+            
+            const allParams = ['transverse_field_ising', 'heisenberg', 'long_range_ising', 
+                              'ising_dicke', 'long_range_ising_dicke', 'custom_spin', 'custom_spinboson'];
+            allParams.forEach(m => {
+                const el = document.getElementById('params-' + m);
+                if (el) el.classList.toggle('hidden', m !== model);
+            });
+            
+            updatePreview();
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // STATE CHANGES
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function onStateTypeChange() {
+            const stateType = document.getElementById('state-type').value;
+            document.getElementById('state-prebuilt-options').classList.toggle('hidden', stateType !== 'prebuilt');
+            document.getElementById('state-random-options').classList.toggle('hidden', stateType !== 'random');
+            updatePreview();
+        }
+        
+        function onStateNameChange() {
+            const name = document.getElementById('state-name').value;
+            ['polarized', 'neel', 'kink', 'domain'].forEach(s => {
+                document.getElementById('state-params-' + s).classList.toggle('hidden', s !== name);
+            });
+            updatePreview();
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CUSTOM CHANNEL UI HELPERS
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function createSpinOpSelect(id, value = 'Z') {
+            return `<select id="${id}" onchange="updatePreview()">
+                ${SPIN_OPS.map(op => `<option value="${op}" ${op === value ? 'selected' : ''}>${op}</option>`).join('')}
+            </select>`;
+        }
+        
+        function createBosonOpSelect(id, value = 'a') {
+            return `<select id="${id}" onchange="updatePreview()">
+                ${BOSON_OPS.map(op => `<option value="${op}" ${op === value ? 'selected' : ''}>${op}</option>`).join('')}
+            </select>`;
+        }
+        
+        function createChannelTypeSelect(id, value = 'FiniteRangeCoupling') {
+            const types = getSpinChannelTypes();
+            // If current value is not available, default to first type
+            if (!types.includes(value)) {
+                value = types[0];
+            }
+            return `<select id="${id}" onchange="onChannelTypeChange('${id}')">
+                ${types.map(t => `<option value="${t}" ${t === value ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>`;
+        }
+        
+        function getChannelTypeParams(type, prefix) {
+            const N = getN();
+            
+            if (type === 'FiniteRangeCoupling') {
+                // In ED: periodic BC available for any range
+                return `
+                    <div class="form-group"><label>op1</label>${createSpinOpSelect(`${prefix}-op1`, 'Z')}</div>
+                    <div class="form-group"><label>op2</label>${createSpinOpSelect(`${prefix}-op2`, 'Z')}</div>
+                    <div class="form-group"><label>range</label><input type="number" id="${prefix}-range" value="1" min="1" onchange="updatePreview()"></div>
+                    <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="1.0" step="0.1" onchange="updatePreview()"></div>
+                    ${isED() ? `<div class="form-group" id="${prefix}-periodic-group">
+                        <label>periodic</label>
+                        <select id="${prefix}-periodic" onchange="updatePreview()">
+                            <option value="false" selected>No (open BC)</option>
+                            <option value="true">Yes (periodic BC)</option>
+                        </select>
+                    </div>` : ''}
+                `;
+            } else if (type === 'Field') {
+                return `
+                    <div class="form-group"><label>op</label>${createSpinOpSelect(`${prefix}-op`, 'X')}</div>
+                    <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="1.0" step="0.1" onchange="updatePreview()"></div>
+                `;
+            } else if (type === 'PowerLawCoupling') {
+                const nexpHtml = isTN() ? `
+                    <div class="form-group"><label>n_exp</label><input type="number" id="${prefix}-n_exp" value="${Math.min(8, Math.floor(N/2)-1)}" min="1" onchange="updatePreview()"><small>TN only</small></div>
+                ` : '';
+                return `
+                    <div class="form-group"><label>op1</label>${createSpinOpSelect(`${prefix}-op1`, 'Z')}</div>
+                    <div class="form-group"><label>op2</label>${createSpinOpSelect(`${prefix}-op2`, 'Z')}</div>
+                    <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="1.0" step="0.1" onchange="updatePreview()"></div>
+                    <div class="form-group"><label>alpha</label><input type="number" id="${prefix}-alpha" value="1.5" step="0.1" min="0" onchange="updatePreview()"></div>
+                    ${nexpHtml}
+                `;
+            } else if (type === 'ExpChannelCoupling') {
+                return `
+                    <div class="form-group"><label>op1</label>${createSpinOpSelect(`${prefix}-op1`, 'Z')}</div>
+                    <div class="form-group"><label>op2</label>${createSpinOpSelect(`${prefix}-op2`, 'Z')}</div>
+                    <div class="form-group"><label>amplitude</label><input type="number" id="${prefix}-amplitude" value="1.0" step="0.1" onchange="updatePreview()"></div>
+                    <div class="form-group"><label>decay</label><input type="number" id="${prefix}-decay" value="0.5" step="0.1" onchange="updatePreview()"></div>
+                `;
+            } else if (type === 'AllToAllCoupling') {
+                return `
+                    <div class="form-group"><label>op1</label>${createSpinOpSelect(`${prefix}-op1`, 'Z')}</div>
+                    <div class="form-group"><label>op2</label>${createSpinOpSelect(`${prefix}-op2`, 'Z')}</div>
+                    <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="1.0" step="0.1" onchange="updatePreview()"></div>
+                `;
+            }
+            return '';
+        }
+        
+        function onChannelTypeChange(selectId) {
+            const select = document.getElementById(selectId);
+            const type = select.value;
+            const prefix = selectId.replace('-type', '');
+            const paramsDiv = document.getElementById(`${prefix}-params`);
+            if (paramsDiv) {
+                paramsDiv.innerHTML = `<div class="inline-form">${getChannelTypeParams(type, prefix)}</div>`;
+            }
+            updatePreview();
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CUSTOM SPIN CHANNELS
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function addSpinChannel() {
+            const id = Date.now();
+            customSpinChannels.push({ id, type: 'FiniteRangeCoupling' });
+            renderCustomSpinChannels();
+            updatePreview();
+        }
+        
+        function removeSpinChannel(id) {
+            customSpinChannels = customSpinChannels.filter(ch => ch.id !== id);
+            renderCustomSpinChannels();
+            updatePreview();
+        }
+        
+        function renderCustomSpinChannels() {
+            const container = document.getElementById('custom-spin-channels');
+            if (customSpinChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No channels added yet</div>';
+                return;
+            }
+            
+            const availableTypes = getSpinChannelTypes();
+            
+            container.innerHTML = customSpinChannels.map((ch, idx) => {
+                const prefix = `spin-ch-${ch.id}`;
+                // Reset type if not available in current algorithm
+                let chType = ch.type || 'FiniteRangeCoupling';
+                if (!availableTypes.includes(chType)) {
+                    chType = 'FiniteRangeCoupling';
+                    ch.type = chType;
+                }
+                return `
+                    <div class="channel-block">
+                        <div class="channel-header">
+                            <span>Channel ${idx + 1}</span>
+                            <button class="btn-remove" onclick="removeSpinChannel(${ch.id})">✕ Remove</button>
+                        </div>
+                        <div class="form-group type-select">
+                            <label>Type</label>
+                            ${createChannelTypeSelect(`${prefix}-type`, chType)}
+                        </div>
+                        <div id="${prefix}-params">
+                            <div class="inline-form">${getChannelTypeParams(chType, prefix)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CUSTOM SPINBOSON - SPIN CHANNELS
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function addSpinBosonSpinChannel() {
+            const id = Date.now();
+            spinbosonSpinChannels.push({ id, type: 'FiniteRangeCoupling' });
+            renderSpinBosonSpinChannels();
+            updatePreview();
+        }
+        
+        function removeSpinBosonSpinChannel(id) {
+            spinbosonSpinChannels = spinbosonSpinChannels.filter(ch => ch.id !== id);
+            renderSpinBosonSpinChannels();
+            updatePreview();
+        }
+        
+        function renderSpinBosonSpinChannels() {
+            const container = document.getElementById('spinboson-spin-channels');
+            if (spinbosonSpinChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No spin channels added</div>';
+                return;
+            }
+            
+            const availableTypes = getSpinChannelTypes();
+            
+            container.innerHTML = spinbosonSpinChannels.map((ch, idx) => {
+                const prefix = `sbspin-ch-${ch.id}`;
+                let chType = ch.type || 'FiniteRangeCoupling';
+                if (!availableTypes.includes(chType)) {
+                    chType = 'FiniteRangeCoupling';
+                    ch.type = chType;
+                }
+                return `
+                    <div class="channel-block">
+                        <div class="channel-header">
+                            <span>Spin Channel ${idx + 1}</span>
+                            <button class="btn-remove" onclick="removeSpinBosonSpinChannel(${ch.id})">✕ Remove</button>
+                        </div>
+                        <div class="form-group type-select">
+                            <label>Type</label>
+                            ${createChannelTypeSelect(`${prefix}-type`, chType)}
+                        </div>
+                        <div id="${prefix}-params">
+                            <div class="inline-form">${getChannelTypeParams(chType, prefix)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CUSTOM SPINBOSON - BOSON CHANNELS
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function addBosonChannel() {
+            const id = Date.now();
+            spinbosonBosonChannels.push({ id });
+            renderBosonChannels();
+            updatePreview();
+        }
+        
+        function removeBosonChannel(id) {
+            spinbosonBosonChannels = spinbosonBosonChannels.filter(ch => ch.id !== id);
+            renderBosonChannels();
+            updatePreview();
+        }
+        
+        function renderBosonChannels() {
+            const container = document.getElementById('spinboson-boson-channels');
+            if (spinbosonBosonChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No boson channels added</div>';
+                return;
+            }
+            
+            container.innerHTML = spinbosonBosonChannels.map((ch, idx) => {
+                const prefix = `boson-ch-${ch.id}`;
+                return `
+                    <div class="channel-block">
+                        <div class="channel-header">
+                            <span>Boson Channel ${idx + 1}</span>
+                            <button class="btn-remove" onclick="removeBosonChannel(${ch.id})">✕ Remove</button>
+                        </div>
+                        <div class="inline-form">
+                            <div class="form-group"><label>op</label>${createBosonOpSelect(`${prefix}-op`, 'Bn')}</div>
+                            <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="1.0" step="0.1" onchange="updatePreview()"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CUSTOM SPINBOSON - COUPLING CHANNELS
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function addSpinBosonCouplingChannel() {
+            const id = Date.now();
+            spinbosonCouplingChannels.push({ id, innerChannels: [] });
+            renderCouplingChannels();
+            updatePreview();
+        }
+        
+        function removeSpinBosonCouplingChannel(id) {
+            spinbosonCouplingChannels = spinbosonCouplingChannels.filter(ch => ch.id !== id);
+            renderCouplingChannels();
+            updatePreview();
+        }
+        
+        function addInnerSpinChannel(couplingId) {
+            const coupling = spinbosonCouplingChannels.find(ch => ch.id === couplingId);
+            if (coupling) {
+                coupling.innerChannels.push({ id: Date.now(), type: 'Field' });
+                renderCouplingChannels();
+                updatePreview();
+            }
+        }
+        
+        function removeInnerSpinChannel(couplingId, innerId) {
+            const coupling = spinbosonCouplingChannels.find(ch => ch.id === couplingId);
+            if (coupling) {
+                coupling.innerChannels = coupling.innerChannels.filter(ch => ch.id !== innerId);
+                renderCouplingChannels();
+                updatePreview();
+            }
+        }
+        
+        function renderCouplingChannels() {
+            const container = document.getElementById('spinboson-coupling-channels');
+            
+            // Show ED limitation note
+            const edNote = isED() ? `
+                <div class="info-box" style="background: #fff3cd; border-color: #ffc107; margin-bottom: 10px;">
+                    <strong>ED Note:</strong> Only Field-type inner channels are supported. 
+                    ED spinboson coupling is: g × boson_op × Σᵢ spin_opᵢ (single-site ops only).
+                </div>
+            ` : '';
+            
+            if (spinbosonCouplingChannels.length === 0) {
+                container.innerHTML = edNote + '<div class="empty-message">No coupling channels added</div>';
+                return;
+            }
+            
+            // For ED, only allow Field type in inner channels
+            const availableInnerTypes = isED() ? ['Field'] : getSpinChannelTypes();
+            
+            const channelsHtml = spinbosonCouplingChannels.map((ch, idx) => {
+                const prefix = `coupling-ch-${ch.id}`;
+                const innerHtml = ch.innerChannels.length === 0 
+                    ? '<div class="empty-message">No inner spin channels</div>'
+                    : ch.innerChannels.map((inner, innerIdx) => {
+                        const innerPrefix = `${prefix}-inner-${inner.id}`;
+                        let innerType = inner.type || 'Field';
+                        if (!availableInnerTypes.includes(innerType)) {
+                            innerType = 'Field';
+                            inner.type = innerType;
+                        }
+                        
+                        // For ED, just show Field dropdown (no other options)
+                        const typeSelect = isED() 
+                            ? `<select id="${innerPrefix}-type" onchange="onChannelTypeChange('${innerPrefix}')"><option value="Field" selected>Field</option></select>`
+                            : createChannelTypeSelect(`${innerPrefix}-type`, innerType);
+                        
+                        return `
+                            <div class="channel-block-inner">
+                                <div class="channel-header">
+                                    <span>Inner ${innerIdx + 1}</span>
+                                    <button class="btn-remove" onclick="removeInnerSpinChannel(${ch.id}, ${inner.id})">✕</button>
+                                </div>
+                                <div class="form-group type-select">
+                                    <label>Type</label>
+                                    ${typeSelect}
+                                </div>
+                                <div id="${innerPrefix}-params">
+                                    <div class="inline-form">${getChannelTypeParams(innerType, innerPrefix)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                
+                return `
+                    <div class="channel-block">
+                        <div class="channel-header">
+                            <span>Coupling ${idx + 1}</span>
+                            <button class="btn-remove" onclick="removeSpinBosonCouplingChannel(${ch.id})">✕ Remove</button>
+                        </div>
+                        <div class="inline-form" style="margin-bottom: 10px;">
+                            <div class="form-group"><label>boson_op</label>${createBosonOpSelect(`${prefix}-boson_op`, 'a')}</div>
+                            <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="0.2" step="0.1" onchange="updatePreview()"></div>
+                        </div>
+                        <div style="margin-left: 10px;">
+                            <label style="font-weight: 500; color: #666; font-size: 0.9em;">Spin Channels:</label>
+                            ${innerHtml}
+                            <button class="btn-add btn-add-small" onclick="addInnerSpinChannel(${ch.id})">+ Add Spin Channel</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = edNote + channelsHtml;
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // READ CHANNEL DATA FROM DOM
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function readSpinChannelFromDOM(prefix) {
+            const typeEl = document.getElementById(`${prefix}-type`);
+            if (!typeEl) return null;
+            
+            const type = typeEl.value;
+            const channel = { type };
+            
+            if (type === 'FiniteRangeCoupling') {
+                channel.op1 = document.getElementById(`${prefix}-op1`)?.value || 'Z';
+                channel.op2 = document.getElementById(`${prefix}-op2`)?.value || 'Z';
+                channel.range = parseInt(document.getElementById(`${prefix}-range`)?.value) || 1;
+                channel.strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0;
+                // Periodic option exists for ED (any range)
+                const periodicEl = document.getElementById(`${prefix}-periodic`);
+                if (periodicEl) {
+                    channel.periodic = periodicEl.value === 'true';
+                }
+            } else if (type === 'Field') {
+                channel.op = document.getElementById(`${prefix}-op`)?.value || 'X';
+                channel.strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0;
+            } else if (type === 'PowerLawCoupling') {
+                channel.op1 = document.getElementById(`${prefix}-op1`)?.value || 'Z';
+                channel.op2 = document.getElementById(`${prefix}-op2`)?.value || 'Z';
+                channel.strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0;
+                channel.alpha = parseFloat(document.getElementById(`${prefix}-alpha`)?.value) || 1.5;
+                if (isTN()) {
+                    channel.n_exp = parseInt(document.getElementById(`${prefix}-n_exp`)?.value) || 8;
+                    channel.N = getN();
+                }
+            } else if (type === 'ExpChannelCoupling') {
+                channel.op1 = document.getElementById(`${prefix}-op1`)?.value || 'Z';
+                channel.op2 = document.getElementById(`${prefix}-op2`)?.value || 'Z';
+                channel.amplitude = parseFloat(document.getElementById(`${prefix}-amplitude`)?.value) || 1.0;
+                channel.decay = parseFloat(document.getElementById(`${prefix}-decay`)?.value) || 0.5;
+            } else if (type === 'AllToAllCoupling') {
+                channel.op1 = document.getElementById(`${prefix}-op1`)?.value || 'Z';
+                channel.op2 = document.getElementById(`${prefix}-op2`)?.value || 'Z';
+                channel.strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0;
+            }
+            
+            return channel;
+        }
+        
+        function readBosonChannelFromDOM(prefix) {
+            return {
+                op: document.getElementById(`${prefix}-op`)?.value || 'Bn',
+                strength: parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0
+            };
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CONVERT TN CHANNEL TO ED TERM
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function convertChannelToEDTerm(channel) {
+            const type = channel.type;
+            
+            if (type === 'Field') {
+                return {
+                    type: 'EDField',
+                    op: channel.op,
+                    strength: channel.strength
+                };
+            } else if (type === 'FiniteRangeCoupling') {
+                // Determine pattern based on range and periodic flag
+                let pattern;
+                const isPeriodic = channel.periodic === true;
+                
+                if (channel.range === 1) {
+                    pattern = isPeriodic ? 'nearest_neighbor_periodic' : 'nearest_neighbor';
+                } else {
+                    pattern = isPeriodic ? 'finite_range_periodic' : 'finite_range';
+                }
+                
+                const term = {
+                    type: 'EDCoupling',
+                    op1: channel.op1,
+                    op2: channel.op2,
+                    pattern: pattern,
+                    strength: channel.strength
+                };
+                
+                // Include range for finite_range patterns
+                if (channel.range > 1) {
+                    term.range = channel.range;
+                }
+                
+                return term;
+            } else if (type === 'PowerLawCoupling') {
+                return {
+                    type: 'EDCoupling',
+                    op1: channel.op1,
+                    op2: channel.op2,
+                    pattern: 'power_law',
+                    strength: channel.strength,
+                    alpha: channel.alpha
+                };
+            } else if (type === 'AllToAllCoupling') {
+                return {
+                    type: 'EDCoupling',
+                    op1: channel.op1,
+                    op2: channel.op2,
+                    pattern: 'all_to_all',
+                    strength: channel.strength
+                };
+            } else if (type === 'ExpChannelCoupling') {
+                // ExpChannelCoupling not supported in ED - should not reach here
+                // since we hide it from the dropdown for ED
+                console.warn('ExpChannelCoupling not supported in ED');
+                return null;
+            }
+            return null;
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // ANALYSIS SELECTION
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function updateSelectionUI() {
+            const selectionTitle = document.getElementById('selection-title');
+            const timeRangeOption = document.getElementById('option-time_range');
+            const groundOption = document.getElementById('option-ground');
+            const selectionType = document.getElementById('selection-type');
+            
+            // Reset to 'all' if current selection is invalid for new algorithm
+            const currentSelection = selectionType.value;
+            
+            if (currentAlgorithm === 'ed_spectrum') {
+                selectionTitle.textContent = 'State Selection';
+                timeRangeOption.classList.add('hidden');
+                groundOption.classList.remove('hidden');
+                document.getElementById('range-start-label').textContent = 'Start state';
+                document.getElementById('range-end-label').textContent = 'End state';
+                document.getElementById('list-label').textContent = 'State indices (comma-separated)';
+                
+                // Reset if time_range was selected
+                if (currentSelection === 'time_range') {
+                    selectionType.value = 'all';
+                    onSelectionTypeChange();
+                }
+            } else if (currentAlgorithm === 'ed_time_evolution') {
+                selectionTitle.textContent = 'Step Selection';
+                timeRangeOption.classList.remove('hidden');
+                groundOption.classList.add('hidden');
+                document.getElementById('range-start-label').textContent = 'Start step';
+                document.getElementById('range-end-label').textContent = 'End step';
+                document.getElementById('list-label').textContent = 'Step indices (comma-separated)';
+                
+                // Reset if ground was selected
+                if (currentSelection === 'ground') {
+                    selectionType.value = 'all';
+                    onSelectionTypeChange();
+                }
+            } else if (currentAlgorithm === 'tdvp') {
+                selectionTitle.textContent = 'Sweep Selection';
+                timeRangeOption.classList.remove('hidden');
+                groundOption.classList.add('hidden');
+                document.getElementById('range-start-label').textContent = 'Start sweep';
+                document.getElementById('range-end-label').textContent = 'End sweep';
+                document.getElementById('list-label').textContent = 'Sweep indices (comma-separated)';
+                
+                // Reset if ground was selected
+                if (currentSelection === 'ground') {
+                    selectionType.value = 'all';
+                    onSelectionTypeChange();
+                }
+            } else {
+                // DMRG
+                selectionTitle.textContent = 'Sweep Selection';
+                timeRangeOption.classList.add('hidden');
+                groundOption.classList.add('hidden');
+                document.getElementById('range-start-label').textContent = 'Start sweep';
+                document.getElementById('range-end-label').textContent = 'End sweep';
+                document.getElementById('list-label').textContent = 'Sweep indices (comma-separated)';
+                
+                // Reset if ground or time_range was selected
+                if (currentSelection === 'ground' || currentSelection === 'time_range') {
+                    selectionType.value = 'all';
+                    onSelectionTypeChange();
+                }
+            }
+        }
+        
+        function onSelectionTypeChange() {
+            const type = document.getElementById('selection-type').value;
+            document.getElementById('selection-range-params').classList.toggle('hidden', type !== 'range');
+            document.getElementById('selection-specific-params').classList.toggle('hidden', type !== 'specific');
+            document.getElementById('selection-time_range-params').classList.toggle('hidden', type !== 'time_range');
+            updatePreview();
+        }
+        
+        function onObservableTypeChange() {
+            const obsType = document.getElementById('observable-type').value;
+            const allObs = ['single_site_expectation', 'subsystem_expectation_sum', 
+                           'two_site_expectation', 'correlation_function', 'connected_correlation',
+                           'entanglement_entropy', 'entanglement_spectrum',
+                           'energy_expectation', 'energy_variance'];
+            allObs.forEach(o => {
+                const el = document.getElementById('obs-params-' + o);
+                if (el) el.classList.toggle('hidden', o !== obsType);
+            });
+            updatePreview();
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // TIME UPDATES
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function updateTotalTime() {
+            const dt = parseFloat(document.getElementById('tdvp-dt').value) || 0;
+            const n = parseInt(document.getElementById('tdvp-n_sweeps').value) || 0;
+            document.getElementById('tdvp-total-time').textContent = (dt * n).toFixed(2);
+        }
+        
+        function updateEDTotalTime() {
+            const dt = parseFloat(document.getElementById('ed_time_evolution-dt').value) || 0;
+            const n = parseInt(document.getElementById('ed_time_evolution-n_steps').value) || 0;
+            document.getElementById('ed-total-time').textContent = (dt * n).toFixed(2);
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // CONFIG BUILDING
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function buildSystemConfig() {
+            const systemType = document.getElementById('system-type').value;
+            const system = {
+                type: systemType,
+                S: parseFloat(document.getElementById('system-S').value),
+                dtype: document.getElementById('system-dtype').value
+            };
+            
+            if (systemType === 'spin') {
+                system.N = parseInt(document.getElementById('system-N').value);
+            } else {
+                system.N_spins = parseInt(document.getElementById('system-N_spins').value);
+                system.nmax = parseInt(document.getElementById('system-nmax').value);
+            }
+            
+            return system;
+        }
+        
+        function buildModelConfig() {
+            const modelName = document.getElementById('model-name').value;
+            const systemType = document.getElementById('system-type').value;
+            const model = { name: modelName, params: {} };
+            
+            // Common params needed by TN model builder
+            if (isTN()) {
+                if (systemType === 'spin') {
+                    model.params.N = parseInt(document.getElementById('system-N').value);
+                } else {
+                    model.params.N_spins = parseInt(document.getElementById('system-N_spins').value);
+                    model.params.nmax = parseInt(document.getElementById('system-nmax').value);
+                }
+            }
+            
+            if (modelName === 'transverse_field_ising') {
+                model.params.J = parseFloat(document.getElementById('tfim-J').value);
+                model.params.h = parseFloat(document.getElementById('tfim-h').value);
+                model.params.coupling_dir = document.getElementById('tfim-coupling_dir').value;
+                model.params.field_dir = document.getElementById('tfim-field_dir').value;
+            } else if (modelName === 'heisenberg') {
+                model.params.Jx = parseFloat(document.getElementById('heis-Jx').value);
+                model.params.Jy = parseFloat(document.getElementById('heis-Jy').value);
+                model.params.Jz = parseFloat(document.getElementById('heis-Jz').value);
+                model.params.hx = parseFloat(document.getElementById('heis-hx').value);
+                model.params.hy = parseFloat(document.getElementById('heis-hy').value);
+                model.params.hz = parseFloat(document.getElementById('heis-hz').value);
+            } else if (modelName === 'long_range_ising') {
+                model.params.J = parseFloat(document.getElementById('lri-J').value);
+                model.params.h = parseFloat(document.getElementById('lri-h').value);
+                model.params.alpha = parseFloat(document.getElementById('lri-alpha').value);
+                model.params.coupling_dir = document.getElementById('lri-coupling_dir').value;
+                model.params.field_dir = document.getElementById('lri-field_dir').value;
+                if (isTN()) {
+                    model.params.n_exp = parseInt(document.getElementById('lri-n_exp').value);
+                }
+            } else if (modelName === 'ising_dicke') {
+                model.params.J = parseFloat(document.getElementById('id-J').value);
+                model.params.h = parseFloat(document.getElementById('id-h').value);
+                model.params.omega = parseFloat(document.getElementById('id-omega').value);
+                model.params.g = parseFloat(document.getElementById('id-g').value);
+                model.params.spin_coupling_dir = document.getElementById('id-spin_coupling_dir').value;
+                model.params.spin_field_dir = document.getElementById('id-spin_field_dir').value;
+                model.params.boson_coupling_dir = document.getElementById('id-boson_coupling_dir').value;
+            } else if (modelName === 'long_range_ising_dicke') {
+                model.params.J = parseFloat(document.getElementById('lrid-J').value);
+                model.params.h = parseFloat(document.getElementById('lrid-h').value);
+                model.params.alpha = parseFloat(document.getElementById('lrid-alpha').value);
+                model.params.omega = parseFloat(document.getElementById('lrid-omega').value);
+                model.params.g = parseFloat(document.getElementById('lrid-g').value);
+                model.params.spin_coupling_dir = document.getElementById('lrid-spin_coupling_dir').value;
+                model.params.spin_field_dir = document.getElementById('lrid-spin_field_dir').value;
+                model.params.boson_coupling_dir = document.getElementById('lrid-boson_coupling_dir').value;
+                if (isTN()) {
+                    model.params.n_exp = parseInt(document.getElementById('lrid-n_exp').value);
+                }
+            } else if (modelName === 'custom_spin') {
+                // Build channels from DOM
+                const channels = [];
+                customSpinChannels.forEach(ch => {
+                    const channel = readSpinChannelFromDOM(`spin-ch-${ch.id}`);
+                    if (channel) channels.push(channel);
+                });
+                
+                if (isTN()) {
+                    // TN format: channels array
+                    model.params.channels = channels;
+                } else {
+                    // ED format: terms array
+                    model.params.terms = channels.map(convertChannelToEDTerm).filter(t => t !== null);
+                }
+            } else if (modelName === 'custom_spinboson') {
+                if (isTN()) {
+                    // TN format: nested channels object
+                    const channels = {
+                        spin_channels: [],
+                        boson_channels: [],
+                        spinboson_channels: []
+                    };
+                    
+                    spinbosonSpinChannels.forEach(ch => {
+                        const channel = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
+                        if (channel) channels.spin_channels.push(channel);
+                    });
+                    
+                    spinbosonBosonChannels.forEach(ch => {
+                        channels.boson_channels.push(readBosonChannelFromDOM(`boson-ch-${ch.id}`));
+                    });
+                    
+                    spinbosonCouplingChannels.forEach(ch => {
+                        const prefix = `coupling-ch-${ch.id}`;
+                        const coupling = {
+                            spin_channels: [],
+                            boson_op: document.getElementById(`${prefix}-boson_op`)?.value || 'a',
+                            strength: parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2
+                        };
+                        
+                        ch.innerChannels.forEach(inner => {
+                            const innerChannel = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
+                            if (innerChannel) coupling.spin_channels.push(innerChannel);
+                        });
+                        
+                        channels.spinboson_channels.push(coupling);
+                    });
+                    
+                    model.params.channels = channels;
+                } else {
+                    // ED format: terms object with spin_terms, boson_terms, spinboson_terms
+                    const terms = {
+                        spin_terms: [],
+                        boson_terms: [],
+                        spinboson_terms: []
+                    };
+                    
+                    spinbosonSpinChannels.forEach(ch => {
+                        const channel = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
+                        if (channel) {
+                            const term = convertChannelToEDTerm(channel);
+                            if (term) terms.spin_terms.push(term);
+                        }
+                    });
+                    
+                    spinbosonBosonChannels.forEach(ch => {
+                        const bosonCh = readBosonChannelFromDOM(`boson-ch-${ch.id}`);
+                        terms.boson_terms.push({
+                            op: bosonCh.op,
+                            strength: bosonCh.strength
+                        });
+                    });
+                    
+                    spinbosonCouplingChannels.forEach(ch => {
+                        const prefix = `coupling-ch-${ch.id}`;
+                        const bosonOp = document.getElementById(`${prefix}-boson_op`)?.value || 'a';
+                        const strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2;
+                        
+                        ch.innerChannels.forEach(inner => {
+                            const innerChannel = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
+                            if (innerChannel) {
+                                if (innerChannel.type === 'Field') {
+                                    terms.spinboson_terms.push({
+                                        boson_op: bosonOp,
+                                        spin_op: innerChannel.op,
+                                        strength: strength * innerChannel.strength
+                                    });
+                                } else {
+                                    // ED only supports Field (single-site) spin ops in spinboson coupling
+                                    console.warn(`ED spinboson coupling: skipping ${innerChannel.type} (only Field supported)`);
+                                }
+                            }
+                        });
+                    });
+                    
+                    model.params.terms = terms;
+                }
+            }
+            
+            return model;
+        }
+        
+        function buildStateConfig() {
+            const stateType = document.getElementById('state-type').value;
+            const systemType = document.getElementById('system-type').value;
+            const state = { type: stateType };
+            
+            if (stateType === 'random') {
+                state.params = {};
+                if (isTN()) {
+                    state.params.bond_dim = parseInt(document.getElementById('state-bond_dim').value);
+                }
+                const seed = document.getElementById('state-seed').value;
+                if (seed) state.params.seed = parseInt(seed);
+            } else {
+                const name = document.getElementById('state-name').value;
+                state.name = name;
+                state.params = {
+                    spin_direction: document.getElementById('state-spin_direction').value
+                };
+                
+                if (name === 'polarized') {
+                    if (systemType === 'spinboson') {
+                        state.params.spin_eigenstate = parseInt(document.getElementById('state-eigenstate').value);
+                    } else {
+                        state.params.eigenstate = parseInt(document.getElementById('state-eigenstate').value);
+                    }
+                } else if (name === 'neel') {
+                    state.params.even_state = parseInt(document.getElementById('state-even_state').value);
+                    state.params.odd_state = parseInt(document.getElementById('state-odd_state').value);
+                } else if (name === 'kink') {
+                    state.params.position = parseInt(document.getElementById('state-position').value);
+                    state.params.left_state = parseInt(document.getElementById('state-left_state').value);
+                    state.params.right_state = parseInt(document.getElementById('state-right_state').value);
+                } else if (name === 'domain') {
+                    state.params.start_index = parseInt(document.getElementById('state-start_index').value);
+                    state.params.domain_size = parseInt(document.getElementById('state-domain_size').value);
+                    state.params.base_state = parseInt(document.getElementById('state-base_state').value);
+                    state.params.flip_state = parseInt(document.getElementById('state-flip_state').value);
+                }
+                
+                if (systemType === 'spinboson') {
+                    state.params.boson_level = parseInt(document.getElementById('state-boson_level').value);
+                }
+            }
+            
+            return state;
+        }
+        
+        function buildAlgorithmConfig() {
+            const algorithm = { type: currentAlgorithm };
+            const localDim = getLocalDim();
+            
+            if (currentAlgorithm === 'dmrg') {
+                algorithm.solver = {
+                    type: 'lanczos',
+                    krylov_dim: parseInt(document.getElementById('dmrg-krylov_dim').value),
+                    max_iter: parseInt(document.getElementById('dmrg-max_iter').value)
+                };
+                algorithm.options = {
+                    chi_max: parseInt(document.getElementById('dmrg-chi_max').value),
+                    cutoff: parseFloat(document.getElementById('dmrg-cutoff').value),
+                    local_dim: localDim
+                };
+                algorithm.run = {
+                    n_sweeps: parseInt(document.getElementById('dmrg-n_sweeps').value)
+                };
+            } else if (currentAlgorithm === 'tdvp') {
+                algorithm.solver = {
+                    type: 'krylov_exponential',
+                    krylov_dim: parseInt(document.getElementById('tdvp-krylov_dim').value),
+                    tol: parseFloat(document.getElementById('tdvp-tol').value),
+                    evol_type: document.getElementById('tdvp-evol_type').value
+                };
+                algorithm.options = {
+                    dt: parseFloat(document.getElementById('tdvp-dt').value),
+                    chi_max: parseInt(document.getElementById('tdvp-chi_max').value),
+                    cutoff: parseFloat(document.getElementById('tdvp-cutoff').value),
+                    local_dim: localDim
+                };
+                algorithm.run = {
+                    n_sweeps: parseInt(document.getElementById('tdvp-n_sweeps').value)
+                };
+            } else if (currentAlgorithm === 'ed_spectrum') {
+                const nStatesVal = document.getElementById('ed_spectrum-n_states').value;
+                if (nStatesVal && nStatesVal.trim() !== '') {
+                    algorithm.n_states = parseInt(nStatesVal);
+                }
+                algorithm.use_sparse = document.getElementById('ed_spectrum-use_sparse').value === 'true';
+            } else if (currentAlgorithm === 'ed_time_evolution') {
+                algorithm.dt = parseFloat(document.getElementById('ed_time_evolution-dt').value);
+                algorithm.n_steps = parseInt(document.getElementById('ed_time_evolution-n_steps').value);
+            }
+            
+            return algorithm;
+        }
+        
+        function buildAnalysisConfig() {
+            const analysis = {};
+            
+            const selType = document.getElementById('selection-type').value;
+            const selection = { selection: selType };
+            
+            if (selType === 'range') {
+                selection.range = [
+                    parseInt(document.getElementById('selection-range-start').value),
+                    parseInt(document.getElementById('selection-range-end').value)
+                ];
+            } else if (selType === 'specific') {
+                const listStr = document.getElementById('selection-list').value;
+                selection.list = listStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            } else if (selType === 'time_range') {
+                selection.time_range = [
+                    parseFloat(document.getElementById('selection-time-start').value),
+                    parseFloat(document.getElementById('selection-time-end').value)
+                ];
+            }
+            
+            if (currentAlgorithm === 'ed_spectrum') {
+                analysis.states = selection;
+            } else if (currentAlgorithm === 'ed_time_evolution') {
+                analysis.steps = selection;
+            } else {
+                analysis.sweeps = selection;
+            }
+            
+            const obsType = document.getElementById('observable-type').value;
+            const observable = { type: obsType, params: {} };
+            
+            if (obsType === 'single_site_expectation') {
+                observable.params.site = parseInt(document.getElementById('obs-site').value);
+                observable.params.operator = document.getElementById('obs-operator').value;
+            } else if (obsType === 'subsystem_expectation_sum') {
+                observable.params.operator = document.getElementById('obs-operator-subsystem').value;
+                observable.params.l = parseInt(document.getElementById('obs-l').value);
+                observable.params.m = parseInt(document.getElementById('obs-m').value);
+            } else if (obsType === 'two_site_expectation') {
+                observable.params.site_i = parseInt(document.getElementById('obs-site_i-two').value);
+                observable.params.site_j = parseInt(document.getElementById('obs-site_j-two').value);
+                observable.params.operator_i = document.getElementById('obs-operator_i').value;
+                observable.params.operator_j = document.getElementById('obs-operator_j').value;
+            } else if (obsType === 'correlation_function') {
+                observable.params.site_i = parseInt(document.getElementById('obs-site_i-corr').value);
+                observable.params.site_j = parseInt(document.getElementById('obs-site_j-corr').value);
+                observable.params.operator = document.getElementById('obs-operator-corr').value;
+            } else if (obsType === 'connected_correlation') {
+                observable.params.site_i = parseInt(document.getElementById('obs-site_i-conn').value);
+                observable.params.site_j = parseInt(document.getElementById('obs-site_j-conn').value);
+                observable.params.operator = document.getElementById('obs-operator-conn').value;
+            } else if (obsType === 'entanglement_entropy') {
+                observable.params.bond = parseInt(document.getElementById('obs-bond-entropy').value);
+                const alpha = parseFloat(document.getElementById('obs-alpha').value);
+                if (alpha !== 1) observable.params.alpha = alpha;
+            } else if (obsType === 'entanglement_spectrum') {
+                observable.params.bond = parseInt(document.getElementById('obs-bond-spectrum').value);
+                const nValues = document.getElementById('obs-n_values').value;
+                if (nValues) observable.params.n_values = parseInt(nValues);
+            }
+            
+            analysis.observable = observable;
+            return analysis;
+        }
+        
+        function buildConfig() {
+            const system = buildSystemConfig();
+            const model = buildModelConfig();
+            const algorithm = buildAlgorithmConfig();
+            const description = document.getElementById('config-description').value.trim();
+            
+            if (currentMode === 'simulation') {
+                const config = { system, model, algorithm };
+                
+                if (currentAlgorithm !== 'ed_spectrum') {
+                    config.state = buildStateConfig();
+                }
+                
+                if (description) config.description = description;
+                return config;
+            } else {
+                const simulation = { system, model, algorithm };
+                if (currentAlgorithm !== 'ed_spectrum') {
+                    simulation.state = buildStateConfig();
+                }
+                
+                const config = {
+                    simulation: simulation,
+                    analysis: buildAnalysisConfig()
+                };
+                
+                if (description) config.description = description;
+                return config;
+            }
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // PREVIEW & EXPORT
+        // ════════════════════════════════════════════════════════════════════════
+        
+        function updatePreview() {
+            const config = buildConfig();
+            document.getElementById('json-preview').textContent = JSON.stringify(config, null, 2);
+        }
+        
+        function downloadConfig() {
+            const config = buildConfig();
+            const json = JSON.stringify(config, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const filename = currentMode === 'simulation' 
+                ? `${currentAlgorithm}_simulation.json`
+                : `${currentAlgorithm}_analysis.json`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function copyConfig() {
+            const config = buildConfig();
+            navigator.clipboard.writeText(JSON.stringify(config, null, 2)).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+        
+        // ════════════════════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ════════════════════════════════════════════════════════════════════════
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setMode('simulation');
+            setAlgorithm('dmrg');
+            onSystemTypeChange();
+            onStateTypeChange();
+            onStateNameChange();
+            onObservableTypeChange();
+            onSelectionTypeChange();
+            renderCustomSpinChannels();
+            renderSpinBosonSpinChannels();
+            renderBosonChannels();
+            renderCouplingChannels();
+            updateTotalTime();
+            updateEDTotalTime();
+            updateCustomModelHint();
+            updatePreview();
+        });
+    </script>
+</body>
+</html>

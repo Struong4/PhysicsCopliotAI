@@ -1,5 +1,5 @@
 # ============================================================================
-# CATALOG MANAGEMENT FOR TENSOR NETWORK SIMULATIONS
+# CATALOG MANAGEMENT FOR SIMULATIONS (TN + ED)
 # ============================================================================
 #
 # This module provides a queryable catalog of simulation runs.
@@ -9,6 +9,10 @@
 #   - runs_index.json: Hash → run_id (exact match, deduplication)
 #   - run_catalog.jsonl: Queryable metadata (discovery, filtering)
 #   - config.json: Source of truth (reconstruction)
+#
+# SUPPORTED ALGORITHMS:
+#   TN: dmrg, tdvp
+#   ED: ed_spectrum, ed_time_evolution
 #
 # SCHEMA:
 # {
@@ -41,7 +45,7 @@
 # FILE FORMAT: JSON Lines (.jsonl) - one JSON object per line
 #
 # USAGE:
-#   Write: _append_to_catalog(config, run_id, status, results; base_dir)
+#   Write: _append_to_catalog(config, run_id, status, run_dir; base_dir)
 #   Read:  _load_catalog(; base_dir)
 #
 # ============================================================================
@@ -90,6 +94,10 @@ end
 
 Extract algorithm-specific parameters.
 Designed to be extensible for new algorithms.
+
+Supports:
+- TN: dmrg, tdvp
+- ED: ed_spectrum, ed_time_evolution
 """
 function _extract_algorithm_params(config::Dict)
     algorithm = config["algorithm"]
@@ -100,11 +108,19 @@ function _extract_algorithm_params(config::Dict)
         return _extract_dmrg_params(algorithm)
     elseif algo_type == "tdvp"
         return _extract_tdvp_params(algorithm)
+    elseif algo_type == "ed_spectrum"
+        return _extract_ed_spectrum_params(algorithm)
+    elseif algo_type == "ed_time_evolution"
+        return _extract_ed_time_evolution_params(algorithm)
     else
         # Fallback for future algorithms: extract what we can
         return _extract_generic_algorithm_params(algorithm)
     end
 end
+
+# ────────────────────────────────────────────────────────────────────────────
+# TN Algorithm Extractors
+# ────────────────────────────────────────────────────────────────────────────
 
 """
 Extract DMRG-specific parameters.
@@ -185,6 +201,76 @@ function _extract_tdvp_params(algorithm::Dict)
     
     return params
 end
+
+# ────────────────────────────────────────────────────────────────────────────
+# ED Algorithm Extractors
+# ────────────────────────────────────────────────────────────────────────────
+
+"""
+Extract ED spectrum-specific parameters.
+
+Config structure:
+{
+  "algorithm": {
+    "type": "ed_spectrum",
+    "n_states": 10,
+    "use_sparse": true
+  }
+}
+"""
+function _extract_ed_spectrum_params(algorithm::Dict)
+    params = Dict{String, Any}()
+    
+    # Number of states to compute
+    if haskey(algorithm, "n_states")
+        params["n_states"] = algorithm["n_states"]
+    end
+    
+    # Sparse vs dense solver
+    if haskey(algorithm, "use_sparse")
+        params["use_sparse"] = algorithm["use_sparse"]
+    end
+    
+    return params
+end
+
+"""
+Extract ED time evolution-specific parameters.
+
+Config structure:
+{
+  "algorithm": {
+    "type": "ed_time_evolution",
+    "dt": 0.05,
+    "n_steps": 200,
+    "n_states": 50  # optional
+  }
+}
+"""
+function _extract_ed_time_evolution_params(algorithm::Dict)
+    params = Dict{String, Any}()
+    
+    # Time step
+    if haskey(algorithm, "dt")
+        params["dt"] = algorithm["dt"]
+    end
+    
+    # Number of time steps
+    if haskey(algorithm, "n_steps")
+        params["n_steps"] = algorithm["n_steps"]
+    end
+    
+    # Number of eigenstates for expansion (optional)
+    if haskey(algorithm, "n_states")
+        params["n_states"] = algorithm["n_states"]
+    end
+    
+    return params
+end
+
+# ────────────────────────────────────────────────────────────────────────────
+# Generic Fallback
+# ────────────────────────────────────────────────────────────────────────────
 
 """
 Generic fallback for unknown algorithms.
@@ -273,7 +359,7 @@ function _extract_prebuilt_model(model::Dict)
         params["coupling_dir"] = model_params["coupling_dir"]
         params["field_dir"] = model_params["field_dir"]
         
-    elseif model_name == "ising_dickie"
+    elseif model_name == "ising_dicke"
         params["J"] = model_params["J"]
         params["h"] = model_params["h"]
         params["omega"] = model_params["omega"]
@@ -282,7 +368,7 @@ function _extract_prebuilt_model(model::Dict)
         params["spin_field_dir"] = model_params["spin_field_dir"]
         params["boson_coupling_dir"] = model_params["boson_coupling_dir"]
         
-    elseif model_name == "long_range_ising_dickie"
+    elseif model_name == "long_range_ising_dicke"
         params["J"] = model_params["J"]
         params["h"] = model_params["h"]
         params["alpha"] = model_params["alpha"]
@@ -306,15 +392,12 @@ end
 
 """
 Extract custom model (placeholder for future implementation).
-Currently stores only kind and name.
 """
 function _extract_custom_model(model::Dict)
-    # TODO: Implement channels and facets extraction
+    # TODO: Implement custom model extraction
     return Dict{String, Any}(
-        "kind" => "custom",
-        "name" => model["name"]
-        # Future: "channels" => [...],
-        # Future: "facets" => {...}
+        "kind" => "custom"
+        # Future: channels specification or facets
     )
 end
 
@@ -336,11 +419,8 @@ function _extract_state(config::Dict)
         return _extract_random_state(state)
     elseif state_type == "custom"
         return _extract_custom_state(state)
-    elseif state_type == "prebuilt"
+    else  # prebuilt
         return _extract_prebuilt_state(state)
-    else
-        @warn "Unknown state type: $state_type"
-        return Dict{String, Any}("kind" => state_type)
     end
 end
 
@@ -353,8 +433,10 @@ function _extract_random_state(state::Dict)
         "params" => Dict{String, Any}()
     )
     
-    if haskey(state, "params") && haskey(state["params"], "bond_dim")
-        result["params"]["bond_dim"] = state["params"]["bond_dim"]
+    state_params = get(state, "params", Dict())
+    
+    if haskey(state_params, "bond_dim")
+        result["params"]["bond_dim"] = state_params["bond_dim"]
     end
     
     return result
@@ -457,24 +539,33 @@ end
 
 Extract summary of simulation results from metadata.
 Called after simulation completes.
+
+Supports:
+- TN: dmrg, tdvp
+- ED: ed_spectrum, ed_time_evolution
 """
 function _extract_results_summary(config::Dict, run_dir::String)
     summary = Dict{String, Any}()
     
     # Load metadata if available
     metadata_path = joinpath(run_dir, "metadata.json")
-    if isfile(metadata_path)
-        metadata = JSON.parsefile(metadata_path)
-        
+    if !isfile(metadata_path)
+        return summary
+    end
+    
+    metadata = JSON.parsefile(metadata_path)
+    algo_type = config["algorithm"]["type"]
+    
+    # ────────────────────────────────────────────────────────────────────────
+    # TN-specific extraction
+    # ────────────────────────────────────────────────────────────────────────
+    if algo_type in ["dmrg", "tdvp"]
         if haskey(metadata, "sweeps_completed")
             summary["sweeps_completed"] = metadata["sweeps_completed"]
         end
         
-        # Algorithm-specific summaries
-        algo_type = config["algorithm"]["type"]
-        
+        # TDVP: compute final time
         if algo_type == "tdvp" && haskey(metadata, "dt")
-            # Compute final time
             if haskey(metadata, "sweeps_completed")
                 summary["final_time"] = metadata["sweeps_completed"] * metadata["dt"]
             end
@@ -492,6 +583,63 @@ function _extract_results_summary(config::Dict, run_dir::String)
             end
             if haskey(last_sweep, "time")
                 summary["final_time"] = last_sweep["time"]
+            end
+        end
+    
+    # ────────────────────────────────────────────────────────────────────────
+    # ED Spectrum extraction
+    # ────────────────────────────────────────────────────────────────────────
+    elseif algo_type == "ed_spectrum"
+        # Hilbert space dimension
+        if haskey(metadata, "hilbert_dim")
+            summary["hilbert_dim"] = metadata["hilbert_dim"]
+        end
+        
+        # Number of states computed
+        if haskey(metadata, "n_states")
+            summary["n_states"] = metadata["n_states"]
+        end
+        
+        # Ground state energy
+        if haskey(metadata, "ground_energy")
+            summary["ground_energy"] = metadata["ground_energy"]
+        end
+        
+        # Spectral gap
+        if haskey(metadata, "spectral_gap")
+            summary["spectral_gap"] = metadata["spectral_gap"]
+        end
+    
+    # ────────────────────────────────────────────────────────────────────────
+    # ED Time Evolution extraction
+    # ────────────────────────────────────────────────────────────────────────
+    elseif algo_type == "ed_time_evolution"
+        # Hilbert space dimension
+        if haskey(metadata, "hilbert_dim")
+            summary["hilbert_dim"] = metadata["hilbert_dim"]
+        end
+        
+        # Steps completed
+        if haskey(metadata, "steps_completed")
+            summary["steps_completed"] = metadata["steps_completed"]
+        end
+        
+        # Compute final time from dt and steps
+        if haskey(metadata, "dt") && haskey(metadata, "steps_completed")
+            summary["final_time"] = metadata["dt"] * metadata["steps_completed"]
+        end
+        
+        # Number of eigenstates used in expansion
+        if haskey(metadata, "n_states_used")
+            summary["n_states_used"] = metadata["n_states_used"]
+        end
+        
+        # Extract from step_data if available
+        if haskey(metadata, "step_data") && !isempty(metadata["step_data"])
+            last_step = metadata["step_data"][end]
+            
+            if haskey(last_step, "time")
+                summary["final_time"] = last_step["time"]
             end
         end
     end
