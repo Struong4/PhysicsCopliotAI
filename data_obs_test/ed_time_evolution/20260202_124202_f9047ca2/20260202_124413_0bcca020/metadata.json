@@ -1,0 +1,518 @@
+{
+  "start_time": "2026-02-02T12:44:14.106",
+  "end_time": "2026-02-02T12:44:19.014",
+  "obs_run_id": "20260202_124413_0bcca020",
+  "observable_type": "single_site_expectation",
+  "status": "completed",
+  "algorithm": "ed_time_evolution",
+  "sim_run_id": "20260202_124202_f9047ca2",
+  "sweep_data": [
+    {
+      "time": 0.0,
+      "filename": "observable_sweep_0.jld2",
+      "sweep": 0
+    },
+    {
+      "time": 0.01,
+      "filename": "observable_sweep_1.jld2",
+      "sweep": 1
+    },
+    {
+      "time": 0.02,
+      "filename": "observable_sweep_2.jld2",
+      "sweep": 2
+    },
+    {
+      "time": 0.03,
+      "filename": "observable_sweep_3.jld2",
+      "sweep": 3
+    },
+    {
+      "time": 0.04,
+      "filename": "observable_sweep_4.jld2",
+      "sweep": 4
+    },
+    {
+      "time": 0.05,
+      "filename": "observable_sweep_5.jld2",
+      "sweep": 5
+    },
+    {
+      "time": 0.06,
+      "filename": "observable_sweep_6.jld2",
+      "sweep": 6
+    },
+    {
+      "time": 0.07,
+      "filename": "observable_sweep_7.jld2",
+      "sweep": 7
+    },
+    {
+      "time": 0.08,
+      "filename": "observable_sweep_8.jld2",
+      "sweep": 8
+    },
+    {
+      "time": 0.09,
+      "filename": "observable_sweep_9.jld2",
+      "sweep": 9
+    },
+    {
+      "time": 0.1,
+      "filename": "observable_sweep_10.jld2",
+      "sweep": 10
+    },
+    {
+      "time": 0.11,
+      "filename": "observable_sweep_11.jld2",
+      "sweep": 11
+    },
+    {
+      "time": 0.12,
+      "filename": "observable_sweep_12.jld2",
+      "sweep": 12
+    },
+    {
+      "time": 0.13,
+      "filename": "observable_sweep_13.jld2",
+      "sweep": 13
+    },
+    {
+      "time": 0.14,
+      "filename": "observable_sweep_14.jld2",
+      "sweep": 14
+    },
+    {
+      "time": 0.15,
+      "filename": "observable_sweep_15.jld2",
+      "sweep": 15
+    },
+    {
+      "time": 0.16,
+      "filename": "observable_sweep_16.jld2",
+      "sweep": 16
+    },
+    {
+      "time": 0.17,
+      "filename": "observable_sweep_17.jld2",
+      "sweep": 17
+    },
+    {
+      "time": 0.18,
+      "filename": "observable_sweep_18.jld2",
+      "sweep": 18
+    },
+    {
+      "time": 0.19,
+      "filename": "observable_sweep_19.jld2",
+      "sweep": 19
+    },
+    {
+      "time": 0.2,
+      "filename": "observable_sweep_20.jld2",
+      "sweep": 20
+    },
+    {
+      "time": 0.21,
+      "filename": "observable_sweep_21.jld2",
+      "sweep": 21
+    },
+    {
+      "time": 0.22,
+      "filename": "observable_sweep_22.jld2",
+      "sweep": 22
+    },
+    {
+      "time": 0.23,
+      "filename": "observable_sweep_23.jld2",
+      "sweep": 23
+    },
+    {
+      "time": 0.24,
+      "filename": "observable_sweep_24.jld2",
+      "sweep": 24
+    },
+    {
+      "time": 0.25,
+      "filename": "observable_sweep_25.jld2",
+      "sweep": 25
+    },
+    {
+      "time": 0.26,
+      "filename": "observable_sweep_26.jld2",
+      "sweep": 26
+    },
+    {
+      "time": 0.27,
+      "filename": "observable_sweep_27.jld2",
+      "sweep": 27
+    },
+    {
+      "time": 0.28,
+      "filename": "observable_sweep_28.jld2",
+      "sweep": 28
+    },
+    {
+      "time": 0.29,
+      "filename": "observable_sweep_29.jld2",
+      "sweep": 29
+    },
+    {
+      "time": 0.3,
+      "filename": "observable_sweep_30.jld2",
+      "sweep": 30
+    },
+    {
+      "time": 0.31,
+      "filename": "observable_sweep_31.jld2",
+      "sweep": 31
+    },
+    {
+      "time": 0.32,
+      "filename": "observable_sweep_32.jld2",
+      "sweep": 32
+    },
+    {
+      "time": 0.33,
+      "filename": "observable_sweep_33.jld2",
+      "sweep": 33
+    },
+    {
+      "time": 0.34,
+      "filename": "observable_sweep_34.jld2",
+      "sweep": 34
+    },
+    {
+      "time": 0.35000000000000003,
+      "filename": "observable_sweep_35.jld2",
+      "sweep": 35
+    },
+    {
+      "time": 0.36,
+      "filename": "observable_sweep_36.jld2",
+      "sweep": 36
+    },
+    {
+      "time": 0.37,
+      "filename": "observable_sweep_37.jld2",
+      "sweep": 37
+    },
+    {
+      "time": 0.38,
+      "filename": "observable_sweep_38.jld2",
+      "sweep": 38
+    },
+    {
+      "time": 0.39,
+      "filename": "observable_sweep_39.jld2",
+      "sweep": 39
+    },
+    {
+      "time": 0.4,
+      "filename": "observable_sweep_40.jld2",
+      "sweep": 40
+    },
+    {
+      "time": 0.41000000000000003,
+      "filename": "observable_sweep_41.jld2",
+      "sweep": 41
+    },
+    {
+      "time": 0.42,
+      "filename": "observable_sweep_42.jld2",
+      "sweep": 42
+    },
+    {
+      "time": 0.43,
+      "filename": "observable_sweep_43.jld2",
+      "sweep": 43
+    },
+    {
+      "time": 0.44,
+      "filename": "observable_sweep_44.jld2",
+      "sweep": 44
+    },
+    {
+      "time": 0.45,
+      "filename": "observable_sweep_45.jld2",
+      "sweep": 45
+    },
+    {
+      "time": 0.46,
+      "filename": "observable_sweep_46.jld2",
+      "sweep": 46
+    },
+    {
+      "time": 0.47000000000000003,
+      "filename": "observable_sweep_47.jld2",
+      "sweep": 47
+    },
+    {
+      "time": 0.48,
+      "filename": "observable_sweep_48.jld2",
+      "sweep": 48
+    },
+    {
+      "time": 0.49,
+      "filename": "observable_sweep_49.jld2",
+      "sweep": 49
+    },
+    {
+      "time": 0.5,
+      "filename": "observable_sweep_50.jld2",
+      "sweep": 50
+    },
+    {
+      "time": 0.51,
+      "filename": "observable_sweep_51.jld2",
+      "sweep": 51
+    },
+    {
+      "time": 0.52,
+      "filename": "observable_sweep_52.jld2",
+      "sweep": 52
+    },
+    {
+      "time": 0.53,
+      "filename": "observable_sweep_53.jld2",
+      "sweep": 53
+    },
+    {
+      "time": 0.54,
+      "filename": "observable_sweep_54.jld2",
+      "sweep": 54
+    },
+    {
+      "time": 0.55,
+      "filename": "observable_sweep_55.jld2",
+      "sweep": 55
+    },
+    {
+      "time": 0.56,
+      "filename": "observable_sweep_56.jld2",
+      "sweep": 56
+    },
+    {
+      "time": 0.5700000000000001,
+      "filename": "observable_sweep_57.jld2",
+      "sweep": 57
+    },
+    {
+      "time": 0.58,
+      "filename": "observable_sweep_58.jld2",
+      "sweep": 58
+    },
+    {
+      "time": 0.59,
+      "filename": "observable_sweep_59.jld2",
+      "sweep": 59
+    },
+    {
+      "time": 0.6,
+      "filename": "observable_sweep_60.jld2",
+      "sweep": 60
+    },
+    {
+      "time": 0.61,
+      "filename": "observable_sweep_61.jld2",
+      "sweep": 61
+    },
+    {
+      "time": 0.62,
+      "filename": "observable_sweep_62.jld2",
+      "sweep": 62
+    },
+    {
+      "time": 0.63,
+      "filename": "observable_sweep_63.jld2",
+      "sweep": 63
+    },
+    {
+      "time": 0.64,
+      "filename": "observable_sweep_64.jld2",
+      "sweep": 64
+    },
+    {
+      "time": 0.65,
+      "filename": "observable_sweep_65.jld2",
+      "sweep": 65
+    },
+    {
+      "time": 0.66,
+      "filename": "observable_sweep_66.jld2",
+      "sweep": 66
+    },
+    {
+      "time": 0.67,
+      "filename": "observable_sweep_67.jld2",
+      "sweep": 67
+    },
+    {
+      "time": 0.68,
+      "filename": "observable_sweep_68.jld2",
+      "sweep": 68
+    },
+    {
+      "time": 0.6900000000000001,
+      "filename": "observable_sweep_69.jld2",
+      "sweep": 69
+    },
+    {
+      "time": 0.7000000000000001,
+      "filename": "observable_sweep_70.jld2",
+      "sweep": 70
+    },
+    {
+      "time": 0.71,
+      "filename": "observable_sweep_71.jld2",
+      "sweep": 71
+    },
+    {
+      "time": 0.72,
+      "filename": "observable_sweep_72.jld2",
+      "sweep": 72
+    },
+    {
+      "time": 0.73,
+      "filename": "observable_sweep_73.jld2",
+      "sweep": 73
+    },
+    {
+      "time": 0.74,
+      "filename": "observable_sweep_74.jld2",
+      "sweep": 74
+    },
+    {
+      "time": 0.75,
+      "filename": "observable_sweep_75.jld2",
+      "sweep": 75
+    },
+    {
+      "time": 0.76,
+      "filename": "observable_sweep_76.jld2",
+      "sweep": 76
+    },
+    {
+      "time": 0.77,
+      "filename": "observable_sweep_77.jld2",
+      "sweep": 77
+    },
+    {
+      "time": 0.78,
+      "filename": "observable_sweep_78.jld2",
+      "sweep": 78
+    },
+    {
+      "time": 0.79,
+      "filename": "observable_sweep_79.jld2",
+      "sweep": 79
+    },
+    {
+      "time": 0.8,
+      "filename": "observable_sweep_80.jld2",
+      "sweep": 80
+    },
+    {
+      "time": 0.81,
+      "filename": "observable_sweep_81.jld2",
+      "sweep": 81
+    },
+    {
+      "time": 0.8200000000000001,
+      "filename": "observable_sweep_82.jld2",
+      "sweep": 82
+    },
+    {
+      "time": 0.8300000000000001,
+      "filename": "observable_sweep_83.jld2",
+      "sweep": 83
+    },
+    {
+      "time": 0.84,
+      "filename": "observable_sweep_84.jld2",
+      "sweep": 84
+    },
+    {
+      "time": 0.85,
+      "filename": "observable_sweep_85.jld2",
+      "sweep": 85
+    },
+    {
+      "time": 0.86,
+      "filename": "observable_sweep_86.jld2",
+      "sweep": 86
+    },
+    {
+      "time": 0.87,
+      "filename": "observable_sweep_87.jld2",
+      "sweep": 87
+    },
+    {
+      "time": 0.88,
+      "filename": "observable_sweep_88.jld2",
+      "sweep": 88
+    },
+    {
+      "time": 0.89,
+      "filename": "observable_sweep_89.jld2",
+      "sweep": 89
+    },
+    {
+      "time": 0.9,
+      "filename": "observable_sweep_90.jld2",
+      "sweep": 90
+    },
+    {
+      "time": 0.91,
+      "filename": "observable_sweep_91.jld2",
+      "sweep": 91
+    },
+    {
+      "time": 0.92,
+      "filename": "observable_sweep_92.jld2",
+      "sweep": 92
+    },
+    {
+      "time": 0.93,
+      "filename": "observable_sweep_93.jld2",
+      "sweep": 93
+    },
+    {
+      "time": 0.9400000000000001,
+      "filename": "observable_sweep_94.jld2",
+      "sweep": 94
+    },
+    {
+      "time": 0.9500000000000001,
+      "filename": "observable_sweep_95.jld2",
+      "sweep": 95
+    },
+    {
+      "time": 0.96,
+      "filename": "observable_sweep_96.jld2",
+      "sweep": 96
+    },
+    {
+      "time": 0.97,
+      "filename": "observable_sweep_97.jld2",
+      "sweep": 97
+    },
+    {
+      "time": 0.98,
+      "filename": "observable_sweep_98.jld2",
+      "sweep": 98
+    },
+    {
+      "time": 0.99,
+      "filename": "observable_sweep_99.jld2",
+      "sweep": 99
+    },
+    {
+      "time": 1.0,
+      "filename": "observable_sweep_100.jld2",
+      "sweep": 100
+    }
+  ],
+  "sweeps_processed": 100,
+  "last_update": "2026-02-02T12:44:19.013"
+}

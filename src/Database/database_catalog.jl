@@ -670,7 +670,7 @@ function _extract_catalog_entry(config::Dict, run_id::String, status::String,
     # Compute config hash (reuse from database_utils.jl)
     config_hash = _compute_config_hash(config)
     
-    return Dict{String, Any}(
+    entry = Dict{String, Any}(
         "run_id" => run_id,
         "config_hash" => config_hash,
         "timestamp" => Dates.format(now(), "yyyy-mm-ddTHH:MM:SS"),
@@ -678,9 +678,15 @@ function _extract_catalog_entry(config::Dict, run_id::String, status::String,
         "core" => _extract_core(config),
         "algorithm_params" => _extract_algorithm_params(config),
         "model" => _extract_model(config),
-        "state" => _extract_state(config),
         "results_summary" => _extract_results_summary(config, run_dir)
     )
+    
+    # Only extract state if present (ed_spectrum doesn't have initial state)
+    if haskey(config, "state")
+        entry["state"] = _extract_state(config)
+    end
+    
+    return entry
 end
 
 # ============================================================================

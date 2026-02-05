@@ -1,0 +1,21 @@
+{
+  "system": {
+    "type": "spin",
+    "S": 0.5,
+    "dtype": "ComplexF64",
+    "N": 10
+  },
+  "model": {
+    "name": "transverse_field_ising",
+    "params": {
+      "J": -1,
+      "h": 0.5,
+      "coupling_dir": "Z",
+      "field_dir": "X"
+    }
+  },
+  "algorithm": {
+    "type": "ed_spectrum",
+    "use_sparse": false
+  }
+}

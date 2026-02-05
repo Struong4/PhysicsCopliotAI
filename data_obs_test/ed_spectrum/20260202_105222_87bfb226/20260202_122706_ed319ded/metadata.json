@@ -1,0 +1,6157 @@
+{
+  "start_time": "2026-02-02T12:27:06.224",
+  "end_time": "2026-02-02T12:27:15.735",
+  "obs_run_id": "20260202_122706_ed319ded",
+  "observable_type": "single_site_expectation",
+  "status": "completed",
+  "algorithm": "ed_spectrum",
+  "sim_run_id": "20260202_105222_87bfb226",
+  "sweep_data": [
+    {
+      "state_index": 1,
+      "filename": "observable_sweep_1.jld2",
+      "energy": -3.0953724999136845,
+      "sweep": 1
+    },
+    {
+      "state_index": 2,
+      "filename": "observable_sweep_2.jld2",
+      "energy": -3.0206424063272626,
+      "sweep": 2
+    },
+    {
+      "state_index": 3,
+      "filename": "observable_sweep_3.jld2",
+      "energy": -2.8728515659573683,
+      "sweep": 3
+    },
+    {
+      "state_index": 4,
+      "filename": "observable_sweep_4.jld2",
+      "energy": -2.79812147237095,
+      "sweep": 4
+    },
+    {
+      "state_index": 5,
+      "filename": "observable_sweep_5.jld2",
+      "energy": -2.730031475547291,
+      "sweep": 5
+    },
+    {
+      "state_index": 6,
+      "filename": "observable_sweep_6.jld2",
+      "energy": -2.6553013819608657,
+      "sweep": 6
+    },
+    {
+      "state_index": 7,
+      "filename": "observable_sweep_7.jld2",
+      "energy": -2.595372499913687,
+      "sweep": 7
+    },
+    {
+      "state_index": 8,
+      "filename": "observable_sweep_8.jld2",
+      "energy": -2.5206424063272617,
+      "sweep": 8
+    },
+    {
+      "state_index": 9,
+      "filename": "observable_sweep_9.jld2",
+      "energy": -2.5075105415909795,
+      "sweep": 9
+    },
+    {
+      "state_index": 10,
+      "filename": "observable_sweep_10.jld2",
+      "energy": -2.4718826980549555,
+      "sweep": 10
+    },
+    {
+      "state_index": 11,
+      "filename": "observable_sweep_11.jld2",
+      "energy": -2.4327804480045523,
+      "sweep": 11
+    },
+    {
+      "state_index": 12,
+      "filename": "observable_sweep_12.jld2",
+      "energy": -2.3971526044685363,
+      "sweep": 12
+    },
+    {
+      "state_index": 13,
+      "filename": "observable_sweep_13.jld2",
+      "energy": -2.3728515659573755,
+      "sweep": 13
+    },
+    {
+      "state_index": 14,
+      "filename": "observable_sweep_14.jld2",
+      "energy": -2.3623206280838596,
+      "sweep": 14
+    },
+    {
+      "state_index": 15,
+      "filename": "observable_sweep_15.jld2",
+      "energy": -2.298121472370951,
+      "sweep": 15
+    },
+    {
+      "state_index": 16,
+      "filename": "observable_sweep_16.jld2",
+      "energy": -2.2875905344974368,
+      "sweep": 16
+    },
+    {
+      "state_index": 17,
+      "filename": "observable_sweep_17.jld2",
+      "energy": -2.2691337255976918,
+      "sweep": 17
+    },
+    {
+      "state_index": 18,
+      "filename": "observable_sweep_18.jld2",
+      "energy": -2.249361764098636,
+      "sweep": 18
+    },
+    {
+      "state_index": 19,
+      "filename": "observable_sweep_19.jld2",
+      "energy": -2.230031475547293,
+      "sweep": 19
+    },
+    {
+      "state_index": 20,
+      "filename": "observable_sweep_20.jld2",
+      "energy": -2.19440363201127,
+      "sweep": 20
+    },
+    {
+      "state_index": 21,
+      "filename": "observable_sweep_21.jld2",
+      "energy": -2.1944036320112645,
+      "sweep": 21
+    },
+    {
+      "state_index": 22,
+      "filename": "observable_sweep_22.jld2",
+      "energy": -2.1746316705122157,
+      "sweep": 22
+    },
+    {
+      "state_index": 23,
+      "filename": "observable_sweep_23.jld2",
+      "energy": -2.1553013819608684,
+      "sweep": 23
+    },
+    {
+      "state_index": 24,
+      "filename": "observable_sweep_24.jld2",
+      "energy": -2.139799694127551,
+      "sweep": 24
+    },
+    {
+      "state_index": 25,
+      "filename": "observable_sweep_25.jld2",
+      "energy": -2.139799694127549,
+      "sweep": 25
+    },
+    {
+      "state_index": 26,
+      "filename": "observable_sweep_26.jld2",
+      "energy": -2.1196735384248444,
+      "sweep": 26
+    },
+    {
+      "state_index": 27,
+      "filename": "observable_sweep_27.jld2",
+      "energy": -2.1065416736885636,
+      "sweep": 27
+    },
+    {
+      "state_index": 28,
+      "filename": "observable_sweep_28.jld2",
+      "energy": -2.106541673688561,
+      "sweep": 28
+    },
+    {
+      "state_index": 29,
+      "filename": "observable_sweep_29.jld2",
+      "energy": -2.0650696005411207,
+      "sweep": 29
+    },
+    {
+      "state_index": 30,
+      "filename": "observable_sweep_30.jld2",
+      "energy": -2.0650696005411198,
+      "sweep": 30
+    },
+    {
+      "state_index": 31,
+      "filename": "observable_sweep_31.jld2",
+      "energy": -2.0466127916413748,
+      "sweep": 31
+    },
+    {
+      "state_index": 32,
+      "filename": "observable_sweep_32.jld2",
+      "energy": -2.0318115801021346,
+      "sweep": 32
+    },
+    {
+      "state_index": 33,
+      "filename": "observable_sweep_33.jld2",
+      "energy": -2.0318115801021337,
+      "sweep": 33
+    },
+    {
+      "state_index": 34,
+      "filename": "observable_sweep_34.jld2",
+      "energy": -2.0075105415909786,
+      "sweep": 34
+    },
+    {
+      "state_index": 35,
+      "filename": "observable_sweep_35.jld2",
+      "energy": -1.9969796037174663,
+      "sweep": 35
+    },
+    {
+      "state_index": 36,
+      "filename": "observable_sweep_36.jld2",
+      "energy": -1.9718826980549562,
+      "sweep": 36
+    },
+    {
+      "state_index": 37,
+      "filename": "observable_sweep_37.jld2",
+      "energy": -1.9718826980549542,
+      "sweep": 37
+    },
+    {
+      "state_index": 38,
+      "filename": "observable_sweep_38.jld2",
+      "energy": -1.9718826980549515,
+      "sweep": 38
+    },
+    {
+      "state_index": 39,
+      "filename": "observable_sweep_39.jld2",
+      "energy": -1.9327804480045523,
+      "sweep": 39
+    },
+    {
+      "state_index": 40,
+      "filename": "observable_sweep_40.jld2",
+      "energy": -1.9222495101310408,
+      "sweep": 40
+    },
+    {
+      "state_index": 41,
+      "filename": "observable_sweep_41.jld2",
+      "energy": -1.9172787601712311,
+      "sweep": 41
+    },
+    {
+      "state_index": 42,
+      "filename": "observable_sweep_42.jld2",
+      "energy": -1.9037927012312976,
+      "sweep": 42
+    },
+    {
+      "state_index": 43,
+      "filename": "observable_sweep_43.jld2",
+      "energy": -1.89715260446853,
+      "sweep": 43
+    },
+    {
+      "state_index": 44,
+      "filename": "observable_sweep_44.jld2",
+      "energy": -1.8971526044685298,
+      "sweep": 44
+    },
+    {
+      "state_index": 45,
+      "filename": "observable_sweep_45.jld2",
+      "energy": -1.8840207397322446,
+      "sweep": 45
+    },
+    {
+      "state_index": 46,
+      "filename": "observable_sweep_46.jld2",
+      "energy": -1.8840207397322433,
+      "sweep": 46
+    },
+    {
+      "state_index": 47,
+      "filename": "observable_sweep_47.jld2",
+      "energy": -1.8623206280838587,
+      "sweep": 47
+    },
+    {
+      "state_index": 48,
+      "filename": "observable_sweep_48.jld2",
+      "energy": -1.8425486665848054,
+      "sweep": 48
+    },
+    {
+      "state_index": 49,
+      "filename": "observable_sweep_49.jld2",
+      "energy": -1.8290626076448726,
+      "sweep": 49
+    },
+    {
+      "state_index": 50,
+      "filename": "observable_sweep_50.jld2",
+      "energy": -1.8290626076448708,
+      "sweep": 50
+    },
+    {
+      "state_index": 51,
+      "filename": "observable_sweep_51.jld2",
+      "energy": -1.8092906461458222,
+      "sweep": 51
+    },
+    {
+      "state_index": 52,
+      "filename": "observable_sweep_52.jld2",
+      "energy": -1.8092906461458196,
+      "sweep": 52
+    },
+    {
+      "state_index": 53,
+      "filename": "observable_sweep_53.jld2",
+      "energy": -1.7875905344974314,
+      "sweep": 53
+    },
+    {
+      "state_index": 54,
+      "filename": "observable_sweep_54.jld2",
+      "energy": -1.774458669761154,
+      "sweep": 54
+    },
+    {
+      "state_index": 55,
+      "filename": "observable_sweep_55.jld2",
+      "energy": -1.774458669761149,
+      "sweep": 55
+    },
+    {
+      "state_index": 56,
+      "filename": "observable_sweep_56.jld2",
+      "energy": -1.7691337255976918,
+      "sweep": 56
+    },
+    {
+      "state_index": 57,
+      "filename": "observable_sweep_57.jld2",
+      "energy": -1.7543325140584503,
+      "sweep": 57
+    },
+    {
+      "state_index": 58,
+      "filename": "observable_sweep_58.jld2",
+      "energy": -1.7493617640986447,
+      "sweep": 58
+    },
+    {
+      "state_index": 59,
+      "filename": "observable_sweep_59.jld2",
+      "energy": -1.7412006493221646,
+      "sweep": 59
+    },
+    {
+      "state_index": 60,
+      "filename": "observable_sweep_60.jld2",
+      "energy": -1.7388308262251286,
+      "sweep": 60
+    },
+    {
+      "state_index": 61,
+      "filename": "observable_sweep_61.jld2",
+      "energy": -1.6997285761747285,
+      "sweep": 61
+    },
+    {
+      "state_index": 62,
+      "filename": "observable_sweep_62.jld2",
+      "energy": -1.699728576174728,
+      "sweep": 62
+    },
+    {
+      "state_index": 63,
+      "filename": "observable_sweep_63.jld2",
+      "energy": -1.6944036320112692,
+      "sweep": 63
+    },
+    {
+      "state_index": 64,
+      "filename": "observable_sweep_64.jld2",
+      "energy": -1.694403632011267,
+      "sweep": 64
+    },
+    {
+      "state_index": 65,
+      "filename": "observable_sweep_65.jld2",
+      "energy": -1.6812717672749833,
+      "sweep": 65
+    },
+    {
+      "state_index": 66,
+      "filename": "observable_sweep_66.jld2",
+      "energy": -1.674631670512213,
+      "sweep": 66
+    },
+    {
+      "state_index": 67,
+      "filename": "observable_sweep_67.jld2",
+      "energy": -1.6664705557357387,
+      "sweep": 67
+    },
+    {
+      "state_index": 68,
+      "filename": "observable_sweep_68.jld2",
+      "energy": -1.6641007326387038,
+      "sweep": 68
+    },
+    {
+      "state_index": 69,
+      "filename": "observable_sweep_69.jld2",
+      "energy": -1.6456439237389593,
+      "sweep": 69
+    },
+    {
+      "state_index": 70,
+      "filename": "observable_sweep_70.jld2",
+      "energy": -1.639799694127546,
+      "sweep": 70
+    },
+    {
+      "state_index": 71,
+      "filename": "observable_sweep_71.jld2",
+      "energy": -1.6397996941275454,
+      "sweep": 71
+    },
+    {
+      "state_index": 72,
+      "filename": "observable_sweep_72.jld2",
+      "energy": -1.6196735384248488,
+      "sweep": 72
+    },
+    {
+      "state_index": 73,
+      "filename": "observable_sweep_73.jld2",
+      "energy": -1.6065416736885618,
+      "sweep": 73
+    },
+    {
+      "state_index": 74,
+      "filename": "observable_sweep_74.jld2",
+      "energy": -1.6065416736885598,
+      "sweep": 74
+    },
+    {
+      "state_index": 75,
+      "filename": "observable_sweep_75.jld2",
+      "energy": -1.6065416736885596,
+      "sweep": 75
+    },
+    {
+      "state_index": 76,
+      "filename": "observable_sweep_76.jld2",
+      "energy": -1.6065416736885536,
+      "sweep": 76
+    },
+    {
+      "state_index": 77,
+      "filename": "observable_sweep_77.jld2",
+      "energy": -1.5709138301525354,
+      "sweep": 77
+    },
+    {
+      "state_index": 78,
+      "filename": "observable_sweep_78.jld2",
+      "energy": -1.5709138301525347,
+      "sweep": 78
+    },
+    {
+      "state_index": 79,
+      "filename": "observable_sweep_79.jld2",
+      "energy": -1.565069600541123,
+      "sweep": 79
+    },
+    {
+      "state_index": 80,
+      "filename": "observable_sweep_80.jld2",
+      "energy": -1.5650696005411218,
+      "sweep": 80
+    },
+    {
+      "state_index": 81,
+      "filename": "observable_sweep_81.jld2",
+      "energy": -1.5519377358048367,
+      "sweep": 81
+    },
+    {
+      "state_index": 82,
+      "filename": "observable_sweep_82.jld2",
+      "energy": -1.54661279164138,
+      "sweep": 82
+    },
+    {
+      "state_index": 83,
+      "filename": "observable_sweep_83.jld2",
+      "energy": -1.5360818537678669,
+      "sweep": 83
+    },
+    {
+      "state_index": 84,
+      "filename": "observable_sweep_84.jld2",
+      "energy": -1.5318115801021361,
+      "sweep": 84
+    },
+    {
+      "state_index": 85,
+      "filename": "observable_sweep_85.jld2",
+      "energy": -1.5318115801021348,
+      "sweep": 85
+    },
+    {
+      "state_index": 86,
+      "filename": "observable_sweep_86.jld2",
+      "energy": -1.5318115801021337,
+      "sweep": 86
+    },
+    {
+      "state_index": 87,
+      "filename": "observable_sweep_87.jld2",
+      "energy": -1.5186797153658524,
+      "sweep": 87
+    },
+    {
+      "state_index": 88,
+      "filename": "observable_sweep_88.jld2",
+      "energy": -1.516309892268817,
+      "sweep": 88
+    },
+    {
+      "state_index": 89,
+      "filename": "observable_sweep_89.jld2",
+      "energy": -1.516309892268815,
+      "sweep": 89
+    },
+    {
+      "state_index": 90,
+      "filename": "observable_sweep_90.jld2",
+      "energy": -1.496979603717466,
+      "sweep": 90
+    },
+    {
+      "state_index": 91,
+      "filename": "observable_sweep_91.jld2",
+      "energy": -1.4961837365661115,
+      "sweep": 91
+    },
+    {
+      "state_index": 92,
+      "filename": "observable_sweep_92.jld2",
+      "energy": -1.4830518718298262,
+      "sweep": 92
+    },
+    {
+      "state_index": 93,
+      "filename": "observable_sweep_93.jld2",
+      "energy": -1.4772076422184122,
+      "sweep": 93
+    },
+    {
+      "state_index": 94,
+      "filename": "observable_sweep_94.jld2",
+      "energy": -1.4718826980549544,
+      "sweep": 94
+    },
+    {
+      "state_index": 95,
+      "filename": "observable_sweep_95.jld2",
+      "energy": -1.4718826980549542,
+      "sweep": 95
+    },
+    {
+      "state_index": 96,
+      "filename": "observable_sweep_96.jld2",
+      "energy": -1.4613517601814425,
+      "sweep": 96
+    },
+    {
+      "state_index": 97,
+      "filename": "observable_sweep_97.jld2",
+      "energy": -1.4613517601814419,
+      "sweep": 97
+    },
+    {
+      "state_index": 98,
+      "filename": "observable_sweep_98.jld2",
+      "energy": -1.4439496217794254,
+      "sweep": 98
+    },
+    {
+      "state_index": 99,
+      "filename": "observable_sweep_99.jld2",
+      "energy": -1.4415797986823893,
+      "sweep": 99
+    },
+    {
+      "state_index": 100,
+      "filename": "observable_sweep_100.jld2",
+      "energy": -1.4415797986823888,
+      "sweep": 100
+    },
+    {
+      "state_index": 101,
+      "filename": "observable_sweep_101.jld2",
+      "energy": -1.423122989782646,
+      "sweep": 101
+    },
+    {
+      "state_index": 102,
+      "filename": "observable_sweep_102.jld2",
+      "energy": -1.4222495101310426,
+      "sweep": 102
+    },
+    {
+      "state_index": 103,
+      "filename": "observable_sweep_103.jld2",
+      "energy": -1.417278760171237,
+      "sweep": 103
+    },
+    {
+      "state_index": 104,
+      "filename": "observable_sweep_104.jld2",
+      "energy": -1.408321778243403,
+      "sweep": 104
+    },
+    {
+      "state_index": 105,
+      "filename": "observable_sweep_105.jld2",
+      "energy": -1.4067478222977214,
+      "sweep": 105
+    },
+    {
+      "state_index": 106,
+      "filename": "observable_sweep_106.jld2",
+      "energy": -1.4037927012312978,
+      "sweep": 106
+    },
+    {
+      "state_index": 107,
+      "filename": "observable_sweep_107.jld2",
+      "energy": -1.3971526044685336,
+      "sweep": 107
+    },
+    {
+      "state_index": 108,
+      "filename": "observable_sweep_108.jld2",
+      "energy": -1.3866216665950184,
+      "sweep": 108
+    },
+    {
+      "state_index": 109,
+      "filename": "observable_sweep_109.jld2",
+      "energy": -1.3840207397322453,
+      "sweep": 109
+    },
+    {
+      "state_index": 110,
+      "filename": "observable_sweep_110.jld2",
+      "energy": -1.3840207397322444,
+      "sweep": 110
+    },
+    {
+      "state_index": 111,
+      "filename": "observable_sweep_111.jld2",
+      "energy": -1.3734898018587347,
+      "sweep": 111
+    },
+    {
+      "state_index": 112,
+      "filename": "observable_sweep_112.jld2",
+      "energy": -1.3734898018587327,
+      "sweep": 112
+    },
+    {
+      "state_index": 113,
+      "filename": "observable_sweep_113.jld2",
+      "energy": -1.3681648576952736,
+      "sweep": 113
+    },
+    {
+      "state_index": 114,
+      "filename": "observable_sweep_114.jld2",
+      "energy": -1.3483928961962213,
+      "sweep": 114
+    },
+    {
+      "state_index": 115,
+      "filename": "observable_sweep_115.jld2",
+      "energy": -1.348392896196221,
+      "sweep": 115
+    },
+    {
+      "state_index": 116,
+      "filename": "observable_sweep_116.jld2",
+      "energy": -1.342548666584809,
+      "sweep": 116
+    },
+    {
+      "state_index": 117,
+      "filename": "observable_sweep_117.jld2",
+      "energy": -1.3320177287112975,
+      "sweep": 117
+    },
+    {
+      "state_index": 118,
+      "filename": "observable_sweep_118.jld2",
+      "energy": -1.3290626076448755,
+      "sweep": 118
+    },
+    {
+      "state_index": 119,
+      "filename": "observable_sweep_119.jld2",
+      "energy": -1.3290626076448728,
+      "sweep": 119
+    },
+    {
+      "state_index": 120,
+      "filename": "observable_sweep_120.jld2",
+      "energy": -1.3135609198115559,
+      "sweep": 120
+    },
+    {
+      "state_index": 121,
+      "filename": "observable_sweep_121.jld2",
+      "energy": -1.3135609198115514,
+      "sweep": 121
+    },
+    {
+      "state_index": 122,
+      "filename": "observable_sweep_122.jld2",
+      "energy": -1.3092906461458214,
+      "sweep": 122
+    },
+    {
+      "state_index": 123,
+      "filename": "observable_sweep_123.jld2",
+      "energy": -1.3092906461458205,
+      "sweep": 123
+    },
+    {
+      "state_index": 124,
+      "filename": "observable_sweep_124.jld2",
+      "energy": -1.2987597082723112,
+      "sweep": 124
+    },
+    {
+      "state_index": 125,
+      "filename": "observable_sweep_125.jld2",
+      "energy": -1.2987597082723075,
+      "sweep": 125
+    },
+    {
+      "state_index": 126,
+      "filename": "observable_sweep_126.jld2",
+      "energy": -1.2937889583124997,
+      "sweep": 126
+    },
+    {
+      "state_index": 127,
+      "filename": "observable_sweep_127.jld2",
+      "energy": -1.2934347641088495,
+      "sweep": 127
+    },
+    {
+      "state_index": 128,
+      "filename": "observable_sweep_128.jld2",
+      "energy": -1.2803028993725645,
+      "sweep": 128
+    },
+    {
+      "state_index": 129,
+      "filename": "observable_sweep_129.jld2",
+      "energy": -1.2803028993725627,
+      "sweep": 129
+    },
+    {
+      "state_index": 130,
+      "filename": "observable_sweep_130.jld2",
+      "energy": -1.2744586697611509,
+      "sweep": 130
+    },
+    {
+      "state_index": 131,
+      "filename": "observable_sweep_131.jld2",
+      "energy": -1.27445866976115,
+      "sweep": 131
+    },
+    {
+      "state_index": 132,
+      "filename": "observable_sweep_132.jld2",
+      "energy": -1.273662802609796,
+      "sweep": 132
+    },
+    {
+      "state_index": 133,
+      "filename": "observable_sweep_133.jld2",
+      "energy": -1.2605309378735146,
+      "sweep": 133
+    },
+    {
+      "state_index": 134,
+      "filename": "observable_sweep_134.jld2",
+      "energy": -1.2543325140584485,
+      "sweep": 134
+    },
+    {
+      "state_index": 135,
+      "filename": "observable_sweep_135.jld2",
+      "energy": -1.2412006493221657,
+      "sweep": 135
+    },
+    {
+      "state_index": 136,
+      "filename": "observable_sweep_136.jld2",
+      "energy": -1.238830826225131,
+      "sweep": 136
+    },
+    {
+      "state_index": 137,
+      "filename": "observable_sweep_137.jld2",
+      "energy": -1.2388308262251306,
+      "sweep": 137
+    },
+    {
+      "state_index": 138,
+      "filename": "observable_sweep_138.jld2",
+      "energy": -1.2388308262251304,
+      "sweep": 138
+    },
+    {
+      "state_index": 139,
+      "filename": "observable_sweep_139.jld2",
+      "energy": -1.2388308262251297,
+      "sweep": 139
+    },
+    {
+      "state_index": 140,
+      "filename": "observable_sweep_140.jld2",
+      "energy": -1.2388308262251277,
+      "sweep": 140
+    },
+    {
+      "state_index": 141,
+      "filename": "observable_sweep_141.jld2",
+      "energy": -1.2190588647260747,
+      "sweep": 141
+    },
+    {
+      "state_index": 142,
+      "filename": "observable_sweep_142.jld2",
+      "energy": -1.2055728057861426,
+      "sweep": 142
+    },
+    {
+      "state_index": 143,
+      "filename": "observable_sweep_143.jld2",
+      "energy": -1.2055728057861421,
+      "sweep": 143
+    },
+    {
+      "state_index": 144,
+      "filename": "observable_sweep_144.jld2",
+      "energy": -1.2055728057861408,
+      "sweep": 144
+    },
+    {
+      "state_index": 145,
+      "filename": "observable_sweep_145.jld2",
+      "energy": -1.2055728057861397,
+      "sweep": 145
+    },
+    {
+      "state_index": 146,
+      "filename": "observable_sweep_146.jld2",
+      "energy": -1.1997285761747267,
+      "sweep": 146
+    },
+    {
+      "state_index": 147,
+      "filename": "observable_sweep_147.jld2",
+      "energy": -1.1997285761747243,
+      "sweep": 147
+    },
+    {
+      "state_index": 148,
+      "filename": "observable_sweep_148.jld2",
+      "energy": -1.1858008442870873,
+      "sweep": 148
+    },
+    {
+      "state_index": 149,
+      "filename": "observable_sweep_149.jld2",
+      "energy": -1.1842268883414064,
+      "sweep": 149
+    },
+    {
+      "state_index": 150,
+      "filename": "observable_sweep_150.jld2",
+      "energy": -1.181271767274984,
+      "sweep": 150
+    },
+    {
+      "state_index": 151,
+      "filename": "observable_sweep_151.jld2",
+      "energy": -1.1707408294014718,
+      "sweep": 151
+    },
+    {
+      "state_index": 152,
+      "filename": "observable_sweep_152.jld2",
+      "energy": -1.16647055573574,
+      "sweep": 152
+    },
+    {
+      "state_index": 153,
+      "filename": "observable_sweep_153.jld2",
+      "energy": -1.164100732638706,
+      "sweep": 153
+    },
+    {
+      "state_index": 154,
+      "filename": "observable_sweep_154.jld2",
+      "energy": -1.1641007326387038,
+      "sweep": 154
+    },
+    {
+      "state_index": 155,
+      "filename": "observable_sweep_155.jld2",
+      "energy": -1.164100732638703,
+      "sweep": 155
+    },
+    {
+      "state_index": 156,
+      "filename": "observable_sweep_156.jld2",
+      "energy": -1.1509688679024193,
+      "sweep": 156
+    },
+    {
+      "state_index": 157,
+      "filename": "observable_sweep_157.jld2",
+      "energy": -1.1509688679024188,
+      "sweep": 157
+    },
+    {
+      "state_index": 158,
+      "filename": "observable_sweep_158.jld2",
+      "energy": -1.1509688679024186,
+      "sweep": 158
+    },
+    {
+      "state_index": 159,
+      "filename": "observable_sweep_159.jld2",
+      "energy": -1.150968867902418,
+      "sweep": 159
+    },
+    {
+      "state_index": 160,
+      "filename": "observable_sweep_160.jld2",
+      "energy": -1.1456439237389606,
+      "sweep": 160
+    },
+    {
+      "state_index": 161,
+      "filename": "observable_sweep_161.jld2",
+      "energy": -1.1456439237389595,
+      "sweep": 161
+    },
+    {
+      "state_index": 162,
+      "filename": "observable_sweep_162.jld2",
+      "energy": -1.130842712199717,
+      "sweep": 162
+    },
+    {
+      "state_index": 163,
+      "filename": "observable_sweep_163.jld2",
+      "energy": -1.1308427121997149,
+      "sweep": 163
+    },
+    {
+      "state_index": 164,
+      "filename": "observable_sweep_164.jld2",
+      "energy": -1.1177108474634303,
+      "sweep": 164
+    },
+    {
+      "state_index": 165,
+      "filename": "observable_sweep_165.jld2",
+      "energy": -1.1094967947549823,
+      "sweep": 165
+    },
+    {
+      "state_index": 166,
+      "filename": "observable_sweep_166.jld2",
+      "energy": -1.1065416736885592,
+      "sweep": 166
+    },
+    {
+      "state_index": 167,
+      "filename": "observable_sweep_167.jld2",
+      "energy": -1.1065416736885592,
+      "sweep": 167
+    },
+    {
+      "state_index": 168,
+      "filename": "observable_sweep_168.jld2",
+      "energy": -1.0960107358150486,
+      "sweep": 168
+    },
+    {
+      "state_index": 169,
+      "filename": "observable_sweep_169.jld2",
+      "energy": -1.0960107358150475,
+      "sweep": 169
+    },
+    {
+      "state_index": 170,
+      "filename": "observable_sweep_170.jld2",
+      "energy": -1.0910399858552382,
+      "sweep": 170
+    },
+    {
+      "state_index": 171,
+      "filename": "observable_sweep_171.jld2",
+      "energy": -1.0762387743159951,
+      "sweep": 171
+    },
+    {
+      "state_index": 172,
+      "filename": "observable_sweep_172.jld2",
+      "energy": -1.0762387743159947,
+      "sweep": 172
+    },
+    {
+      "state_index": 173,
+      "filename": "observable_sweep_173.jld2",
+      "energy": -1.0762387743159945,
+      "sweep": 173
+    },
+    {
+      "state_index": 174,
+      "filename": "observable_sweep_174.jld2",
+      "energy": -1.0762387743159942,
+      "sweep": 174
+    },
+    {
+      "state_index": 175,
+      "filename": "observable_sweep_175.jld2",
+      "energy": -1.070913830152536,
+      "sweep": 175
+    },
+    {
+      "state_index": 176,
+      "filename": "observable_sweep_176.jld2",
+      "energy": -1.0709138301525354,
+      "sweep": 176
+    },
+    {
+      "state_index": 177,
+      "filename": "observable_sweep_177.jld2",
+      "energy": -1.070913830152535,
+      "sweep": 177
+    },
+    {
+      "state_index": 178,
+      "filename": "observable_sweep_178.jld2",
+      "energy": -1.0577819654162515,
+      "sweep": 178
+    },
+    {
+      "state_index": 179,
+      "filename": "observable_sweep_179.jld2",
+      "energy": -1.05778196541625,
+      "sweep": 179
+    },
+    {
+      "state_index": 180,
+      "filename": "observable_sweep_180.jld2",
+      "energy": -1.0519377358048385,
+      "sweep": 180
+    },
+    {
+      "state_index": 181,
+      "filename": "observable_sweep_181.jld2",
+      "energy": -1.042980753877009,
+      "sweep": 181
+    },
+    {
+      "state_index": 182,
+      "filename": "observable_sweep_182.jld2",
+      "energy": -1.041406797931326,
+      "sweep": 182
+    },
+    {
+      "state_index": 183,
+      "filename": "observable_sweep_183.jld2",
+      "energy": -1.036081853767866,
+      "sweep": 183
+    },
+    {
+      "state_index": 184,
+      "filename": "observable_sweep_184.jld2",
+      "energy": -1.0318115801021341,
+      "sweep": 184
+    },
+    {
+      "state_index": 185,
+      "filename": "observable_sweep_185.jld2",
+      "energy": -1.0212806422286242,
+      "sweep": 185
+    },
+    {
+      "state_index": 186,
+      "filename": "observable_sweep_186.jld2",
+      "energy": -1.0186797153658496,
+      "sweep": 186
+    },
+    {
+      "state_index": 187,
+      "filename": "observable_sweep_187.jld2",
+      "energy": -1.0163098922688185,
+      "sweep": 187
+    },
+    {
+      "state_index": 188,
+      "filename": "observable_sweep_188.jld2",
+      "energy": -1.0163098922688159,
+      "sweep": 188
+    },
+    {
+      "state_index": 189,
+      "filename": "observable_sweep_189.jld2",
+      "energy": -1.0163098922688136,
+      "sweep": 189
+    },
+    {
+      "state_index": 190,
+      "filename": "observable_sweep_190.jld2",
+      "energy": -1.0163098922688119,
+      "sweep": 190
+    },
+    {
+      "state_index": 191,
+      "filename": "observable_sweep_191.jld2",
+      "energy": -1.0081487774923388,
+      "sweep": 191
+    },
+    {
+      "state_index": 192,
+      "filename": "observable_sweep_192.jld2",
+      "energy": -1.0028238333288786,
+      "sweep": 192
+    },
+    {
+      "state_index": 193,
+      "filename": "observable_sweep_193.jld2",
+      "energy": -0.996183736566111,
+      "sweep": 193
+    },
+    {
+      "state_index": 194,
+      "filename": "observable_sweep_194.jld2",
+      "energy": -0.9830518718298278,
+      "sweep": 194
+    },
+    {
+      "state_index": 195,
+      "filename": "observable_sweep_195.jld2",
+      "energy": -0.9830518718298272,
+      "sweep": 195
+    },
+    {
+      "state_index": 196,
+      "filename": "observable_sweep_196.jld2",
+      "energy": -0.9830518718298266,
+      "sweep": 196
+    },
+    {
+      "state_index": 197,
+      "filename": "observable_sweep_197.jld2",
+      "energy": -0.9830518718298253,
+      "sweep": 197
+    },
+    {
+      "state_index": 198,
+      "filename": "observable_sweep_198.jld2",
+      "energy": -0.983051871829825,
+      "sweep": 198
+    },
+    {
+      "state_index": 199,
+      "filename": "observable_sweep_199.jld2",
+      "energy": -0.9772076422184139,
+      "sweep": 199
+    },
+    {
+      "state_index": 200,
+      "filename": "observable_sweep_200.jld2",
+      "energy": -0.9666767043449043,
+      "sweep": 200
+    },
+    {
+      "state_index": 201,
+      "filename": "observable_sweep_201.jld2",
+      "energy": -0.961351760181442,
+      "sweep": 201
+    },
+    {
+      "state_index": 202,
+      "filename": "observable_sweep_202.jld2",
+      "energy": -0.9613517601814411,
+      "sweep": 202
+    },
+    {
+      "state_index": 203,
+      "filename": "observable_sweep_203.jld2",
+      "energy": -0.9482198954451571,
+      "sweep": 203
+    },
+    {
+      "state_index": 204,
+      "filename": "observable_sweep_204.jld2",
+      "energy": -0.9482198954451562,
+      "sweep": 204
+    },
+    {
+      "state_index": 205,
+      "filename": "observable_sweep_205.jld2",
+      "energy": -0.9439496217794264,
+      "sweep": 205
+    },
+    {
+      "state_index": 206,
+      "filename": "observable_sweep_206.jld2",
+      "energy": -0.9415797986823903,
+      "sweep": 206
+    },
+    {
+      "state_index": 207,
+      "filename": "observable_sweep_207.jld2",
+      "energy": -0.9415797986823894,
+      "sweep": 207
+    },
+    {
+      "state_index": 208,
+      "filename": "observable_sweep_208.jld2",
+      "energy": -0.9415797986823892,
+      "sweep": 208
+    },
+    {
+      "state_index": 209,
+      "filename": "observable_sweep_209.jld2",
+      "energy": -0.933418683905916,
+      "sweep": 209
+    },
+    {
+      "state_index": 210,
+      "filename": "observable_sweep_210.jld2",
+      "energy": -0.9284479339461088,
+      "sweep": 210
+    },
+    {
+      "state_index": 211,
+      "filename": "observable_sweep_211.jld2",
+      "energy": -0.9284479339461055,
+      "sweep": 211
+    },
+    {
+      "state_index": 212,
+      "filename": "observable_sweep_212.jld2",
+      "energy": -0.9280937397424552,
+      "sweep": 212
+    },
+    {
+      "state_index": 213,
+      "filename": "observable_sweep_213.jld2",
+      "energy": -0.9231229897826458,
+      "sweep": 213
+    },
+    {
+      "state_index": 214,
+      "filename": "observable_sweep_214.jld2",
+      "energy": -0.9149618750061709,
+      "sweep": 214
+    },
+    {
+      "state_index": 215,
+      "filename": "observable_sweep_215.jld2",
+      "energy": -0.912592051909133,
+      "sweep": 215
+    },
+    {
+      "state_index": 216,
+      "filename": "observable_sweep_216.jld2",
+      "energy": -0.9083217782434021,
+      "sweep": 216
+    },
+    {
+      "state_index": 217,
+      "filename": "observable_sweep_217.jld2",
+      "energy": -0.9083217782434018,
+      "sweep": 217
+    },
+    {
+      "state_index": 218,
+      "filename": "observable_sweep_218.jld2",
+      "energy": -0.9083217782434015,
+      "sweep": 218
+    },
+    {
+      "state_index": 219,
+      "filename": "observable_sweep_219.jld2",
+      "energy": -0.9067478222977207,
+      "sweep": 219
+    },
+    {
+      "state_index": 220,
+      "filename": "observable_sweep_220.jld2",
+      "energy": -0.8951899135071177,
+      "sweep": 220
+    },
+    {
+      "state_index": 221,
+      "filename": "observable_sweep_221.jld2",
+      "energy": -0.8866216665950182,
+      "sweep": 221
+    },
+    {
+      "state_index": 222,
+      "filename": "observable_sweep_222.jld2",
+      "energy": -0.8734898018587326,
+      "sweep": 222
+    },
+    {
+      "state_index": 223,
+      "filename": "observable_sweep_223.jld2",
+      "energy": -0.8734898018587324,
+      "sweep": 223
+    },
+    {
+      "state_index": 224,
+      "filename": "observable_sweep_224.jld2",
+      "energy": -0.8734898018587322,
+      "sweep": 224
+    },
+    {
+      "state_index": 225,
+      "filename": "observable_sweep_225.jld2",
+      "energy": -0.8734898018587317,
+      "sweep": 225
+    },
+    {
+      "state_index": 226,
+      "filename": "observable_sweep_226.jld2",
+      "energy": -0.8734898018587315,
+      "sweep": 226
+    },
+    {
+      "state_index": 227,
+      "filename": "observable_sweep_227.jld2",
+      "energy": -0.8734898018587312,
+      "sweep": 227
+    },
+    {
+      "state_index": 228,
+      "filename": "observable_sweep_228.jld2",
+      "energy": -0.8681648576952727,
+      "sweep": 228
+    },
+    {
+      "state_index": 229,
+      "filename": "observable_sweep_229.jld2",
+      "energy": -0.8537178403596802,
+      "sweep": 229
+    },
+    {
+      "state_index": 230,
+      "filename": "observable_sweep_230.jld2",
+      "energy": -0.8537178403596801,
+      "sweep": 230
+    },
+    {
+      "state_index": 231,
+      "filename": "observable_sweep_231.jld2",
+      "energy": -0.8483928961962213,
+      "sweep": 231
+    },
+    {
+      "state_index": 232,
+      "filename": "observable_sweep_232.jld2",
+      "energy": -0.8483928961962192,
+      "sweep": 232
+    },
+    {
+      "state_index": 233,
+      "filename": "observable_sweep_233.jld2",
+      "energy": -0.8402317814197484,
+      "sweep": 233
+    },
+    {
+      "state_index": 234,
+      "filename": "observable_sweep_234.jld2",
+      "energy": -0.8402317814197451,
+      "sweep": 234
+    },
+    {
+      "state_index": 235,
+      "filename": "observable_sweep_235.jld2",
+      "energy": -0.8378619583227097,
+      "sweep": 235
+    },
+    {
+      "state_index": 236,
+      "filename": "observable_sweep_236.jld2",
+      "energy": -0.837861958322708,
+      "sweep": 236
+    },
+    {
+      "state_index": 237,
+      "filename": "observable_sweep_237.jld2",
+      "energy": -0.8320177287112971,
+      "sweep": 237
+    },
+    {
+      "state_index": 238,
+      "filename": "observable_sweep_238.jld2",
+      "energy": -0.820459819920693,
+      "sweep": 238
+    },
+    {
+      "state_index": 239,
+      "filename": "observable_sweep_239.jld2",
+      "energy": -0.8188858639750118,
+      "sweep": 239
+    },
+    {
+      "state_index": 240,
+      "filename": "observable_sweep_240.jld2",
+      "energy": -0.8135609198115554,
+      "sweep": 240
+    },
+    {
+      "state_index": 241,
+      "filename": "observable_sweep_241.jld2",
+      "energy": -0.8135609198115512,
+      "sweep": 241
+    },
+    {
+      "state_index": 242,
+      "filename": "observable_sweep_242.jld2",
+      "energy": -0.798759708272309,
+      "sweep": 242
+    },
+    {
+      "state_index": 243,
+      "filename": "observable_sweep_243.jld2",
+      "energy": -0.7987597082723085,
+      "sweep": 243
+    },
+    {
+      "state_index": 244,
+      "filename": "observable_sweep_244.jld2",
+      "energy": -0.7987597082723079,
+      "sweep": 244
+    },
+    {
+      "state_index": 245,
+      "filename": "observable_sweep_245.jld2",
+      "energy": -0.798759708272306,
+      "sweep": 245
+    },
+    {
+      "state_index": 246,
+      "filename": "observable_sweep_246.jld2",
+      "energy": -0.793788958312499,
+      "sweep": 246
+    },
+    {
+      "state_index": 247,
+      "filename": "observable_sweep_247.jld2",
+      "energy": -0.7934347641088497,
+      "sweep": 247
+    },
+    {
+      "state_index": 248,
+      "filename": "observable_sweep_248.jld2",
+      "energy": -0.7856278435360248,
+      "sweep": 248
+    },
+    {
+      "state_index": 249,
+      "filename": "observable_sweep_249.jld2",
+      "energy": -0.7856278435360248,
+      "sweep": 249
+    },
+    {
+      "state_index": 250,
+      "filename": "observable_sweep_250.jld2",
+      "energy": -0.7832580204389881,
+      "sweep": 250
+    },
+    {
+      "state_index": 251,
+      "filename": "observable_sweep_251.jld2",
+      "energy": -0.7803028993725651,
+      "sweep": 251
+    },
+    {
+      "state_index": 252,
+      "filename": "observable_sweep_252.jld2",
+      "energy": -0.7803028993725641,
+      "sweep": 252
+    },
+    {
+      "state_index": 253,
+      "filename": "observable_sweep_253.jld2",
+      "energy": -0.7803028993725634,
+      "sweep": 253
+    },
+    {
+      "state_index": 254,
+      "filename": "observable_sweep_254.jld2",
+      "energy": -0.7736628026097967,
+      "sweep": 254
+    },
+    {
+      "state_index": 255,
+      "filename": "observable_sweep_255.jld2",
+      "energy": -0.7655016878333236,
+      "sweep": 255
+    },
+    {
+      "state_index": 256,
+      "filename": "observable_sweep_256.jld2",
+      "energy": -0.763131864736285,
+      "sweep": 256
+    },
+    {
+      "state_index": 257,
+      "filename": "observable_sweep_257.jld2",
+      "energy": -0.7605309378735116,
+      "sweep": 257
+    },
+    {
+      "state_index": 258,
+      "filename": "observable_sweep_258.jld2",
+      "energy": -0.7499999999999991,
+      "sweep": 258
+    },
+    {
+      "state_index": 259,
+      "filename": "observable_sweep_259.jld2",
+      "energy": -0.7446750558365416,
+      "sweep": 259
+    },
+    {
+      "state_index": 260,
+      "filename": "observable_sweep_260.jld2",
+      "energy": -0.7441557703885874,
+      "sweep": 260
+    },
+    {
+      "state_index": 261,
+      "filename": "observable_sweep_261.jld2",
+      "energy": -0.7388308262251316,
+      "sweep": 261
+    },
+    {
+      "state_index": 262,
+      "filename": "observable_sweep_262.jld2",
+      "energy": -0.7388308262251283,
+      "sweep": 262
+    },
+    {
+      "state_index": 263,
+      "filename": "observable_sweep_263.jld2",
+      "energy": -0.7388308262251272,
+      "sweep": 263
+    },
+    {
+      "state_index": 264,
+      "filename": "observable_sweep_264.jld2",
+      "energy": -0.7388308262251252,
+      "sweep": 264
+    },
+    {
+      "state_index": 265,
+      "filename": "observable_sweep_265.jld2",
+      "energy": -0.7256989614888423,
+      "sweep": 265
+    },
+    {
+      "state_index": 266,
+      "filename": "observable_sweep_266.jld2",
+      "energy": -0.7190588647260747,
+      "sweep": 266
+    },
+    {
+      "state_index": 267,
+      "filename": "observable_sweep_267.jld2",
+      "energy": -0.7108977499496002,
+      "sweep": 267
+    },
+    {
+      "state_index": 268,
+      "filename": "observable_sweep_268.jld2",
+      "energy": -0.7108977499495992,
+      "sweep": 268
+    },
+    {
+      "state_index": 269,
+      "filename": "observable_sweep_269.jld2",
+      "energy": -0.7085279268525637,
+      "sweep": 269
+    },
+    {
+      "state_index": 270,
+      "filename": "observable_sweep_270.jld2",
+      "energy": -0.7055728057861438,
+      "sweep": 270
+    },
+    {
+      "state_index": 271,
+      "filename": "observable_sweep_271.jld2",
+      "energy": -0.7055728057861438,
+      "sweep": 271
+    },
+    {
+      "state_index": 272,
+      "filename": "observable_sweep_272.jld2",
+      "energy": -0.7055728057861406,
+      "sweep": 272
+    },
+    {
+      "state_index": 273,
+      "filename": "observable_sweep_273.jld2",
+      "energy": -0.70557280578614,
+      "sweep": 273
+    },
+    {
+      "state_index": 274,
+      "filename": "observable_sweep_274.jld2",
+      "energy": -0.7055728057861396,
+      "sweep": 274
+    },
+    {
+      "state_index": 275,
+      "filename": "observable_sweep_275.jld2",
+      "energy": -0.6924409410498561,
+      "sweep": 275
+    },
+    {
+      "state_index": 276,
+      "filename": "observable_sweep_276.jld2",
+      "energy": -0.6900711179528198,
+      "sweep": 276
+    },
+    {
+      "state_index": 277,
+      "filename": "observable_sweep_277.jld2",
+      "energy": -0.6900711179528193,
+      "sweep": 277
+    },
+    {
+      "state_index": 278,
+      "filename": "observable_sweep_278.jld2",
+      "energy": -0.6858008442870875,
+      "sweep": 278
+    },
+    {
+      "state_index": 279,
+      "filename": "observable_sweep_279.jld2",
+      "energy": -0.6842268883414074,
+      "sweep": 279
+    },
+    {
+      "state_index": 280,
+      "filename": "observable_sweep_280.jld2",
+      "energy": -0.6752699064135768,
+      "sweep": 280
+    },
+    {
+      "state_index": 281,
+      "filename": "observable_sweep_281.jld2",
+      "energy": -0.6707408294014713,
+      "sweep": 281
+    },
+    {
+      "state_index": 282,
+      "filename": "observable_sweep_282.jld2",
+      "energy": -0.669944962250117,
+      "sweep": 282
+    },
+    {
+      "state_index": 283,
+      "filename": "observable_sweep_283.jld2",
+      "energy": -0.6641007326387046,
+      "sweep": 283
+    },
+    {
+      "state_index": 284,
+      "filename": "observable_sweep_284.jld2",
+      "energy": -0.6641007326387037,
+      "sweep": 284
+    },
+    {
+      "state_index": 285,
+      "filename": "observable_sweep_285.jld2",
+      "energy": -0.6568130975138313,
+      "sweep": 285
+    },
+    {
+      "state_index": 286,
+      "filename": "observable_sweep_286.jld2",
+      "energy": -0.6509688679024214,
+      "sweep": 286
+    },
+    {
+      "state_index": 287,
+      "filename": "observable_sweep_287.jld2",
+      "energy": -0.650968867902421,
+      "sweep": 287
+    },
+    {
+      "state_index": 288,
+      "filename": "observable_sweep_288.jld2",
+      "energy": -0.6509688679024201,
+      "sweep": 288
+    },
+    {
+      "state_index": 289,
+      "filename": "observable_sweep_289.jld2",
+      "energy": -0.6509688679024188,
+      "sweep": 289
+    },
+    {
+      "state_index": 290,
+      "filename": "observable_sweep_290.jld2",
+      "energy": -0.6509688679024185,
+      "sweep": 290
+    },
+    {
+      "state_index": 291,
+      "filename": "observable_sweep_291.jld2",
+      "energy": -0.6509688679024164,
+      "sweep": 291
+    },
+    {
+      "state_index": 292,
+      "filename": "observable_sweep_292.jld2",
+      "energy": -0.6456439237389588,
+      "sweep": 292
+    },
+    {
+      "state_index": 293,
+      "filename": "observable_sweep_293.jld2",
+      "energy": -0.6351129858654487,
+      "sweep": 293
+    },
+    {
+      "state_index": 294,
+      "filename": "observable_sweep_294.jld2",
+      "energy": -0.6308427121997162,
+      "sweep": 294
+    },
+    {
+      "state_index": 295,
+      "filename": "observable_sweep_295.jld2",
+      "energy": -0.6308427121997161,
+      "sweep": 295
+    },
+    {
+      "state_index": 296,
+      "filename": "observable_sweep_296.jld2",
+      "energy": -0.6177108474634325,
+      "sweep": 296
+    },
+    {
+      "state_index": 297,
+      "filename": "observable_sweep_297.jld2",
+      "energy": -0.6177108474634319,
+      "sweep": 297
+    },
+    {
+      "state_index": 298,
+      "filename": "observable_sweep_298.jld2",
+      "energy": -0.6177108474634309,
+      "sweep": 298
+    },
+    {
+      "state_index": 299,
+      "filename": "observable_sweep_299.jld2",
+      "energy": -0.6153410243663974,
+      "sweep": 299
+    },
+    {
+      "state_index": 300,
+      "filename": "observable_sweep_300.jld2",
+      "energy": -0.6153410243663955,
+      "sweep": 300
+    },
+    {
+      "state_index": 301,
+      "filename": "observable_sweep_301.jld2",
+      "energy": -0.6153410243663948,
+      "sweep": 301
+    },
+    {
+      "state_index": 302,
+      "filename": "observable_sweep_302.jld2",
+      "energy": -0.6153410243663942,
+      "sweep": 302
+    },
+    {
+      "state_index": 303,
+      "filename": "observable_sweep_303.jld2",
+      "energy": -0.6094967947549792,
+      "sweep": 303
+    },
+    {
+      "state_index": 304,
+      "filename": "observable_sweep_304.jld2",
+      "energy": -0.5960107358150486,
+      "sweep": 304
+    },
+    {
+      "state_index": 305,
+      "filename": "observable_sweep_305.jld2",
+      "energy": -0.5960107358150477,
+      "sweep": 305
+    },
+    {
+      "state_index": 306,
+      "filename": "observable_sweep_306.jld2",
+      "energy": -0.5910399858552391,
+      "sweep": 306
+    },
+    {
+      "state_index": 307,
+      "filename": "observable_sweep_307.jld2",
+      "energy": -0.5820830039274079,
+      "sweep": 307
+    },
+    {
+      "state_index": 308,
+      "filename": "observable_sweep_308.jld2",
+      "energy": -0.5820830039274059,
+      "sweep": 308
+    },
+    {
+      "state_index": 309,
+      "filename": "observable_sweep_309.jld2",
+      "energy": -0.5805090479817266,
+      "sweep": 309
+    },
+    {
+      "state_index": 310,
+      "filename": "observable_sweep_310.jld2",
+      "energy": -0.5762387743159959,
+      "sweep": 310
+    },
+    {
+      "state_index": 311,
+      "filename": "observable_sweep_311.jld2",
+      "energy": -0.5762387743159956,
+      "sweep": 311
+    },
+    {
+      "state_index": 312,
+      "filename": "observable_sweep_312.jld2",
+      "energy": -0.5762387743159939,
+      "sweep": 312
+    },
+    {
+      "state_index": 313,
+      "filename": "observable_sweep_313.jld2",
+      "energy": -0.5762387743159935,
+      "sweep": 313
+    },
+    {
+      "state_index": 314,
+      "filename": "observable_sweep_314.jld2",
+      "energy": -0.5762387743159926,
+      "sweep": 314
+    },
+    {
+      "state_index": 315,
+      "filename": "observable_sweep_315.jld2",
+      "energy": -0.570913830152536,
+      "sweep": 315
+    },
+    {
+      "state_index": 316,
+      "filename": "observable_sweep_316.jld2",
+      "energy": -0.5631069095797105,
+      "sweep": 316
+    },
+    {
+      "state_index": 317,
+      "filename": "observable_sweep_317.jld2",
+      "energy": -0.5607370864826713,
+      "sweep": 317
+    },
+    {
+      "state_index": 318,
+      "filename": "observable_sweep_318.jld2",
+      "energy": -0.5603828922790238,
+      "sweep": 318
+    },
+    {
+      "state_index": 319,
+      "filename": "observable_sweep_319.jld2",
+      "energy": -0.557781965416251,
+      "sweep": 319
+    },
+    {
+      "state_index": 320,
+      "filename": "observable_sweep_320.jld2",
+      "energy": -0.5577819654162507,
+      "sweep": 320
+    },
+    {
+      "state_index": 321,
+      "filename": "observable_sweep_321.jld2",
+      "energy": -0.5472510275427394,
+      "sweep": 321
+    },
+    {
+      "state_index": 322,
+      "filename": "observable_sweep_322.jld2",
+      "energy": -0.5472510275427379,
+      "sweep": 322
+    },
+    {
+      "state_index": 323,
+      "filename": "observable_sweep_323.jld2",
+      "energy": -0.5429807538770076,
+      "sweep": 323
+    },
+    {
+      "state_index": 324,
+      "filename": "observable_sweep_324.jld2",
+      "energy": -0.5429807538770062,
+      "sweep": 324
+    },
+    {
+      "state_index": 325,
+      "filename": "observable_sweep_325.jld2",
+      "energy": -0.541406797931326,
+      "sweep": 325
+    },
+    {
+      "state_index": 326,
+      "filename": "observable_sweep_326.jld2",
+      "energy": -0.5406109307799711,
+      "sweep": 326
+    },
+    {
+      "state_index": 327,
+      "filename": "observable_sweep_327.jld2",
+      "energy": -0.5406109307799699,
+      "sweep": 327
+    },
+    {
+      "state_index": 328,
+      "filename": "observable_sweep_328.jld2",
+      "energy": -0.5274790660436856,
+      "sweep": 328
+    },
+    {
+      "state_index": 329,
+      "filename": "observable_sweep_329.jld2",
+      "energy": -0.527479066043685,
+      "sweep": 329
+    },
+    {
+      "state_index": 330,
+      "filename": "observable_sweep_330.jld2",
+      "energy": -0.5221541218802268,
+      "sweep": 330
+    },
+    {
+      "state_index": 331,
+      "filename": "observable_sweep_331.jld2",
+      "energy": -0.5212806422286236,
+      "sweep": 331
+    },
+    {
+      "state_index": 332,
+      "filename": "observable_sweep_332.jld2",
+      "energy": -0.5163098922688152,
+      "sweep": 332
+    },
+    {
+      "state_index": 333,
+      "filename": "observable_sweep_333.jld2",
+      "energy": -0.5163098922688147,
+      "sweep": 333
+    },
+    {
+      "state_index": 334,
+      "filename": "observable_sweep_334.jld2",
+      "energy": -0.5081487774923386,
+      "sweep": 334
+    },
+    {
+      "state_index": 335,
+      "filename": "observable_sweep_335.jld2",
+      "energy": -0.5073529103409837,
+      "sweep": 335
+    },
+    {
+      "state_index": 336,
+      "filename": "observable_sweep_336.jld2",
+      "energy": -0.5057789543953032,
+      "sweep": 336
+    },
+    {
+      "state_index": 337,
+      "filename": "observable_sweep_337.jld2",
+      "energy": -0.5057789543953021,
+      "sweep": 337
+    },
+    {
+      "state_index": 338,
+      "filename": "observable_sweep_338.jld2",
+      "energy": -0.5028238333288784,
+      "sweep": 338
+    },
+    {
+      "state_index": 339,
+      "filename": "observable_sweep_339.jld2",
+      "energy": -0.4883768159932854,
+      "sweep": 339
+    },
+    {
+      "state_index": 340,
+      "filename": "observable_sweep_340.jld2",
+      "energy": -0.48600699289624943,
+      "sweep": 340
+    },
+    {
+      "state_index": 341,
+      "filename": "observable_sweep_341.jld2",
+      "energy": -0.4830518718298261,
+      "sweep": 341
+    },
+    {
+      "state_index": 342,
+      "filename": "observable_sweep_342.jld2",
+      "energy": -0.48305187182982584,
+      "sweep": 342
+    },
+    {
+      "state_index": 343,
+      "filename": "observable_sweep_343.jld2",
+      "energy": -0.4830518718298253,
+      "sweep": 343
+    },
+    {
+      "state_index": 344,
+      "filename": "observable_sweep_344.jld2",
+      "energy": -0.48305187182982334,
+      "sweep": 344
+    },
+    {
+      "state_index": 345,
+      "filename": "observable_sweep_345.jld2",
+      "energy": -0.47252093395631506,
+      "sweep": 345
+    },
+    {
+      "state_index": 346,
+      "filename": "observable_sweep_346.jld2",
+      "energy": -0.47252093395631434,
+      "sweep": 346
+    },
+    {
+      "state_index": 347,
+      "filename": "observable_sweep_347.jld2",
+      "energy": -0.47252093395631434,
+      "sweep": 347
+    },
+    {
+      "state_index": 348,
+      "filename": "observable_sweep_348.jld2",
+      "energy": -0.4725209339563127,
+      "sweep": 348
+    },
+    {
+      "state_index": 349,
+      "filename": "observable_sweep_349.jld2",
+      "energy": -0.4675501839965057,
+      "sweep": 349
+    },
+    {
+      "state_index": 350,
+      "filename": "observable_sweep_350.jld2",
+      "energy": -0.46667670434490216,
+      "sweep": 350
+    },
+    {
+      "state_index": 351,
+      "filename": "observable_sweep_351.jld2",
+      "energy": -0.452748972457265,
+      "sweep": 351
+    },
+    {
+      "state_index": 352,
+      "filename": "observable_sweep_352.jld2",
+      "energy": -0.4527489724572616,
+      "sweep": 352
+    },
+    {
+      "state_index": 353,
+      "filename": "observable_sweep_353.jld2",
+      "energy": -0.44821989544515906,
+      "sweep": 353
+    },
+    {
+      "state_index": 354,
+      "filename": "observable_sweep_354.jld2",
+      "energy": -0.4482198954451582,
+      "sweep": 354
+    },
+    {
+      "state_index": 355,
+      "filename": "observable_sweep_355.jld2",
+      "energy": -0.4474240282938017,
+      "sweep": 355
+    },
+    {
+      "state_index": 356,
+      "filename": "observable_sweep_356.jld2",
+      "energy": -0.4415797986823895,
+      "sweep": 356
+    },
+    {
+      "state_index": 357,
+      "filename": "observable_sweep_357.jld2",
+      "energy": -0.4342921635575162,
+      "sweep": 357
+    },
+    {
+      "state_index": 358,
+      "filename": "observable_sweep_358.jld2",
+      "energy": -0.4334186839059133,
+      "sweep": 358
+    },
+    {
+      "state_index": 359,
+      "filename": "observable_sweep_359.jld2",
+      "energy": -0.43104886080887833,
+      "sweep": 359
+    },
+    {
+      "state_index": 360,
+      "filename": "observable_sweep_360.jld2",
+      "energy": -0.42844793394610575,
+      "sweep": 360
+    },
+    {
+      "state_index": 361,
+      "filename": "observable_sweep_361.jld2",
+      "energy": -0.42844793394610453,
+      "sweep": 361
+    },
+    {
+      "state_index": 362,
+      "filename": "observable_sweep_362.jld2",
+      "energy": -0.42809373974245496,
+      "sweep": 362
+    },
+    {
+      "state_index": 363,
+      "filename": "observable_sweep_363.jld2",
+      "energy": -0.417916996072593,
+      "sweep": 363
+    },
+    {
+      "state_index": 364,
+      "filename": "observable_sweep_364.jld2",
+      "energy": -0.41791699607259275,
+      "sweep": 364
+    },
+    {
+      "state_index": 365,
+      "filename": "observable_sweep_365.jld2",
+      "energy": -0.41496187500616916,
+      "sweep": 365
+    },
+    {
+      "state_index": 366,
+      "filename": "observable_sweep_366.jld2",
+      "energy": -0.4125920519091366,
+      "sweep": 366
+    },
+    {
+      "state_index": 367,
+      "filename": "observable_sweep_367.jld2",
+      "energy": -0.41259205190913384,
+      "sweep": 367
+    },
+    {
+      "state_index": 368,
+      "filename": "observable_sweep_368.jld2",
+      "energy": -0.41259205190913323,
+      "sweep": 368
+    },
+    {
+      "state_index": 369,
+      "filename": "observable_sweep_369.jld2",
+      "energy": -0.4083217782434025,
+      "sweep": 369
+    },
+    {
+      "state_index": 370,
+      "filename": "observable_sweep_370.jld2",
+      "energy": -0.4083217782434015,
+      "sweep": 370
+    },
+    {
+      "state_index": 371,
+      "filename": "observable_sweep_371.jld2",
+      "energy": -0.3977908403698905,
+      "sweep": 371
+    },
+    {
+      "state_index": 372,
+      "filename": "observable_sweep_372.jld2",
+      "energy": -0.39779084036988965,
+      "sweep": 372
+    },
+    {
+      "state_index": 373,
+      "filename": "observable_sweep_373.jld2",
+      "energy": -0.3951899135071171,
+      "sweep": 373
+    },
+    {
+      "state_index": 374,
+      "filename": "observable_sweep_374.jld2",
+      "energy": -0.39282009041008076,
+      "sweep": 374
+    },
+    {
+      "state_index": 375,
+      "filename": "observable_sweep_375.jld2",
+      "energy": -0.3928200904100802,
+      "sweep": 375
+    },
+    {
+      "state_index": 376,
+      "filename": "observable_sweep_376.jld2",
+      "energy": -0.3846589756336054,
+      "sweep": 376
+    },
+    {
+      "state_index": 377,
+      "filename": "observable_sweep_377.jld2",
+      "energy": -0.37933403147014716,
+      "sweep": 377
+    },
+    {
+      "state_index": 378,
+      "filename": "observable_sweep_378.jld2",
+      "energy": -0.3793340314701465,
+      "sweep": 378
+    },
+    {
+      "state_index": 379,
+      "filename": "observable_sweep_379.jld2",
+      "energy": -0.3734898018587352,
+      "sweep": 379
+    },
+    {
+      "state_index": 380,
+      "filename": "observable_sweep_380.jld2",
+      "energy": -0.373489801858734,
+      "sweep": 380
+    },
+    {
+      "state_index": 381,
+      "filename": "observable_sweep_381.jld2",
+      "energy": -0.37348980185873254,
+      "sweep": 381
+    },
+    {
+      "state_index": 382,
+      "filename": "observable_sweep_382.jld2",
+      "energy": -0.373489801858729,
+      "sweep": 382
+    },
+    {
+      "state_index": 383,
+      "filename": "observable_sweep_383.jld2",
+      "energy": -0.3595620699710941,
+      "sweep": 383
+    },
+    {
+      "state_index": 384,
+      "filename": "observable_sweep_384.jld2",
+      "energy": -0.35956206997109275,
+      "sweep": 384
+    },
+    {
+      "state_index": 385,
+      "filename": "observable_sweep_385.jld2",
+      "energy": -0.3579881140254112,
+      "sweep": 385
+    },
+    {
+      "state_index": 386,
+      "filename": "observable_sweep_386.jld2",
+      "energy": -0.35371784035968196,
+      "sweep": 386
+    },
+    {
+      "state_index": 387,
+      "filename": "observable_sweep_387.jld2",
+      "energy": -0.35371784035968146,
+      "sweep": 387
+    },
+    {
+      "state_index": 388,
+      "filename": "observable_sweep_388.jld2",
+      "energy": -0.3431869024861687,
+      "sweep": 388
+    },
+    {
+      "state_index": 389,
+      "filename": "observable_sweep_389.jld2",
+      "energy": -0.3431869024861686,
+      "sweep": 389
+    },
+    {
+      "state_index": 390,
+      "filename": "observable_sweep_390.jld2",
+      "energy": -0.34023178141974525,
+      "sweep": 390
+    },
+    {
+      "state_index": 391,
+      "filename": "observable_sweep_391.jld2",
+      "energy": -0.3402317814197429,
+      "sweep": 391
+    },
+    {
+      "state_index": 392,
+      "filename": "observable_sweep_392.jld2",
+      "energy": -0.33786195832271226,
+      "sweep": 392
+    },
+    {
+      "state_index": 393,
+      "filename": "observable_sweep_393.jld2",
+      "energy": -0.33786195832270927,
+      "sweep": 393
+    },
+    {
+      "state_index": 394,
+      "filename": "observable_sweep_394.jld2",
+      "energy": -0.3378619583227081,
+      "sweep": 394
+    },
+    {
+      "state_index": 395,
+      "filename": "observable_sweep_395.jld2",
+      "energy": -0.3378619583227075,
+      "sweep": 395
+    },
+    {
+      "state_index": 396,
+      "filename": "observable_sweep_396.jld2",
+      "energy": -0.3247300935864254,
+      "sweep": 396
+    },
+    {
+      "state_index": 397,
+      "filename": "observable_sweep_397.jld2",
+      "energy": -0.3247300935864252,
+      "sweep": 397
+    },
+    {
+      "state_index": 398,
+      "filename": "observable_sweep_398.jld2",
+      "energy": -0.32473009358642435,
+      "sweep": 398
+    },
+    {
+      "state_index": 399,
+      "filename": "observable_sweep_399.jld2",
+      "energy": -0.32473009358642074,
+      "sweep": 399
+    },
+    {
+      "state_index": 400,
+      "filename": "observable_sweep_400.jld2",
+      "energy": -0.3204598199206928,
+      "sweep": 400
+    },
+    {
+      "state_index": 401,
+      "filename": "observable_sweep_401.jld2",
+      "energy": -0.3188858639750129,
+      "sweep": 401
+    },
+    {
+      "state_index": 402,
+      "filename": "observable_sweep_402.jld2",
+      "energy": -0.31808999682365624,
+      "sweep": 402
+    },
+    {
+      "state_index": 403,
+      "filename": "observable_sweep_403.jld2",
+      "energy": -0.3099288820471813,
+      "sweep": 403
+    },
+    {
+      "state_index": 404,
+      "filename": "observable_sweep_404.jld2",
+      "energy": -0.30495813208737077,
+      "sweep": 404
+    },
+    {
+      "state_index": 405,
+      "filename": "observable_sweep_405.jld2",
+      "energy": -0.3046039378837218,
+      "sweep": 405
+    },
+    {
+      "state_index": 406,
+      "filename": "observable_sweep_406.jld2",
+      "energy": -0.30460393788372164,
+      "sweep": 406
+    },
+    {
+      "state_index": 407,
+      "filename": "observable_sweep_407.jld2",
+      "energy": -0.29875970827230997,
+      "sweep": 407
+    },
+    {
+      "state_index": 408,
+      "filename": "observable_sweep_408.jld2",
+      "energy": -0.298759708272309,
+      "sweep": 408
+    },
+    {
+      "state_index": 409,
+      "filename": "observable_sweep_409.jld2",
+      "energy": -0.2914720731474367,
+      "sweep": 409
+    },
+    {
+      "state_index": 410,
+      "filename": "observable_sweep_410.jld2",
+      "energy": -0.285627843536024,
+      "sweep": 410
+    },
+    {
+      "state_index": 411,
+      "filename": "observable_sweep_411.jld2",
+      "energy": -0.2856278435360234,
+      "sweep": 411
+    },
+    {
+      "state_index": 412,
+      "filename": "observable_sweep_412.jld2",
+      "energy": -0.28483197638466806,
+      "sweep": 412
+    },
+    {
+      "state_index": 413,
+      "filename": "observable_sweep_413.jld2",
+      "energy": -0.28325802043898807,
+      "sweep": 413
+    },
+    {
+      "state_index": 414,
+      "filename": "observable_sweep_414.jld2",
+      "energy": -0.28325802043898757,
+      "sweep": 414
+    },
+    {
+      "state_index": 415,
+      "filename": "observable_sweep_415.jld2",
+      "energy": -0.28325802043898485,
+      "sweep": 415
+    },
+    {
+      "state_index": 416,
+      "filename": "observable_sweep_416.jld2",
+      "energy": -0.2803028993725657,
+      "sweep": 416
+    },
+    {
+      "state_index": 417,
+      "filename": "observable_sweep_417.jld2",
+      "energy": -0.2697719614990528,
+      "sweep": 417
+    },
+    {
+      "state_index": 418,
+      "filename": "observable_sweep_418.jld2",
+      "energy": -0.2655016878333217,
+      "sweep": 418
+    },
+    {
+      "state_index": 419,
+      "filename": "observable_sweep_419.jld2",
+      "energy": -0.2631318647362856,
+      "sweep": 419
+    },
+    {
+      "state_index": 420,
+      "filename": "observable_sweep_420.jld2",
+      "energy": -0.2500000000000036,
+      "sweep": 420
+    },
+    {
+      "state_index": 421,
+      "filename": "observable_sweep_421.jld2",
+      "energy": -0.2500000000000006,
+      "sweep": 421
+    },
+    {
+      "state_index": 422,
+      "filename": "observable_sweep_422.jld2",
+      "energy": -0.25,
+      "sweep": 422
+    },
+    {
+      "state_index": 423,
+      "filename": "observable_sweep_423.jld2",
+      "energy": -0.25,
+      "sweep": 423
+    },
+    {
+      "state_index": 424,
+      "filename": "observable_sweep_424.jld2",
+      "energy": -0.24999999999999992,
+      "sweep": 424
+    },
+    {
+      "state_index": 425,
+      "filename": "observable_sweep_425.jld2",
+      "energy": -0.24999999999999956,
+      "sweep": 425
+    },
+    {
+      "state_index": 426,
+      "filename": "observable_sweep_426.jld2",
+      "energy": -0.24999999999999944,
+      "sweep": 426
+    },
+    {
+      "state_index": 427,
+      "filename": "observable_sweep_427.jld2",
+      "energy": -0.24999999999999906,
+      "sweep": 427
+    },
+    {
+      "state_index": 428,
+      "filename": "observable_sweep_428.jld2",
+      "energy": -0.24999999999999645,
+      "sweep": 428
+    },
+    {
+      "state_index": 429,
+      "filename": "observable_sweep_429.jld2",
+      "energy": -0.24467505583654078,
+      "sweep": 429
+    },
+    {
+      "state_index": 430,
+      "filename": "observable_sweep_430.jld2",
+      "energy": -0.24415577038858768,
+      "sweep": 430
+    },
+    {
+      "state_index": 431,
+      "filename": "observable_sweep_431.jld2",
+      "energy": -0.23022803850094675,
+      "sweep": 431
+    },
+    {
+      "state_index": 432,
+      "filename": "observable_sweep_432.jld2",
+      "energy": -0.22569896148884272,
+      "sweep": 432
+    },
+    {
+      "state_index": 433,
+      "filename": "observable_sweep_433.jld2",
+      "energy": -0.21674197956101335,
+      "sweep": 433
+    },
+    {
+      "state_index": 434,
+      "filename": "observable_sweep_434.jld2",
+      "energy": -0.21674197956101193,
+      "sweep": 434
+    },
+    {
+      "state_index": 435,
+      "filename": "observable_sweep_435.jld2",
+      "energy": -0.2151680236153305,
+      "sweep": 435
+    },
+    {
+      "state_index": 436,
+      "filename": "observable_sweep_436.jld2",
+      "energy": -0.21089774994959987,
+      "sweep": 436
+    },
+    {
+      "state_index": 437,
+      "filename": "observable_sweep_437.jld2",
+      "energy": -0.21089774994959976,
+      "sweep": 437
+    },
+    {
+      "state_index": 438,
+      "filename": "observable_sweep_438.jld2",
+      "energy": -0.2085279268525634,
+      "sweep": 438
+    },
+    {
+      "state_index": 439,
+      "filename": "observable_sweep_439.jld2",
+      "energy": -0.20852792685256283,
+      "sweep": 439
+    },
+    {
+      "state_index": 440,
+      "filename": "observable_sweep_440.jld2",
+      "energy": -0.20557280578614087,
+      "sweep": 440
+    },
+    {
+      "state_index": 441,
+      "filename": "observable_sweep_441.jld2",
+      "energy": -0.19539606211627758,
+      "sweep": 441
+    },
+    {
+      "state_index": 442,
+      "filename": "observable_sweep_442.jld2",
+      "energy": -0.19539606211627733,
+      "sweep": 442
+    },
+    {
+      "state_index": 443,
+      "filename": "observable_sweep_443.jld2",
+      "energy": -0.1950418679126286,
+      "sweep": 443
+    },
+    {
+      "state_index": 444,
+      "filename": "observable_sweep_444.jld2",
+      "energy": -0.1924409410498549,
+      "sweep": 444
+    },
+    {
+      "state_index": 445,
+      "filename": "observable_sweep_445.jld2",
+      "energy": -0.19007111795281953,
+      "sweep": 445
+    },
+    {
+      "state_index": 446,
+      "filename": "observable_sweep_446.jld2",
+      "energy": -0.19007111795281856,
+      "sweep": 446
+    },
+    {
+      "state_index": 447,
+      "filename": "observable_sweep_447.jld2",
+      "energy": -0.1900711179528184,
+      "sweep": 447
+    },
+    {
+      "state_index": 448,
+      "filename": "observable_sweep_448.jld2",
+      "energy": -0.18191000317634387,
+      "sweep": 448
+    },
+    {
+      "state_index": 449,
+      "filename": "observable_sweep_449.jld2",
+      "energy": -0.1752699064135774,
+      "sweep": 449
+    },
+    {
+      "state_index": 450,
+      "filename": "observable_sweep_450.jld2",
+      "energy": -0.17526990641357723,
+      "sweep": 450
+    },
+    {
+      "state_index": 451,
+      "filename": "observable_sweep_451.jld2",
+      "energy": -0.17526990641357604,
+      "sweep": 451
+    },
+    {
+      "state_index": 452,
+      "filename": "observable_sweep_452.jld2",
+      "energy": -0.17526990641357515,
+      "sweep": 452
+    },
+    {
+      "state_index": 453,
+      "filename": "observable_sweep_453.jld2",
+      "energy": -0.1752699064135708,
+      "sweep": 453
+    },
+    {
+      "state_index": 454,
+      "filename": "observable_sweep_454.jld2",
+      "energy": -0.16994496225011613,
+      "sweep": 454
+    },
+    {
+      "state_index": 455,
+      "filename": "observable_sweep_455.jld2",
+      "energy": -0.16213804167729115,
+      "sweep": 455
+    },
+    {
+      "state_index": 456,
+      "filename": "observable_sweep_456.jld2",
+      "energy": -0.16213804167729048,
+      "sweep": 456
+    },
+    {
+      "state_index": 457,
+      "filename": "observable_sweep_457.jld2",
+      "energy": -0.15681309751383185,
+      "sweep": 457
+    },
+    {
+      "state_index": 458,
+      "filename": "observable_sweep_458.jld2",
+      "energy": -0.15681309751383132,
+      "sweep": 458
+    },
+    {
+      "state_index": 459,
+      "filename": "observable_sweep_459.jld2",
+      "energy": -0.15681309751383127,
+      "sweep": 459
+    },
+    {
+      "state_index": 460,
+      "filename": "observable_sweep_460.jld2",
+      "energy": -0.15096886790242026,
+      "sweep": 460
+    },
+    {
+      "state_index": 461,
+      "filename": "observable_sweep_461.jld2",
+      "energy": -0.15096886790241945,
+      "sweep": 461
+    },
+    {
+      "state_index": 462,
+      "filename": "observable_sweep_462.jld2",
+      "energy": -0.14201188597458816,
+      "sweep": 462
+    },
+    {
+      "state_index": 463,
+      "filename": "observable_sweep_463.jld2",
+      "energy": -0.1404379300289072,
+      "sweep": 463
+    },
+    {
+      "state_index": 464,
+      "filename": "observable_sweep_464.jld2",
+      "energy": -0.14043793002890687,
+      "sweep": 464
+    },
+    {
+      "state_index": 465,
+      "filename": "observable_sweep_465.jld2",
+      "energy": -0.1351129858654474,
+      "sweep": 465
+    },
+    {
+      "state_index": 466,
+      "filename": "observable_sweep_466.jld2",
+      "energy": -0.12066596852985416,
+      "sweep": 466
+    },
+    {
+      "state_index": 467,
+      "filename": "observable_sweep_467.jld2",
+      "energy": -0.12066596852985305,
+      "sweep": 467
+    },
+    {
+      "state_index": 468,
+      "filename": "observable_sweep_468.jld2",
+      "energy": -0.11771084746343122,
+      "sweep": 468
+    },
+    {
+      "state_index": 469,
+      "filename": "observable_sweep_469.jld2",
+      "energy": -0.11771084746343101,
+      "sweep": 469
+    },
+    {
+      "state_index": 470,
+      "filename": "observable_sweep_470.jld2",
+      "energy": -0.11534102436639948,
+      "sweep": 470
+    },
+    {
+      "state_index": 471,
+      "filename": "observable_sweep_471.jld2",
+      "energy": -0.11534102436639557,
+      "sweep": 471
+    },
+    {
+      "state_index": 472,
+      "filename": "observable_sweep_472.jld2",
+      "energy": -0.11534102436639446,
+      "sweep": 472
+    },
+    {
+      "state_index": 473,
+      "filename": "observable_sweep_473.jld2",
+      "energy": -0.11534102436639314,
+      "sweep": 473
+    },
+    {
+      "state_index": 474,
+      "filename": "observable_sweep_474.jld2",
+      "energy": -0.1153410243663929,
+      "sweep": 474
+    },
+    {
+      "state_index": 475,
+      "filename": "observable_sweep_475.jld2",
+      "energy": -0.10717990958991956,
+      "sweep": 475
+    },
+    {
+      "state_index": 476,
+      "filename": "observable_sweep_476.jld2",
+      "energy": -0.10717990958991866,
+      "sweep": 476
+    },
+    {
+      "state_index": 477,
+      "filename": "observable_sweep_477.jld2",
+      "energy": -0.10220915963011007,
+      "sweep": 477
+    },
+    {
+      "state_index": 478,
+      "filename": "observable_sweep_478.jld2",
+      "energy": -0.10220915963010957,
+      "sweep": 478
+    },
+    {
+      "state_index": 479,
+      "filename": "observable_sweep_479.jld2",
+      "energy": -0.08740794809086645,
+      "sweep": 479
+    },
+    {
+      "state_index": 480,
+      "filename": "observable_sweep_480.jld2",
+      "energy": -0.08740794809086617,
+      "sweep": 480
+    },
+    {
+      "state_index": 481,
+      "filename": "observable_sweep_481.jld2",
+      "energy": -0.08208300392741054,
+      "sweep": 481
+    },
+    {
+      "state_index": 482,
+      "filename": "observable_sweep_482.jld2",
+      "energy": -0.0820830039274072,
+      "sweep": 482
+    },
+    {
+      "state_index": 483,
+      "filename": "observable_sweep_483.jld2",
+      "energy": -0.08208300392740582,
+      "sweep": 483
+    },
+    {
+      "state_index": 484,
+      "filename": "observable_sweep_484.jld2",
+      "energy": -0.08208300392740515,
+      "sweep": 484
+    },
+    {
+      "state_index": 485,
+      "filename": "observable_sweep_485.jld2",
+      "energy": -0.08050904798172641,
+      "sweep": 485
+    },
+    {
+      "state_index": 486,
+      "filename": "observable_sweep_486.jld2",
+      "energy": -0.07623877431599446,
+      "sweep": 486
+    },
+    {
+      "state_index": 487,
+      "filename": "observable_sweep_487.jld2",
+      "energy": -0.06895113919112106,
+      "sweep": 487
+    },
+    {
+      "state_index": 488,
+      "filename": "observable_sweep_488.jld2",
+      "energy": -0.06570783644248297,
+      "sweep": 488
+    },
+    {
+      "state_index": 489,
+      "filename": "observable_sweep_489.jld2",
+      "energy": -0.06310690957971012,
+      "sweep": 489
+    },
+    {
+      "state_index": 490,
+      "filename": "observable_sweep_490.jld2",
+      "energy": -0.060737086482672405,
+      "sweep": 490
+    },
+    {
+      "state_index": 491,
+      "filename": "observable_sweep_491.jld2",
+      "energy": -0.06038289227902339,
+      "sweep": 491
+    },
+    {
+      "state_index": 492,
+      "filename": "observable_sweep_492.jld2",
+      "energy": -0.05257597170619821,
+      "sweep": 492
+    },
+    {
+      "state_index": 493,
+      "filename": "observable_sweep_493.jld2",
+      "energy": -0.04725102754274079,
+      "sweep": 493
+    },
+    {
+      "state_index": 494,
+      "filename": "observable_sweep_494.jld2",
+      "energy": -0.04725102754273936,
+      "sweep": 494
+    },
+    {
+      "state_index": 495,
+      "filename": "observable_sweep_495.jld2",
+      "energy": -0.04725102754273805,
+      "sweep": 495
+    },
+    {
+      "state_index": 496,
+      "filename": "observable_sweep_496.jld2",
+      "energy": -0.04725102754273735,
+      "sweep": 496
+    },
+    {
+      "state_index": 497,
+      "filename": "observable_sweep_497.jld2",
+      "energy": -0.04298075387700679,
+      "sweep": 497
+    },
+    {
+      "state_index": 498,
+      "filename": "observable_sweep_498.jld2",
+      "energy": -0.0406109307799704,
+      "sweep": 498
+    },
+    {
+      "state_index": 499,
+      "filename": "observable_sweep_499.jld2",
+      "energy": -0.04061093077997035,
+      "sweep": 499
+    },
+    {
+      "state_index": 500,
+      "filename": "observable_sweep_500.jld2",
+      "energy": -0.03244981600349517,
+      "sweep": 500
+    },
+    {
+      "state_index": 501,
+      "filename": "observable_sweep_501.jld2",
+      "energy": -0.027479066043688237,
+      "sweep": 501
+    },
+    {
+      "state_index": 502,
+      "filename": "observable_sweep_502.jld2",
+      "energy": -0.02747906604368596,
+      "sweep": 502
+    },
+    {
+      "state_index": 503,
+      "filename": "observable_sweep_503.jld2",
+      "energy": -0.027479066043685697,
+      "sweep": 503
+    },
+    {
+      "state_index": 504,
+      "filename": "observable_sweep_504.jld2",
+      "energy": -0.02747906604368557,
+      "sweep": 504
+    },
+    {
+      "state_index": 505,
+      "filename": "observable_sweep_505.jld2",
+      "energy": -0.027479066043685222,
+      "sweep": 505
+    },
+    {
+      "state_index": 506,
+      "filename": "observable_sweep_506.jld2",
+      "energy": -0.02747906604368314,
+      "sweep": 506
+    },
+    {
+      "state_index": 507,
+      "filename": "observable_sweep_507.jld2",
+      "energy": -0.022154121880226807,
+      "sweep": 507
+    },
+    {
+      "state_index": 508,
+      "filename": "observable_sweep_508.jld2",
+      "energy": -0.013993007103750617,
+      "sweep": 508
+    },
+    {
+      "state_index": 509,
+      "filename": "observable_sweep_509.jld2",
+      "energy": -0.011623184006713916,
+      "sweep": 509
+    },
+    {
+      "state_index": 510,
+      "filename": "observable_sweep_510.jld2",
+      "energy": -0.007352910340981963,
+      "sweep": 510
+    },
+    {
+      "state_index": 511,
+      "filename": "observable_sweep_511.jld2",
+      "energy": -0.005778954395302346,
+      "sweep": 511
+    },
+    {
+      "state_index": 512,
+      "filename": "observable_sweep_512.jld2",
+      "energy": -0.005778954395302184,
+      "sweep": 512
+    },
+    {
+      "state_index": 513,
+      "filename": "observable_sweep_513.jld2",
+      "energy": 0.0057789543953027725,
+      "sweep": 513
+    },
+    {
+      "state_index": 514,
+      "filename": "observable_sweep_514.jld2",
+      "energy": 0.005778954395303507,
+      "sweep": 514
+    },
+    {
+      "state_index": 515,
+      "filename": "observable_sweep_515.jld2",
+      "energy": 0.007352910340983121,
+      "sweep": 515
+    },
+    {
+      "state_index": 516,
+      "filename": "observable_sweep_516.jld2",
+      "energy": 0.01162318400671504,
+      "sweep": 516
+    },
+    {
+      "state_index": 517,
+      "filename": "observable_sweep_517.jld2",
+      "energy": 0.013993007103750933,
+      "sweep": 517
+    },
+    {
+      "state_index": 518,
+      "filename": "observable_sweep_518.jld2",
+      "energy": 0.022154121880226807,
+      "sweep": 518
+    },
+    {
+      "state_index": 519,
+      "filename": "observable_sweep_519.jld2",
+      "energy": 0.027479066043684178,
+      "sweep": 519
+    },
+    {
+      "state_index": 520,
+      "filename": "observable_sweep_520.jld2",
+      "energy": 0.027479066043684754,
+      "sweep": 520
+    },
+    {
+      "state_index": 521,
+      "filename": "observable_sweep_521.jld2",
+      "energy": 0.027479066043685874,
+      "sweep": 521
+    },
+    {
+      "state_index": 522,
+      "filename": "observable_sweep_522.jld2",
+      "energy": 0.027479066043686273,
+      "sweep": 522
+    },
+    {
+      "state_index": 523,
+      "filename": "observable_sweep_523.jld2",
+      "energy": 0.027479066043686308,
+      "sweep": 523
+    },
+    {
+      "state_index": 524,
+      "filename": "observable_sweep_524.jld2",
+      "energy": 0.027479066043688428,
+      "sweep": 524
+    },
+    {
+      "state_index": 525,
+      "filename": "observable_sweep_525.jld2",
+      "energy": 0.0324498160034965,
+      "sweep": 525
+    },
+    {
+      "state_index": 526,
+      "filename": "observable_sweep_526.jld2",
+      "energy": 0.04061093077997045,
+      "sweep": 526
+    },
+    {
+      "state_index": 527,
+      "filename": "observable_sweep_527.jld2",
+      "energy": 0.04061093077997061,
+      "sweep": 527
+    },
+    {
+      "state_index": 528,
+      "filename": "observable_sweep_528.jld2",
+      "energy": 0.042980753877006686,
+      "sweep": 528
+    },
+    {
+      "state_index": 529,
+      "filename": "observable_sweep_529.jld2",
+      "energy": 0.04725102754273606,
+      "sweep": 529
+    },
+    {
+      "state_index": 530,
+      "filename": "observable_sweep_530.jld2",
+      "energy": 0.0472510275427383,
+      "sweep": 530
+    },
+    {
+      "state_index": 531,
+      "filename": "observable_sweep_531.jld2",
+      "energy": 0.04725102754273849,
+      "sweep": 531
+    },
+    {
+      "state_index": 532,
+      "filename": "observable_sweep_532.jld2",
+      "energy": 0.047251027542738716,
+      "sweep": 532
+    },
+    {
+      "state_index": 533,
+      "filename": "observable_sweep_533.jld2",
+      "energy": 0.052575971706197766,
+      "sweep": 533
+    },
+    {
+      "state_index": 534,
+      "filename": "observable_sweep_534.jld2",
+      "energy": 0.06038289227902469,
+      "sweep": 534
+    },
+    {
+      "state_index": 535,
+      "filename": "observable_sweep_535.jld2",
+      "energy": 0.060737086482677026,
+      "sweep": 535
+    },
+    {
+      "state_index": 536,
+      "filename": "observable_sweep_536.jld2",
+      "energy": 0.06310690957971044,
+      "sweep": 536
+    },
+    {
+      "state_index": 537,
+      "filename": "observable_sweep_537.jld2",
+      "energy": 0.06570783644248315,
+      "sweep": 537
+    },
+    {
+      "state_index": 538,
+      "filename": "observable_sweep_538.jld2",
+      "energy": 0.06895113919112239,
+      "sweep": 538
+    },
+    {
+      "state_index": 539,
+      "filename": "observable_sweep_539.jld2",
+      "energy": 0.07623877431599446,
+      "sweep": 539
+    },
+    {
+      "state_index": 540,
+      "filename": "observable_sweep_540.jld2",
+      "energy": 0.0805090479817294,
+      "sweep": 540
+    },
+    {
+      "state_index": 541,
+      "filename": "observable_sweep_541.jld2",
+      "energy": 0.08208300392740422,
+      "sweep": 541
+    },
+    {
+      "state_index": 542,
+      "filename": "observable_sweep_542.jld2",
+      "energy": 0.0820830039274073,
+      "sweep": 542
+    },
+    {
+      "state_index": 543,
+      "filename": "observable_sweep_543.jld2",
+      "energy": 0.08208300392740758,
+      "sweep": 543
+    },
+    {
+      "state_index": 544,
+      "filename": "observable_sweep_544.jld2",
+      "energy": 0.08208300392740858,
+      "sweep": 544
+    },
+    {
+      "state_index": 545,
+      "filename": "observable_sweep_545.jld2",
+      "energy": 0.08740794809086587,
+      "sweep": 545
+    },
+    {
+      "state_index": 546,
+      "filename": "observable_sweep_546.jld2",
+      "energy": 0.08740794809086634,
+      "sweep": 546
+    },
+    {
+      "state_index": 547,
+      "filename": "observable_sweep_547.jld2",
+      "energy": 0.10220915963010938,
+      "sweep": 547
+    },
+    {
+      "state_index": 548,
+      "filename": "observable_sweep_548.jld2",
+      "energy": 0.10220915963011042,
+      "sweep": 548
+    },
+    {
+      "state_index": 549,
+      "filename": "observable_sweep_549.jld2",
+      "energy": 0.10717990958991923,
+      "sweep": 549
+    },
+    {
+      "state_index": 550,
+      "filename": "observable_sweep_550.jld2",
+      "energy": 0.10717990958991958,
+      "sweep": 550
+    },
+    {
+      "state_index": 551,
+      "filename": "observable_sweep_551.jld2",
+      "energy": 0.11534102436639493,
+      "sweep": 551
+    },
+    {
+      "state_index": 552,
+      "filename": "observable_sweep_552.jld2",
+      "energy": 0.11534102436639507,
+      "sweep": 552
+    },
+    {
+      "state_index": 553,
+      "filename": "observable_sweep_553.jld2",
+      "energy": 0.11534102436639528,
+      "sweep": 553
+    },
+    {
+      "state_index": 554,
+      "filename": "observable_sweep_554.jld2",
+      "energy": 0.11534102436639596,
+      "sweep": 554
+    },
+    {
+      "state_index": 555,
+      "filename": "observable_sweep_555.jld2",
+      "energy": 0.1153410243663971,
+      "sweep": 555
+    },
+    {
+      "state_index": 556,
+      "filename": "observable_sweep_556.jld2",
+      "energy": 0.11771084746343133,
+      "sweep": 556
+    },
+    {
+      "state_index": 557,
+      "filename": "observable_sweep_557.jld2",
+      "energy": 0.11771084746343176,
+      "sweep": 557
+    },
+    {
+      "state_index": 558,
+      "filename": "observable_sweep_558.jld2",
+      "energy": 0.12066596852985423,
+      "sweep": 558
+    },
+    {
+      "state_index": 559,
+      "filename": "observable_sweep_559.jld2",
+      "energy": 0.12066596852985445,
+      "sweep": 559
+    },
+    {
+      "state_index": 560,
+      "filename": "observable_sweep_560.jld2",
+      "energy": 0.1351129858654483,
+      "sweep": 560
+    },
+    {
+      "state_index": 561,
+      "filename": "observable_sweep_561.jld2",
+      "energy": 0.1404379300289072,
+      "sweep": 561
+    },
+    {
+      "state_index": 562,
+      "filename": "observable_sweep_562.jld2",
+      "energy": 0.14043793002890764,
+      "sweep": 562
+    },
+    {
+      "state_index": 563,
+      "filename": "observable_sweep_563.jld2",
+      "energy": 0.14201188597458766,
+      "sweep": 563
+    },
+    {
+      "state_index": 564,
+      "filename": "observable_sweep_564.jld2",
+      "energy": 0.15096886790241879,
+      "sweep": 564
+    },
+    {
+      "state_index": 565,
+      "filename": "observable_sweep_565.jld2",
+      "energy": 0.15096886790241892,
+      "sweep": 565
+    },
+    {
+      "state_index": 566,
+      "filename": "observable_sweep_566.jld2",
+      "energy": 0.15681309751383082,
+      "sweep": 566
+    },
+    {
+      "state_index": 567,
+      "filename": "observable_sweep_567.jld2",
+      "energy": 0.15681309751383146,
+      "sweep": 567
+    },
+    {
+      "state_index": 568,
+      "filename": "observable_sweep_568.jld2",
+      "energy": 0.15681309751383246,
+      "sweep": 568
+    },
+    {
+      "state_index": 569,
+      "filename": "observable_sweep_569.jld2",
+      "energy": 0.16213804167729035,
+      "sweep": 569
+    },
+    {
+      "state_index": 570,
+      "filename": "observable_sweep_570.jld2",
+      "energy": 0.1621380416772907,
+      "sweep": 570
+    },
+    {
+      "state_index": 571,
+      "filename": "observable_sweep_571.jld2",
+      "energy": 0.16994496225011613,
+      "sweep": 571
+    },
+    {
+      "state_index": 572,
+      "filename": "observable_sweep_572.jld2",
+      "energy": 0.17526990641357176,
+      "sweep": 572
+    },
+    {
+      "state_index": 573,
+      "filename": "observable_sweep_573.jld2",
+      "energy": 0.17526990641357473,
+      "sweep": 573
+    },
+    {
+      "state_index": 574,
+      "filename": "observable_sweep_574.jld2",
+      "energy": 0.175269906413575,
+      "sweep": 574
+    },
+    {
+      "state_index": 575,
+      "filename": "observable_sweep_575.jld2",
+      "energy": 0.17526990641357543,
+      "sweep": 575
+    },
+    {
+      "state_index": 576,
+      "filename": "observable_sweep_576.jld2",
+      "energy": 0.17526990641357576,
+      "sweep": 576
+    },
+    {
+      "state_index": 577,
+      "filename": "observable_sweep_577.jld2",
+      "energy": 0.18191000317634387,
+      "sweep": 577
+    },
+    {
+      "state_index": 578,
+      "filename": "observable_sweep_578.jld2",
+      "energy": 0.1900711179528176,
+      "sweep": 578
+    },
+    {
+      "state_index": 579,
+      "filename": "observable_sweep_579.jld2",
+      "energy": 0.19007111795282003,
+      "sweep": 579
+    },
+    {
+      "state_index": 580,
+      "filename": "observable_sweep_580.jld2",
+      "energy": 0.19007111795282014,
+      "sweep": 580
+    },
+    {
+      "state_index": 581,
+      "filename": "observable_sweep_581.jld2",
+      "energy": 0.1924409410498561,
+      "sweep": 581
+    },
+    {
+      "state_index": 582,
+      "filename": "observable_sweep_582.jld2",
+      "energy": 0.19504186791262884,
+      "sweep": 582
+    },
+    {
+      "state_index": 583,
+      "filename": "observable_sweep_583.jld2",
+      "energy": 0.19539606211627852,
+      "sweep": 583
+    },
+    {
+      "state_index": 584,
+      "filename": "observable_sweep_584.jld2",
+      "energy": 0.1953960621162787,
+      "sweep": 584
+    },
+    {
+      "state_index": 585,
+      "filename": "observable_sweep_585.jld2",
+      "energy": 0.205572805786141,
+      "sweep": 585
+    },
+    {
+      "state_index": 586,
+      "filename": "observable_sweep_586.jld2",
+      "energy": 0.20852792685256294,
+      "sweep": 586
+    },
+    {
+      "state_index": 587,
+      "filename": "observable_sweep_587.jld2",
+      "energy": 0.2085279268525647,
+      "sweep": 587
+    },
+    {
+      "state_index": 588,
+      "filename": "observable_sweep_588.jld2",
+      "energy": 0.21089774994959956,
+      "sweep": 588
+    },
+    {
+      "state_index": 589,
+      "filename": "observable_sweep_589.jld2",
+      "energy": 0.2108977499496005,
+      "sweep": 589
+    },
+    {
+      "state_index": 590,
+      "filename": "observable_sweep_590.jld2",
+      "energy": 0.21516802361533244,
+      "sweep": 590
+    },
+    {
+      "state_index": 591,
+      "filename": "observable_sweep_591.jld2",
+      "energy": 0.21674197956101135,
+      "sweep": 591
+    },
+    {
+      "state_index": 592,
+      "filename": "observable_sweep_592.jld2",
+      "energy": 0.21674197956101304,
+      "sweep": 592
+    },
+    {
+      "state_index": 593,
+      "filename": "observable_sweep_593.jld2",
+      "energy": 0.22569896148884316,
+      "sweep": 593
+    },
+    {
+      "state_index": 594,
+      "filename": "observable_sweep_594.jld2",
+      "energy": 0.23022803850094853,
+      "sweep": 594
+    },
+    {
+      "state_index": 595,
+      "filename": "observable_sweep_595.jld2",
+      "energy": 0.2441557703885883,
+      "sweep": 595
+    },
+    {
+      "state_index": 596,
+      "filename": "observable_sweep_596.jld2",
+      "energy": 0.244675055836541,
+      "sweep": 596
+    },
+    {
+      "state_index": 597,
+      "filename": "observable_sweep_597.jld2",
+      "energy": 0.24999999999999822,
+      "sweep": 597
+    },
+    {
+      "state_index": 598,
+      "filename": "observable_sweep_598.jld2",
+      "energy": 0.2499999999999988,
+      "sweep": 598
+    },
+    {
+      "state_index": 599,
+      "filename": "observable_sweep_599.jld2",
+      "energy": 0.25000000000000006,
+      "sweep": 599
+    },
+    {
+      "state_index": 600,
+      "filename": "observable_sweep_600.jld2",
+      "energy": 0.25000000000000006,
+      "sweep": 600
+    },
+    {
+      "state_index": 601,
+      "filename": "observable_sweep_601.jld2",
+      "energy": 0.2500000000000004,
+      "sweep": 601
+    },
+    {
+      "state_index": 602,
+      "filename": "observable_sweep_602.jld2",
+      "energy": 0.25000000000000094,
+      "sweep": 602
+    },
+    {
+      "state_index": 603,
+      "filename": "observable_sweep_603.jld2",
+      "energy": 0.250000000000001,
+      "sweep": 603
+    },
+    {
+      "state_index": 604,
+      "filename": "observable_sweep_604.jld2",
+      "energy": 0.25000000000000167,
+      "sweep": 604
+    },
+    {
+      "state_index": 605,
+      "filename": "observable_sweep_605.jld2",
+      "energy": 0.2500000000000018,
+      "sweep": 605
+    },
+    {
+      "state_index": 606,
+      "filename": "observable_sweep_606.jld2",
+      "energy": 0.2631318647362849,
+      "sweep": 606
+    },
+    {
+      "state_index": 607,
+      "filename": "observable_sweep_607.jld2",
+      "energy": 0.2655016878333204,
+      "sweep": 607
+    },
+    {
+      "state_index": 608,
+      "filename": "observable_sweep_608.jld2",
+      "energy": 0.26977196149905325,
+      "sweep": 608
+    },
+    {
+      "state_index": 609,
+      "filename": "observable_sweep_609.jld2",
+      "energy": 0.2803028993725647,
+      "sweep": 609
+    },
+    {
+      "state_index": 610,
+      "filename": "observable_sweep_610.jld2",
+      "energy": 0.2832580204389882,
+      "sweep": 610
+    },
+    {
+      "state_index": 611,
+      "filename": "observable_sweep_611.jld2",
+      "energy": 0.28325802043898846,
+      "sweep": 611
+    },
+    {
+      "state_index": 612,
+      "filename": "observable_sweep_612.jld2",
+      "energy": 0.28325802043898934,
+      "sweep": 612
+    },
+    {
+      "state_index": 613,
+      "filename": "observable_sweep_613.jld2",
+      "energy": 0.28483197638466917,
+      "sweep": 613
+    },
+    {
+      "state_index": 614,
+      "filename": "observable_sweep_614.jld2",
+      "energy": 0.2856278435360234,
+      "sweep": 614
+    },
+    {
+      "state_index": 615,
+      "filename": "observable_sweep_615.jld2",
+      "energy": 0.2856278435360247,
+      "sweep": 615
+    },
+    {
+      "state_index": 616,
+      "filename": "observable_sweep_616.jld2",
+      "energy": 0.2914720731474354,
+      "sweep": 616
+    },
+    {
+      "state_index": 617,
+      "filename": "observable_sweep_617.jld2",
+      "energy": 0.2987597082723088,
+      "sweep": 617
+    },
+    {
+      "state_index": 618,
+      "filename": "observable_sweep_618.jld2",
+      "energy": 0.298759708272309,
+      "sweep": 618
+    },
+    {
+      "state_index": 619,
+      "filename": "observable_sweep_619.jld2",
+      "energy": 0.30460393788372164,
+      "sweep": 619
+    },
+    {
+      "state_index": 620,
+      "filename": "observable_sweep_620.jld2",
+      "energy": 0.30460393788372364,
+      "sweep": 620
+    },
+    {
+      "state_index": 621,
+      "filename": "observable_sweep_621.jld2",
+      "energy": 0.30495813208737144,
+      "sweep": 621
+    },
+    {
+      "state_index": 622,
+      "filename": "observable_sweep_622.jld2",
+      "energy": 0.30992888204718083,
+      "sweep": 622
+    },
+    {
+      "state_index": 623,
+      "filename": "observable_sweep_623.jld2",
+      "energy": 0.3180899968236566,
+      "sweep": 623
+    },
+    {
+      "state_index": 624,
+      "filename": "observable_sweep_624.jld2",
+      "energy": 0.3188858639750122,
+      "sweep": 624
+    },
+    {
+      "state_index": 625,
+      "filename": "observable_sweep_625.jld2",
+      "energy": 0.3204598199206926,
+      "sweep": 625
+    },
+    {
+      "state_index": 626,
+      "filename": "observable_sweep_626.jld2",
+      "energy": 0.3247300935864224,
+      "sweep": 626
+    },
+    {
+      "state_index": 627,
+      "filename": "observable_sweep_627.jld2",
+      "energy": 0.32473009358642335,
+      "sweep": 627
+    },
+    {
+      "state_index": 628,
+      "filename": "observable_sweep_628.jld2",
+      "energy": 0.3247300935864241,
+      "sweep": 628
+    },
+    {
+      "state_index": 629,
+      "filename": "observable_sweep_629.jld2",
+      "energy": 0.3247300935864282,
+      "sweep": 629
+    },
+    {
+      "state_index": 630,
+      "filename": "observable_sweep_630.jld2",
+      "energy": 0.33786195832270793,
+      "sweep": 630
+    },
+    {
+      "state_index": 631,
+      "filename": "observable_sweep_631.jld2",
+      "energy": 0.3378619583227086,
+      "sweep": 631
+    },
+    {
+      "state_index": 632,
+      "filename": "observable_sweep_632.jld2",
+      "energy": 0.3378619583227097,
+      "sweep": 632
+    },
+    {
+      "state_index": 633,
+      "filename": "observable_sweep_633.jld2",
+      "energy": 0.3378619583227105,
+      "sweep": 633
+    },
+    {
+      "state_index": 634,
+      "filename": "observable_sweep_634.jld2",
+      "energy": 0.3402317814197425,
+      "sweep": 634
+    },
+    {
+      "state_index": 635,
+      "filename": "observable_sweep_635.jld2",
+      "energy": 0.3402317814197455,
+      "sweep": 635
+    },
+    {
+      "state_index": 636,
+      "filename": "observable_sweep_636.jld2",
+      "energy": 0.3431869024861682,
+      "sweep": 636
+    },
+    {
+      "state_index": 637,
+      "filename": "observable_sweep_637.jld2",
+      "energy": 0.34318690248616857,
+      "sweep": 637
+    },
+    {
+      "state_index": 638,
+      "filename": "observable_sweep_638.jld2",
+      "energy": 0.3537178403596804,
+      "sweep": 638
+    },
+    {
+      "state_index": 639,
+      "filename": "observable_sweep_639.jld2",
+      "energy": 0.35371784035968074,
+      "sweep": 639
+    },
+    {
+      "state_index": 640,
+      "filename": "observable_sweep_640.jld2",
+      "energy": 0.35798811402541264,
+      "sweep": 640
+    },
+    {
+      "state_index": 641,
+      "filename": "observable_sweep_641.jld2",
+      "energy": 0.3595620699710926,
+      "sweep": 641
+    },
+    {
+      "state_index": 642,
+      "filename": "observable_sweep_642.jld2",
+      "energy": 0.3595620699710936,
+      "sweep": 642
+    },
+    {
+      "state_index": 643,
+      "filename": "observable_sweep_643.jld2",
+      "energy": 0.3734898018587334,
+      "sweep": 643
+    },
+    {
+      "state_index": 644,
+      "filename": "observable_sweep_644.jld2",
+      "energy": 0.37348980185873343,
+      "sweep": 644
+    },
+    {
+      "state_index": 645,
+      "filename": "observable_sweep_645.jld2",
+      "energy": 0.3734898018587339,
+      "sweep": 645
+    },
+    {
+      "state_index": 646,
+      "filename": "observable_sweep_646.jld2",
+      "energy": 0.3734898018587342,
+      "sweep": 646
+    },
+    {
+      "state_index": 647,
+      "filename": "observable_sweep_647.jld2",
+      "energy": 0.3793340314701454,
+      "sweep": 647
+    },
+    {
+      "state_index": 648,
+      "filename": "observable_sweep_648.jld2",
+      "energy": 0.37933403147014616,
+      "sweep": 648
+    },
+    {
+      "state_index": 649,
+      "filename": "observable_sweep_649.jld2",
+      "energy": 0.38465897563360407,
+      "sweep": 649
+    },
+    {
+      "state_index": 650,
+      "filename": "observable_sweep_650.jld2",
+      "energy": 0.39282009041008076,
+      "sweep": 650
+    },
+    {
+      "state_index": 651,
+      "filename": "observable_sweep_651.jld2",
+      "energy": 0.39282009041008115,
+      "sweep": 651
+    },
+    {
+      "state_index": 652,
+      "filename": "observable_sweep_652.jld2",
+      "energy": 0.3951899135071173,
+      "sweep": 652
+    },
+    {
+      "state_index": 653,
+      "filename": "observable_sweep_653.jld2",
+      "energy": 0.3977908403698896,
+      "sweep": 653
+    },
+    {
+      "state_index": 654,
+      "filename": "observable_sweep_654.jld2",
+      "energy": 0.39779084036988976,
+      "sweep": 654
+    },
+    {
+      "state_index": 655,
+      "filename": "observable_sweep_655.jld2",
+      "energy": 0.4083217782434019,
+      "sweep": 655
+    },
+    {
+      "state_index": 656,
+      "filename": "observable_sweep_656.jld2",
+      "energy": 0.40832177824340266,
+      "sweep": 656
+    },
+    {
+      "state_index": 657,
+      "filename": "observable_sweep_657.jld2",
+      "energy": 0.4125920519091336,
+      "sweep": 657
+    },
+    {
+      "state_index": 658,
+      "filename": "observable_sweep_658.jld2",
+      "energy": 0.41259205190913384,
+      "sweep": 658
+    },
+    {
+      "state_index": 659,
+      "filename": "observable_sweep_659.jld2",
+      "energy": 0.41259205190913434,
+      "sweep": 659
+    },
+    {
+      "state_index": 660,
+      "filename": "observable_sweep_660.jld2",
+      "energy": 0.41496187500617,
+      "sweep": 660
+    },
+    {
+      "state_index": 661,
+      "filename": "observable_sweep_661.jld2",
+      "energy": 0.4179169960725928,
+      "sweep": 661
+    },
+    {
+      "state_index": 662,
+      "filename": "observable_sweep_662.jld2",
+      "energy": 0.4179169960725932,
+      "sweep": 662
+    },
+    {
+      "state_index": 663,
+      "filename": "observable_sweep_663.jld2",
+      "energy": 0.4280937397424542,
+      "sweep": 663
+    },
+    {
+      "state_index": 664,
+      "filename": "observable_sweep_664.jld2",
+      "energy": 0.42844793394610475,
+      "sweep": 664
+    },
+    {
+      "state_index": 665,
+      "filename": "observable_sweep_665.jld2",
+      "energy": 0.4284479339461064,
+      "sweep": 665
+    },
+    {
+      "state_index": 666,
+      "filename": "observable_sweep_666.jld2",
+      "energy": 0.43104886080887833,
+      "sweep": 666
+    },
+    {
+      "state_index": 667,
+      "filename": "observable_sweep_667.jld2",
+      "energy": 0.4334186839059118,
+      "sweep": 667
+    },
+    {
+      "state_index": 668,
+      "filename": "observable_sweep_668.jld2",
+      "energy": 0.43429216355751704,
+      "sweep": 668
+    },
+    {
+      "state_index": 669,
+      "filename": "observable_sweep_669.jld2",
+      "energy": 0.44157979868238995,
+      "sweep": 669
+    },
+    {
+      "state_index": 670,
+      "filename": "observable_sweep_670.jld2",
+      "energy": 0.44742402829380207,
+      "sweep": 670
+    },
+    {
+      "state_index": 671,
+      "filename": "observable_sweep_671.jld2",
+      "energy": 0.44821989544515695,
+      "sweep": 671
+    },
+    {
+      "state_index": 672,
+      "filename": "observable_sweep_672.jld2",
+      "energy": 0.44821989544515745,
+      "sweep": 672
+    },
+    {
+      "state_index": 673,
+      "filename": "observable_sweep_673.jld2",
+      "energy": 0.4527489724572616,
+      "sweep": 673
+    },
+    {
+      "state_index": 674,
+      "filename": "observable_sweep_674.jld2",
+      "energy": 0.45274897245726176,
+      "sweep": 674
+    },
+    {
+      "state_index": 675,
+      "filename": "observable_sweep_675.jld2",
+      "energy": 0.4666767043449018,
+      "sweep": 675
+    },
+    {
+      "state_index": 676,
+      "filename": "observable_sweep_676.jld2",
+      "energy": 0.4675501839965043,
+      "sweep": 676
+    },
+    {
+      "state_index": 677,
+      "filename": "observable_sweep_677.jld2",
+      "energy": 0.47252093395631367,
+      "sweep": 677
+    },
+    {
+      "state_index": 678,
+      "filename": "observable_sweep_678.jld2",
+      "energy": 0.47252093395631417,
+      "sweep": 678
+    },
+    {
+      "state_index": 679,
+      "filename": "observable_sweep_679.jld2",
+      "energy": 0.4725209339563145,
+      "sweep": 679
+    },
+    {
+      "state_index": 680,
+      "filename": "observable_sweep_680.jld2",
+      "energy": 0.47252093395631667,
+      "sweep": 680
+    },
+    {
+      "state_index": 681,
+      "filename": "observable_sweep_681.jld2",
+      "energy": 0.48305187182982495,
+      "sweep": 681
+    },
+    {
+      "state_index": 682,
+      "filename": "observable_sweep_682.jld2",
+      "energy": 0.48305187182982595,
+      "sweep": 682
+    },
+    {
+      "state_index": 683,
+      "filename": "observable_sweep_683.jld2",
+      "energy": 0.483051871829827,
+      "sweep": 683
+    },
+    {
+      "state_index": 684,
+      "filename": "observable_sweep_684.jld2",
+      "energy": 0.48305187182982795,
+      "sweep": 684
+    },
+    {
+      "state_index": 685,
+      "filename": "observable_sweep_685.jld2",
+      "energy": 0.4860069928962492,
+      "sweep": 685
+    },
+    {
+      "state_index": 686,
+      "filename": "observable_sweep_686.jld2",
+      "energy": 0.4883768159932857,
+      "sweep": 686
+    },
+    {
+      "state_index": 687,
+      "filename": "observable_sweep_687.jld2",
+      "energy": 0.5028238333288799,
+      "sweep": 687
+    },
+    {
+      "state_index": 688,
+      "filename": "observable_sweep_688.jld2",
+      "energy": 0.5057789543953018,
+      "sweep": 688
+    },
+    {
+      "state_index": 689,
+      "filename": "observable_sweep_689.jld2",
+      "energy": 0.5057789543953021,
+      "sweep": 689
+    },
+    {
+      "state_index": 690,
+      "filename": "observable_sweep_690.jld2",
+      "energy": 0.5073529103409824,
+      "sweep": 690
+    },
+    {
+      "state_index": 691,
+      "filename": "observable_sweep_691.jld2",
+      "energy": 0.5081487774923387,
+      "sweep": 691
+    },
+    {
+      "state_index": 692,
+      "filename": "observable_sweep_692.jld2",
+      "energy": 0.5163098922688136,
+      "sweep": 692
+    },
+    {
+      "state_index": 693,
+      "filename": "observable_sweep_693.jld2",
+      "energy": 0.5163098922688139,
+      "sweep": 693
+    },
+    {
+      "state_index": 694,
+      "filename": "observable_sweep_694.jld2",
+      "energy": 0.5212806422286235,
+      "sweep": 694
+    },
+    {
+      "state_index": 695,
+      "filename": "observable_sweep_695.jld2",
+      "energy": 0.5221541218802261,
+      "sweep": 695
+    },
+    {
+      "state_index": 696,
+      "filename": "observable_sweep_696.jld2",
+      "energy": 0.5274790660436849,
+      "sweep": 696
+    },
+    {
+      "state_index": 697,
+      "filename": "observable_sweep_697.jld2",
+      "energy": 0.5274790660436852,
+      "sweep": 697
+    },
+    {
+      "state_index": 698,
+      "filename": "observable_sweep_698.jld2",
+      "energy": 0.5406109307799705,
+      "sweep": 698
+    },
+    {
+      "state_index": 699,
+      "filename": "observable_sweep_699.jld2",
+      "energy": 0.5406109307799708,
+      "sweep": 699
+    },
+    {
+      "state_index": 700,
+      "filename": "observable_sweep_700.jld2",
+      "energy": 0.5414067979313265,
+      "sweep": 700
+    },
+    {
+      "state_index": 701,
+      "filename": "observable_sweep_701.jld2",
+      "energy": 0.5429807538770062,
+      "sweep": 701
+    },
+    {
+      "state_index": 702,
+      "filename": "observable_sweep_702.jld2",
+      "energy": 0.5429807538770066,
+      "sweep": 702
+    },
+    {
+      "state_index": 703,
+      "filename": "observable_sweep_703.jld2",
+      "energy": 0.5472510275427388,
+      "sweep": 703
+    },
+    {
+      "state_index": 704,
+      "filename": "observable_sweep_704.jld2",
+      "energy": 0.5472510275427388,
+      "sweep": 704
+    },
+    {
+      "state_index": 705,
+      "filename": "observable_sweep_705.jld2",
+      "energy": 0.5577819654162501,
+      "sweep": 705
+    },
+    {
+      "state_index": 706,
+      "filename": "observable_sweep_706.jld2",
+      "energy": 0.5577819654162529,
+      "sweep": 706
+    },
+    {
+      "state_index": 707,
+      "filename": "observable_sweep_707.jld2",
+      "energy": 0.5603828922790232,
+      "sweep": 707
+    },
+    {
+      "state_index": 708,
+      "filename": "observable_sweep_708.jld2",
+      "energy": 0.5607370864826736,
+      "sweep": 708
+    },
+    {
+      "state_index": 709,
+      "filename": "observable_sweep_709.jld2",
+      "energy": 0.56310690957971,
+      "sweep": 709
+    },
+    {
+      "state_index": 710,
+      "filename": "observable_sweep_710.jld2",
+      "energy": 0.5709138301525352,
+      "sweep": 710
+    },
+    {
+      "state_index": 711,
+      "filename": "observable_sweep_711.jld2",
+      "energy": 0.5762387743159939,
+      "sweep": 711
+    },
+    {
+      "state_index": 712,
+      "filename": "observable_sweep_712.jld2",
+      "energy": 0.5762387743159946,
+      "sweep": 712
+    },
+    {
+      "state_index": 713,
+      "filename": "observable_sweep_713.jld2",
+      "energy": 0.5762387743159946,
+      "sweep": 713
+    },
+    {
+      "state_index": 714,
+      "filename": "observable_sweep_714.jld2",
+      "energy": 0.576238774315995,
+      "sweep": 714
+    },
+    {
+      "state_index": 715,
+      "filename": "observable_sweep_715.jld2",
+      "energy": 0.5762387743159952,
+      "sweep": 715
+    },
+    {
+      "state_index": 716,
+      "filename": "observable_sweep_716.jld2",
+      "energy": 0.580509047981726,
+      "sweep": 716
+    },
+    {
+      "state_index": 717,
+      "filename": "observable_sweep_717.jld2",
+      "energy": 0.5820830039274064,
+      "sweep": 717
+    },
+    {
+      "state_index": 718,
+      "filename": "observable_sweep_718.jld2",
+      "energy": 0.5820830039274072,
+      "sweep": 718
+    },
+    {
+      "state_index": 719,
+      "filename": "observable_sweep_719.jld2",
+      "energy": 0.5910399858552382,
+      "sweep": 719
+    },
+    {
+      "state_index": 720,
+      "filename": "observable_sweep_720.jld2",
+      "energy": 0.5960107358150477,
+      "sweep": 720
+    },
+    {
+      "state_index": 721,
+      "filename": "observable_sweep_721.jld2",
+      "energy": 0.5960107358150478,
+      "sweep": 721
+    },
+    {
+      "state_index": 722,
+      "filename": "observable_sweep_722.jld2",
+      "energy": 0.6094967947549823,
+      "sweep": 722
+    },
+    {
+      "state_index": 723,
+      "filename": "observable_sweep_723.jld2",
+      "energy": 0.6153410243663953,
+      "sweep": 723
+    },
+    {
+      "state_index": 724,
+      "filename": "observable_sweep_724.jld2",
+      "energy": 0.6153410243663956,
+      "sweep": 724
+    },
+    {
+      "state_index": 725,
+      "filename": "observable_sweep_725.jld2",
+      "energy": 0.6153410243663958,
+      "sweep": 725
+    },
+    {
+      "state_index": 726,
+      "filename": "observable_sweep_726.jld2",
+      "energy": 0.6153410243663969,
+      "sweep": 726
+    },
+    {
+      "state_index": 727,
+      "filename": "observable_sweep_727.jld2",
+      "energy": 0.6177108474634311,
+      "sweep": 727
+    },
+    {
+      "state_index": 728,
+      "filename": "observable_sweep_728.jld2",
+      "energy": 0.6177108474634314,
+      "sweep": 728
+    },
+    {
+      "state_index": 729,
+      "filename": "observable_sweep_729.jld2",
+      "energy": 0.6177108474634323,
+      "sweep": 729
+    },
+    {
+      "state_index": 730,
+      "filename": "observable_sweep_730.jld2",
+      "energy": 0.6308427121997158,
+      "sweep": 730
+    },
+    {
+      "state_index": 731,
+      "filename": "observable_sweep_731.jld2",
+      "energy": 0.6308427121997168,
+      "sweep": 731
+    },
+    {
+      "state_index": 732,
+      "filename": "observable_sweep_732.jld2",
+      "energy": 0.6351129858654483,
+      "sweep": 732
+    },
+    {
+      "state_index": 733,
+      "filename": "observable_sweep_733.jld2",
+      "energy": 0.6456439237389597,
+      "sweep": 733
+    },
+    {
+      "state_index": 734,
+      "filename": "observable_sweep_734.jld2",
+      "energy": 0.6509688679024178,
+      "sweep": 734
+    },
+    {
+      "state_index": 735,
+      "filename": "observable_sweep_735.jld2",
+      "energy": 0.6509688679024188,
+      "sweep": 735
+    },
+    {
+      "state_index": 736,
+      "filename": "observable_sweep_736.jld2",
+      "energy": 0.6509688679024189,
+      "sweep": 736
+    },
+    {
+      "state_index": 737,
+      "filename": "observable_sweep_737.jld2",
+      "energy": 0.6509688679024194,
+      "sweep": 737
+    },
+    {
+      "state_index": 738,
+      "filename": "observable_sweep_738.jld2",
+      "energy": 0.6509688679024198,
+      "sweep": 738
+    },
+    {
+      "state_index": 739,
+      "filename": "observable_sweep_739.jld2",
+      "energy": 0.6509688679024199,
+      "sweep": 739
+    },
+    {
+      "state_index": 740,
+      "filename": "observable_sweep_740.jld2",
+      "energy": 0.6568130975138304,
+      "sweep": 740
+    },
+    {
+      "state_index": 741,
+      "filename": "observable_sweep_741.jld2",
+      "energy": 0.6641007326387034,
+      "sweep": 741
+    },
+    {
+      "state_index": 742,
+      "filename": "observable_sweep_742.jld2",
+      "energy": 0.6641007326387041,
+      "sweep": 742
+    },
+    {
+      "state_index": 743,
+      "filename": "observable_sweep_743.jld2",
+      "energy": 0.6699449622501159,
+      "sweep": 743
+    },
+    {
+      "state_index": 744,
+      "filename": "observable_sweep_744.jld2",
+      "energy": 0.6707408294014722,
+      "sweep": 744
+    },
+    {
+      "state_index": 745,
+      "filename": "observable_sweep_745.jld2",
+      "energy": 0.6752699064135754,
+      "sweep": 745
+    },
+    {
+      "state_index": 746,
+      "filename": "observable_sweep_746.jld2",
+      "energy": 0.6842268883414063,
+      "sweep": 746
+    },
+    {
+      "state_index": 747,
+      "filename": "observable_sweep_747.jld2",
+      "energy": 0.6858008442870879,
+      "sweep": 747
+    },
+    {
+      "state_index": 748,
+      "filename": "observable_sweep_748.jld2",
+      "energy": 0.6900711179528187,
+      "sweep": 748
+    },
+    {
+      "state_index": 749,
+      "filename": "observable_sweep_749.jld2",
+      "energy": 0.6900711179528191,
+      "sweep": 749
+    },
+    {
+      "state_index": 750,
+      "filename": "observable_sweep_750.jld2",
+      "energy": 0.6924409410498559,
+      "sweep": 750
+    },
+    {
+      "state_index": 751,
+      "filename": "observable_sweep_751.jld2",
+      "energy": 0.7055728057861407,
+      "sweep": 751
+    },
+    {
+      "state_index": 752,
+      "filename": "observable_sweep_752.jld2",
+      "energy": 0.705572805786141,
+      "sweep": 752
+    },
+    {
+      "state_index": 753,
+      "filename": "observable_sweep_753.jld2",
+      "energy": 0.7055728057861411,
+      "sweep": 753
+    },
+    {
+      "state_index": 754,
+      "filename": "observable_sweep_754.jld2",
+      "energy": 0.7055728057861415,
+      "sweep": 754
+    },
+    {
+      "state_index": 755,
+      "filename": "observable_sweep_755.jld2",
+      "energy": 0.705572805786142,
+      "sweep": 755
+    },
+    {
+      "state_index": 756,
+      "filename": "observable_sweep_756.jld2",
+      "energy": 0.7085279268525629,
+      "sweep": 756
+    },
+    {
+      "state_index": 757,
+      "filename": "observable_sweep_757.jld2",
+      "energy": 0.7108977499495998,
+      "sweep": 757
+    },
+    {
+      "state_index": 758,
+      "filename": "observable_sweep_758.jld2",
+      "energy": 0.7108977499496,
+      "sweep": 758
+    },
+    {
+      "state_index": 759,
+      "filename": "observable_sweep_759.jld2",
+      "energy": 0.7190588647260752,
+      "sweep": 759
+    },
+    {
+      "state_index": 760,
+      "filename": "observable_sweep_760.jld2",
+      "energy": 0.7256989614888427,
+      "sweep": 760
+    },
+    {
+      "state_index": 761,
+      "filename": "observable_sweep_761.jld2",
+      "energy": 0.7388308262251281,
+      "sweep": 761
+    },
+    {
+      "state_index": 762,
+      "filename": "observable_sweep_762.jld2",
+      "energy": 0.738830826225129,
+      "sweep": 762
+    },
+    {
+      "state_index": 763,
+      "filename": "observable_sweep_763.jld2",
+      "energy": 0.7388308262251299,
+      "sweep": 763
+    },
+    {
+      "state_index": 764,
+      "filename": "observable_sweep_764.jld2",
+      "energy": 0.7388308262251305,
+      "sweep": 764
+    },
+    {
+      "state_index": 765,
+      "filename": "observable_sweep_765.jld2",
+      "energy": 0.7441557703885873,
+      "sweep": 765
+    },
+    {
+      "state_index": 766,
+      "filename": "observable_sweep_766.jld2",
+      "energy": 0.7446750558365397,
+      "sweep": 766
+    },
+    {
+      "state_index": 767,
+      "filename": "observable_sweep_767.jld2",
+      "energy": 0.7500000000000004,
+      "sweep": 767
+    },
+    {
+      "state_index": 768,
+      "filename": "observable_sweep_768.jld2",
+      "energy": 0.7605309378735114,
+      "sweep": 768
+    },
+    {
+      "state_index": 769,
+      "filename": "observable_sweep_769.jld2",
+      "energy": 0.7631318647362848,
+      "sweep": 769
+    },
+    {
+      "state_index": 770,
+      "filename": "observable_sweep_770.jld2",
+      "energy": 0.765501687833321,
+      "sweep": 770
+    },
+    {
+      "state_index": 771,
+      "filename": "observable_sweep_771.jld2",
+      "energy": 0.7736628026097971,
+      "sweep": 771
+    },
+    {
+      "state_index": 772,
+      "filename": "observable_sweep_772.jld2",
+      "energy": 0.7803028993725647,
+      "sweep": 772
+    },
+    {
+      "state_index": 773,
+      "filename": "observable_sweep_773.jld2",
+      "energy": 0.7803028993725654,
+      "sweep": 773
+    },
+    {
+      "state_index": 774,
+      "filename": "observable_sweep_774.jld2",
+      "energy": 0.7803028993725655,
+      "sweep": 774
+    },
+    {
+      "state_index": 775,
+      "filename": "observable_sweep_775.jld2",
+      "energy": 0.7832580204389883,
+      "sweep": 775
+    },
+    {
+      "state_index": 776,
+      "filename": "observable_sweep_776.jld2",
+      "energy": 0.7856278435360241,
+      "sweep": 776
+    },
+    {
+      "state_index": 777,
+      "filename": "observable_sweep_777.jld2",
+      "energy": 0.7856278435360243,
+      "sweep": 777
+    },
+    {
+      "state_index": 778,
+      "filename": "observable_sweep_778.jld2",
+      "energy": 0.7934347641088502,
+      "sweep": 778
+    },
+    {
+      "state_index": 779,
+      "filename": "observable_sweep_779.jld2",
+      "energy": 0.7937889583124997,
+      "sweep": 779
+    },
+    {
+      "state_index": 780,
+      "filename": "observable_sweep_780.jld2",
+      "energy": 0.7987597082723087,
+      "sweep": 780
+    },
+    {
+      "state_index": 781,
+      "filename": "observable_sweep_781.jld2",
+      "energy": 0.7987597082723087,
+      "sweep": 781
+    },
+    {
+      "state_index": 782,
+      "filename": "observable_sweep_782.jld2",
+      "energy": 0.7987597082723088,
+      "sweep": 782
+    },
+    {
+      "state_index": 783,
+      "filename": "observable_sweep_783.jld2",
+      "energy": 0.7987597082723104,
+      "sweep": 783
+    },
+    {
+      "state_index": 784,
+      "filename": "observable_sweep_784.jld2",
+      "energy": 0.8135609198115534,
+      "sweep": 784
+    },
+    {
+      "state_index": 785,
+      "filename": "observable_sweep_785.jld2",
+      "energy": 0.8135609198115539,
+      "sweep": 785
+    },
+    {
+      "state_index": 786,
+      "filename": "observable_sweep_786.jld2",
+      "energy": 0.8188858639750121,
+      "sweep": 786
+    },
+    {
+      "state_index": 787,
+      "filename": "observable_sweep_787.jld2",
+      "energy": 0.8204598199206933,
+      "sweep": 787
+    },
+    {
+      "state_index": 788,
+      "filename": "observable_sweep_788.jld2",
+      "energy": 0.8320177287112971,
+      "sweep": 788
+    },
+    {
+      "state_index": 789,
+      "filename": "observable_sweep_789.jld2",
+      "energy": 0.8378619583227094,
+      "sweep": 789
+    },
+    {
+      "state_index": 790,
+      "filename": "observable_sweep_790.jld2",
+      "energy": 0.8378619583227097,
+      "sweep": 790
+    },
+    {
+      "state_index": 791,
+      "filename": "observable_sweep_791.jld2",
+      "energy": 0.8402317814197459,
+      "sweep": 791
+    },
+    {
+      "state_index": 792,
+      "filename": "observable_sweep_792.jld2",
+      "energy": 0.8402317814197466,
+      "sweep": 792
+    },
+    {
+      "state_index": 793,
+      "filename": "observable_sweep_793.jld2",
+      "energy": 0.848392896196221,
+      "sweep": 793
+    },
+    {
+      "state_index": 794,
+      "filename": "observable_sweep_794.jld2",
+      "energy": 0.8483928961962215,
+      "sweep": 794
+    },
+    {
+      "state_index": 795,
+      "filename": "observable_sweep_795.jld2",
+      "energy": 0.8537178403596806,
+      "sweep": 795
+    },
+    {
+      "state_index": 796,
+      "filename": "observable_sweep_796.jld2",
+      "energy": 0.8537178403596807,
+      "sweep": 796
+    },
+    {
+      "state_index": 797,
+      "filename": "observable_sweep_797.jld2",
+      "energy": 0.8681648576952745,
+      "sweep": 797
+    },
+    {
+      "state_index": 798,
+      "filename": "observable_sweep_798.jld2",
+      "energy": 0.8734898018587322,
+      "sweep": 798
+    },
+    {
+      "state_index": 799,
+      "filename": "observable_sweep_799.jld2",
+      "energy": 0.8734898018587328,
+      "sweep": 799
+    },
+    {
+      "state_index": 800,
+      "filename": "observable_sweep_800.jld2",
+      "energy": 0.8734898018587338,
+      "sweep": 800
+    },
+    {
+      "state_index": 801,
+      "filename": "observable_sweep_801.jld2",
+      "energy": 0.8734898018587339,
+      "sweep": 801
+    },
+    {
+      "state_index": 802,
+      "filename": "observable_sweep_802.jld2",
+      "energy": 0.8734898018587343,
+      "sweep": 802
+    },
+    {
+      "state_index": 803,
+      "filename": "observable_sweep_803.jld2",
+      "energy": 0.8734898018587349,
+      "sweep": 803
+    },
+    {
+      "state_index": 804,
+      "filename": "observable_sweep_804.jld2",
+      "energy": 0.8866216665950177,
+      "sweep": 804
+    },
+    {
+      "state_index": 805,
+      "filename": "observable_sweep_805.jld2",
+      "energy": 0.8951899135071173,
+      "sweep": 805
+    },
+    {
+      "state_index": 806,
+      "filename": "observable_sweep_806.jld2",
+      "energy": 0.90674782229772,
+      "sweep": 806
+    },
+    {
+      "state_index": 807,
+      "filename": "observable_sweep_807.jld2",
+      "energy": 0.9083217782434002,
+      "sweep": 807
+    },
+    {
+      "state_index": 808,
+      "filename": "observable_sweep_808.jld2",
+      "energy": 0.9083217782434017,
+      "sweep": 808
+    },
+    {
+      "state_index": 809,
+      "filename": "observable_sweep_809.jld2",
+      "energy": 0.9083217782434023,
+      "sweep": 809
+    },
+    {
+      "state_index": 810,
+      "filename": "observable_sweep_810.jld2",
+      "energy": 0.9125920519091344,
+      "sweep": 810
+    },
+    {
+      "state_index": 811,
+      "filename": "observable_sweep_811.jld2",
+      "energy": 0.9149618750061697,
+      "sweep": 811
+    },
+    {
+      "state_index": 812,
+      "filename": "observable_sweep_812.jld2",
+      "energy": 0.9231229897826441,
+      "sweep": 812
+    },
+    {
+      "state_index": 813,
+      "filename": "observable_sweep_813.jld2",
+      "energy": 0.9280937397424549,
+      "sweep": 813
+    },
+    {
+      "state_index": 814,
+      "filename": "observable_sweep_814.jld2",
+      "energy": 0.9284479339461045,
+      "sweep": 814
+    },
+    {
+      "state_index": 815,
+      "filename": "observable_sweep_815.jld2",
+      "energy": 0.9284479339461048,
+      "sweep": 815
+    },
+    {
+      "state_index": 816,
+      "filename": "observable_sweep_816.jld2",
+      "energy": 0.9334186839059133,
+      "sweep": 816
+    },
+    {
+      "state_index": 817,
+      "filename": "observable_sweep_817.jld2",
+      "energy": 0.9415797986823892,
+      "sweep": 817
+    },
+    {
+      "state_index": 818,
+      "filename": "observable_sweep_818.jld2",
+      "energy": 0.9415797986823894,
+      "sweep": 818
+    },
+    {
+      "state_index": 819,
+      "filename": "observable_sweep_819.jld2",
+      "energy": 0.9415797986823896,
+      "sweep": 819
+    },
+    {
+      "state_index": 820,
+      "filename": "observable_sweep_820.jld2",
+      "energy": 0.9439496217794261,
+      "sweep": 820
+    },
+    {
+      "state_index": 821,
+      "filename": "observable_sweep_821.jld2",
+      "energy": 0.9482198954451576,
+      "sweep": 821
+    },
+    {
+      "state_index": 822,
+      "filename": "observable_sweep_822.jld2",
+      "energy": 0.9482198954451582,
+      "sweep": 822
+    },
+    {
+      "state_index": 823,
+      "filename": "observable_sweep_823.jld2",
+      "energy": 0.9613517601814427,
+      "sweep": 823
+    },
+    {
+      "state_index": 824,
+      "filename": "observable_sweep_824.jld2",
+      "energy": 0.9613517601814433,
+      "sweep": 824
+    },
+    {
+      "state_index": 825,
+      "filename": "observable_sweep_825.jld2",
+      "energy": 0.9666767043449025,
+      "sweep": 825
+    },
+    {
+      "state_index": 826,
+      "filename": "observable_sweep_826.jld2",
+      "energy": 0.9772076422184135,
+      "sweep": 826
+    },
+    {
+      "state_index": 827,
+      "filename": "observable_sweep_827.jld2",
+      "energy": 0.9830518718298236,
+      "sweep": 827
+    },
+    {
+      "state_index": 828,
+      "filename": "observable_sweep_828.jld2",
+      "energy": 0.9830518718298259,
+      "sweep": 828
+    },
+    {
+      "state_index": 829,
+      "filename": "observable_sweep_829.jld2",
+      "energy": 0.983051871829826,
+      "sweep": 829
+    },
+    {
+      "state_index": 830,
+      "filename": "observable_sweep_830.jld2",
+      "energy": 0.9830518718298265,
+      "sweep": 830
+    },
+    {
+      "state_index": 831,
+      "filename": "observable_sweep_831.jld2",
+      "energy": 0.9830518718298267,
+      "sweep": 831
+    },
+    {
+      "state_index": 832,
+      "filename": "observable_sweep_832.jld2",
+      "energy": 0.9961837365661115,
+      "sweep": 832
+    },
+    {
+      "state_index": 833,
+      "filename": "observable_sweep_833.jld2",
+      "energy": 1.002823833328879,
+      "sweep": 833
+    },
+    {
+      "state_index": 834,
+      "filename": "observable_sweep_834.jld2",
+      "energy": 1.0081487774923383,
+      "sweep": 834
+    },
+    {
+      "state_index": 835,
+      "filename": "observable_sweep_835.jld2",
+      "energy": 1.0163098922688125,
+      "sweep": 835
+    },
+    {
+      "state_index": 836,
+      "filename": "observable_sweep_836.jld2",
+      "energy": 1.0163098922688139,
+      "sweep": 836
+    },
+    {
+      "state_index": 837,
+      "filename": "observable_sweep_837.jld2",
+      "energy": 1.0163098922688143,
+      "sweep": 837
+    },
+    {
+      "state_index": 838,
+      "filename": "observable_sweep_838.jld2",
+      "energy": 1.016309892268815,
+      "sweep": 838
+    },
+    {
+      "state_index": 839,
+      "filename": "observable_sweep_839.jld2",
+      "energy": 1.0186797153658511,
+      "sweep": 839
+    },
+    {
+      "state_index": 840,
+      "filename": "observable_sweep_840.jld2",
+      "energy": 1.0212806422286227,
+      "sweep": 840
+    },
+    {
+      "state_index": 841,
+      "filename": "observable_sweep_841.jld2",
+      "energy": 1.0318115801021355,
+      "sweep": 841
+    },
+    {
+      "state_index": 842,
+      "filename": "observable_sweep_842.jld2",
+      "energy": 1.0360818537678669,
+      "sweep": 842
+    },
+    {
+      "state_index": 843,
+      "filename": "observable_sweep_843.jld2",
+      "energy": 1.0414067979313262,
+      "sweep": 843
+    },
+    {
+      "state_index": 844,
+      "filename": "observable_sweep_844.jld2",
+      "energy": 1.0429807538770068,
+      "sweep": 844
+    },
+    {
+      "state_index": 845,
+      "filename": "observable_sweep_845.jld2",
+      "energy": 1.0519377358048376,
+      "sweep": 845
+    },
+    {
+      "state_index": 846,
+      "filename": "observable_sweep_846.jld2",
+      "energy": 1.0577819654162501,
+      "sweep": 846
+    },
+    {
+      "state_index": 847,
+      "filename": "observable_sweep_847.jld2",
+      "energy": 1.0577819654162508,
+      "sweep": 847
+    },
+    {
+      "state_index": 848,
+      "filename": "observable_sweep_848.jld2",
+      "energy": 1.0709138301525358,
+      "sweep": 848
+    },
+    {
+      "state_index": 849,
+      "filename": "observable_sweep_849.jld2",
+      "energy": 1.0709138301525358,
+      "sweep": 849
+    },
+    {
+      "state_index": 850,
+      "filename": "observable_sweep_850.jld2",
+      "energy": 1.0709138301525367,
+      "sweep": 850
+    },
+    {
+      "state_index": 851,
+      "filename": "observable_sweep_851.jld2",
+      "energy": 1.0762387743159938,
+      "sweep": 851
+    },
+    {
+      "state_index": 852,
+      "filename": "observable_sweep_852.jld2",
+      "energy": 1.0762387743159945,
+      "sweep": 852
+    },
+    {
+      "state_index": 853,
+      "filename": "observable_sweep_853.jld2",
+      "energy": 1.0762387743159947,
+      "sweep": 853
+    },
+    {
+      "state_index": 854,
+      "filename": "observable_sweep_854.jld2",
+      "energy": 1.0762387743159958,
+      "sweep": 854
+    },
+    {
+      "state_index": 855,
+      "filename": "observable_sweep_855.jld2",
+      "energy": 1.0910399858552378,
+      "sweep": 855
+    },
+    {
+      "state_index": 856,
+      "filename": "observable_sweep_856.jld2",
+      "energy": 1.0960107358150477,
+      "sweep": 856
+    },
+    {
+      "state_index": 857,
+      "filename": "observable_sweep_857.jld2",
+      "energy": 1.096010735815048,
+      "sweep": 857
+    },
+    {
+      "state_index": 858,
+      "filename": "observable_sweep_858.jld2",
+      "energy": 1.1065416736885585,
+      "sweep": 858
+    },
+    {
+      "state_index": 859,
+      "filename": "observable_sweep_859.jld2",
+      "energy": 1.1065416736885594,
+      "sweep": 859
+    },
+    {
+      "state_index": 860,
+      "filename": "observable_sweep_860.jld2",
+      "energy": 1.1094967947549828,
+      "sweep": 860
+    },
+    {
+      "state_index": 861,
+      "filename": "observable_sweep_861.jld2",
+      "energy": 1.1177108474634305,
+      "sweep": 861
+    },
+    {
+      "state_index": 862,
+      "filename": "observable_sweep_862.jld2",
+      "energy": 1.130842712199716,
+      "sweep": 862
+    },
+    {
+      "state_index": 863,
+      "filename": "observable_sweep_863.jld2",
+      "energy": 1.1308427121997164,
+      "sweep": 863
+    },
+    {
+      "state_index": 864,
+      "filename": "observable_sweep_864.jld2",
+      "energy": 1.14564392373896,
+      "sweep": 864
+    },
+    {
+      "state_index": 865,
+      "filename": "observable_sweep_865.jld2",
+      "energy": 1.1456439237389602,
+      "sweep": 865
+    },
+    {
+      "state_index": 866,
+      "filename": "observable_sweep_866.jld2",
+      "energy": 1.1509688679024177,
+      "sweep": 866
+    },
+    {
+      "state_index": 867,
+      "filename": "observable_sweep_867.jld2",
+      "energy": 1.1509688679024186,
+      "sweep": 867
+    },
+    {
+      "state_index": 868,
+      "filename": "observable_sweep_868.jld2",
+      "energy": 1.1509688679024193,
+      "sweep": 868
+    },
+    {
+      "state_index": 869,
+      "filename": "observable_sweep_869.jld2",
+      "energy": 1.1509688679024208,
+      "sweep": 869
+    },
+    {
+      "state_index": 870,
+      "filename": "observable_sweep_870.jld2",
+      "energy": 1.164100732638704,
+      "sweep": 870
+    },
+    {
+      "state_index": 871,
+      "filename": "observable_sweep_871.jld2",
+      "energy": 1.164100732638704,
+      "sweep": 871
+    },
+    {
+      "state_index": 872,
+      "filename": "observable_sweep_872.jld2",
+      "energy": 1.1641007326387045,
+      "sweep": 872
+    },
+    {
+      "state_index": 873,
+      "filename": "observable_sweep_873.jld2",
+      "energy": 1.1664705557357398,
+      "sweep": 873
+    },
+    {
+      "state_index": 874,
+      "filename": "observable_sweep_874.jld2",
+      "energy": 1.1707408294014718,
+      "sweep": 874
+    },
+    {
+      "state_index": 875,
+      "filename": "observable_sweep_875.jld2",
+      "energy": 1.1812717672749844,
+      "sweep": 875
+    },
+    {
+      "state_index": 876,
+      "filename": "observable_sweep_876.jld2",
+      "energy": 1.1842268883414058,
+      "sweep": 876
+    },
+    {
+      "state_index": 877,
+      "filename": "observable_sweep_877.jld2",
+      "energy": 1.1858008442870882,
+      "sweep": 877
+    },
+    {
+      "state_index": 878,
+      "filename": "observable_sweep_878.jld2",
+      "energy": 1.1997285761747276,
+      "sweep": 878
+    },
+    {
+      "state_index": 879,
+      "filename": "observable_sweep_879.jld2",
+      "energy": 1.1997285761747285,
+      "sweep": 879
+    },
+    {
+      "state_index": 880,
+      "filename": "observable_sweep_880.jld2",
+      "energy": 1.2055728057861397,
+      "sweep": 880
+    },
+    {
+      "state_index": 881,
+      "filename": "observable_sweep_881.jld2",
+      "energy": 1.20557280578614,
+      "sweep": 881
+    },
+    {
+      "state_index": 882,
+      "filename": "observable_sweep_882.jld2",
+      "energy": 1.2055728057861417,
+      "sweep": 882
+    },
+    {
+      "state_index": 883,
+      "filename": "observable_sweep_883.jld2",
+      "energy": 1.2055728057861426,
+      "sweep": 883
+    },
+    {
+      "state_index": 884,
+      "filename": "observable_sweep_884.jld2",
+      "energy": 1.2190588647260754,
+      "sweep": 884
+    },
+    {
+      "state_index": 885,
+      "filename": "observable_sweep_885.jld2",
+      "energy": 1.2388308262251275,
+      "sweep": 885
+    },
+    {
+      "state_index": 886,
+      "filename": "observable_sweep_886.jld2",
+      "energy": 1.2388308262251275,
+      "sweep": 886
+    },
+    {
+      "state_index": 887,
+      "filename": "observable_sweep_887.jld2",
+      "energy": 1.2388308262251284,
+      "sweep": 887
+    },
+    {
+      "state_index": 888,
+      "filename": "observable_sweep_888.jld2",
+      "energy": 1.2388308262251286,
+      "sweep": 888
+    },
+    {
+      "state_index": 889,
+      "filename": "observable_sweep_889.jld2",
+      "energy": 1.2388308262251295,
+      "sweep": 889
+    },
+    {
+      "state_index": 890,
+      "filename": "observable_sweep_890.jld2",
+      "energy": 1.241200649322165,
+      "sweep": 890
+    },
+    {
+      "state_index": 891,
+      "filename": "observable_sweep_891.jld2",
+      "energy": 1.2543325140584491,
+      "sweep": 891
+    },
+    {
+      "state_index": 892,
+      "filename": "observable_sweep_892.jld2",
+      "energy": 1.2605309378735114,
+      "sweep": 892
+    },
+    {
+      "state_index": 893,
+      "filename": "observable_sweep_893.jld2",
+      "energy": 1.273662802609797,
+      "sweep": 893
+    },
+    {
+      "state_index": 894,
+      "filename": "observable_sweep_894.jld2",
+      "energy": 1.2744586697611515,
+      "sweep": 894
+    },
+    {
+      "state_index": 895,
+      "filename": "observable_sweep_895.jld2",
+      "energy": 1.2744586697611537,
+      "sweep": 895
+    },
+    {
+      "state_index": 896,
+      "filename": "observable_sweep_896.jld2",
+      "energy": 1.2803028993725647,
+      "sweep": 896
+    },
+    {
+      "state_index": 897,
+      "filename": "observable_sweep_897.jld2",
+      "energy": 1.2803028993725656,
+      "sweep": 897
+    },
+    {
+      "state_index": 898,
+      "filename": "observable_sweep_898.jld2",
+      "energy": 1.2934347641088504,
+      "sweep": 898
+    },
+    {
+      "state_index": 899,
+      "filename": "observable_sweep_899.jld2",
+      "energy": 1.2937889583124997,
+      "sweep": 899
+    },
+    {
+      "state_index": 900,
+      "filename": "observable_sweep_900.jld2",
+      "energy": 1.2987597082723084,
+      "sweep": 900
+    },
+    {
+      "state_index": 901,
+      "filename": "observable_sweep_901.jld2",
+      "energy": 1.2987597082723097,
+      "sweep": 901
+    },
+    {
+      "state_index": 902,
+      "filename": "observable_sweep_902.jld2",
+      "energy": 1.309290646145821,
+      "sweep": 902
+    },
+    {
+      "state_index": 903,
+      "filename": "observable_sweep_903.jld2",
+      "energy": 1.3092906461458222,
+      "sweep": 903
+    },
+    {
+      "state_index": 904,
+      "filename": "observable_sweep_904.jld2",
+      "energy": 1.3135609198115519,
+      "sweep": 904
+    },
+    {
+      "state_index": 905,
+      "filename": "observable_sweep_905.jld2",
+      "energy": 1.3135609198115528,
+      "sweep": 905
+    },
+    {
+      "state_index": 906,
+      "filename": "observable_sweep_906.jld2",
+      "energy": 1.3290626076448742,
+      "sweep": 906
+    },
+    {
+      "state_index": 907,
+      "filename": "observable_sweep_907.jld2",
+      "energy": 1.3290626076448746,
+      "sweep": 907
+    },
+    {
+      "state_index": 908,
+      "filename": "observable_sweep_908.jld2",
+      "energy": 1.3320177287112969,
+      "sweep": 908
+    },
+    {
+      "state_index": 909,
+      "filename": "observable_sweep_909.jld2",
+      "energy": 1.3425486665848094,
+      "sweep": 909
+    },
+    {
+      "state_index": 910,
+      "filename": "observable_sweep_910.jld2",
+      "energy": 1.348392896196221,
+      "sweep": 910
+    },
+    {
+      "state_index": 911,
+      "filename": "observable_sweep_911.jld2",
+      "energy": 1.3483928961962213,
+      "sweep": 911
+    },
+    {
+      "state_index": 912,
+      "filename": "observable_sweep_912.jld2",
+      "energy": 1.3681648576952752,
+      "sweep": 912
+    },
+    {
+      "state_index": 913,
+      "filename": "observable_sweep_913.jld2",
+      "energy": 1.3734898018587327,
+      "sweep": 913
+    },
+    {
+      "state_index": 914,
+      "filename": "observable_sweep_914.jld2",
+      "energy": 1.373489801858734,
+      "sweep": 914
+    },
+    {
+      "state_index": 915,
+      "filename": "observable_sweep_915.jld2",
+      "energy": 1.3840207397322442,
+      "sweep": 915
+    },
+    {
+      "state_index": 916,
+      "filename": "observable_sweep_916.jld2",
+      "energy": 1.3840207397322453,
+      "sweep": 916
+    },
+    {
+      "state_index": 917,
+      "filename": "observable_sweep_917.jld2",
+      "energy": 1.3866216665950193,
+      "sweep": 917
+    },
+    {
+      "state_index": 918,
+      "filename": "observable_sweep_918.jld2",
+      "energy": 1.397152604468531,
+      "sweep": 918
+    },
+    {
+      "state_index": 919,
+      "filename": "observable_sweep_919.jld2",
+      "energy": 1.4037927012312976,
+      "sweep": 919
+    },
+    {
+      "state_index": 920,
+      "filename": "observable_sweep_920.jld2",
+      "energy": 1.4067478222977212,
+      "sweep": 920
+    },
+    {
+      "state_index": 921,
+      "filename": "observable_sweep_921.jld2",
+      "energy": 1.408321778243402,
+      "sweep": 921
+    },
+    {
+      "state_index": 922,
+      "filename": "observable_sweep_922.jld2",
+      "energy": 1.4172787601712338,
+      "sweep": 922
+    },
+    {
+      "state_index": 923,
+      "filename": "observable_sweep_923.jld2",
+      "energy": 1.4222495101310426,
+      "sweep": 923
+    },
+    {
+      "state_index": 924,
+      "filename": "observable_sweep_924.jld2",
+      "energy": 1.4231229897826456,
+      "sweep": 924
+    },
+    {
+      "state_index": 925,
+      "filename": "observable_sweep_925.jld2",
+      "energy": 1.4415797986823895,
+      "sweep": 925
+    },
+    {
+      "state_index": 926,
+      "filename": "observable_sweep_926.jld2",
+      "energy": 1.44157979868239,
+      "sweep": 926
+    },
+    {
+      "state_index": 927,
+      "filename": "observable_sweep_927.jld2",
+      "energy": 1.443949621779426,
+      "sweep": 927
+    },
+    {
+      "state_index": 928,
+      "filename": "observable_sweep_928.jld2",
+      "energy": 1.4613517601814419,
+      "sweep": 928
+    },
+    {
+      "state_index": 929,
+      "filename": "observable_sweep_929.jld2",
+      "energy": 1.4613517601814439,
+      "sweep": 929
+    },
+    {
+      "state_index": 930,
+      "filename": "observable_sweep_930.jld2",
+      "energy": 1.4718826980549544,
+      "sweep": 930
+    },
+    {
+      "state_index": 931,
+      "filename": "observable_sweep_931.jld2",
+      "energy": 1.4718826980549546,
+      "sweep": 931
+    },
+    {
+      "state_index": 932,
+      "filename": "observable_sweep_932.jld2",
+      "energy": 1.4772076422184133,
+      "sweep": 932
+    },
+    {
+      "state_index": 933,
+      "filename": "observable_sweep_933.jld2",
+      "energy": 1.4830518718298265,
+      "sweep": 933
+    },
+    {
+      "state_index": 934,
+      "filename": "observable_sweep_934.jld2",
+      "energy": 1.4961837365661108,
+      "sweep": 934
+    },
+    {
+      "state_index": 935,
+      "filename": "observable_sweep_935.jld2",
+      "energy": 1.496979603717467,
+      "sweep": 935
+    },
+    {
+      "state_index": 936,
+      "filename": "observable_sweep_936.jld2",
+      "energy": 1.5163098922688136,
+      "sweep": 936
+    },
+    {
+      "state_index": 937,
+      "filename": "observable_sweep_937.jld2",
+      "energy": 1.516309892268814,
+      "sweep": 937
+    },
+    {
+      "state_index": 938,
+      "filename": "observable_sweep_938.jld2",
+      "energy": 1.5186797153658504,
+      "sweep": 938
+    },
+    {
+      "state_index": 939,
+      "filename": "observable_sweep_939.jld2",
+      "energy": 1.5318115801021346,
+      "sweep": 939
+    },
+    {
+      "state_index": 940,
+      "filename": "observable_sweep_940.jld2",
+      "energy": 1.5318115801021357,
+      "sweep": 940
+    },
+    {
+      "state_index": 941,
+      "filename": "observable_sweep_941.jld2",
+      "energy": 1.531811580102136,
+      "sweep": 941
+    },
+    {
+      "state_index": 942,
+      "filename": "observable_sweep_942.jld2",
+      "energy": 1.5360818537678667,
+      "sweep": 942
+    },
+    {
+      "state_index": 943,
+      "filename": "observable_sweep_943.jld2",
+      "energy": 1.5466127916413792,
+      "sweep": 943
+    },
+    {
+      "state_index": 944,
+      "filename": "observable_sweep_944.jld2",
+      "energy": 1.5519377358048376,
+      "sweep": 944
+    },
+    {
+      "state_index": 945,
+      "filename": "observable_sweep_945.jld2",
+      "energy": 1.565069600541123,
+      "sweep": 945
+    },
+    {
+      "state_index": 946,
+      "filename": "observable_sweep_946.jld2",
+      "energy": 1.565069600541123,
+      "sweep": 946
+    },
+    {
+      "state_index": 947,
+      "filename": "observable_sweep_947.jld2",
+      "energy": 1.5709138301525354,
+      "sweep": 947
+    },
+    {
+      "state_index": 948,
+      "filename": "observable_sweep_948.jld2",
+      "energy": 1.5709138301525358,
+      "sweep": 948
+    },
+    {
+      "state_index": 949,
+      "filename": "observable_sweep_949.jld2",
+      "energy": 1.6065416736885598,
+      "sweep": 949
+    },
+    {
+      "state_index": 950,
+      "filename": "observable_sweep_950.jld2",
+      "energy": 1.60654167368856,
+      "sweep": 950
+    },
+    {
+      "state_index": 951,
+      "filename": "observable_sweep_951.jld2",
+      "energy": 1.60654167368856,
+      "sweep": 951
+    },
+    {
+      "state_index": 952,
+      "filename": "observable_sweep_952.jld2",
+      "energy": 1.6065416736885612,
+      "sweep": 952
+    },
+    {
+      "state_index": 953,
+      "filename": "observable_sweep_953.jld2",
+      "energy": 1.6196735384248446,
+      "sweep": 953
+    },
+    {
+      "state_index": 954,
+      "filename": "observable_sweep_954.jld2",
+      "energy": 1.6397996941275472,
+      "sweep": 954
+    },
+    {
+      "state_index": 955,
+      "filename": "observable_sweep_955.jld2",
+      "energy": 1.6397996941275474,
+      "sweep": 955
+    },
+    {
+      "state_index": 956,
+      "filename": "observable_sweep_956.jld2",
+      "energy": 1.6456439237389602,
+      "sweep": 956
+    },
+    {
+      "state_index": 957,
+      "filename": "observable_sweep_957.jld2",
+      "energy": 1.664100732638704,
+      "sweep": 957
+    },
+    {
+      "state_index": 958,
+      "filename": "observable_sweep_958.jld2",
+      "energy": 1.66647055573574,
+      "sweep": 958
+    },
+    {
+      "state_index": 959,
+      "filename": "observable_sweep_959.jld2",
+      "energy": 1.6746316705122164,
+      "sweep": 959
+    },
+    {
+      "state_index": 960,
+      "filename": "observable_sweep_960.jld2",
+      "energy": 1.6812717672749833,
+      "sweep": 960
+    },
+    {
+      "state_index": 961,
+      "filename": "observable_sweep_961.jld2",
+      "energy": 1.6944036320112696,
+      "sweep": 961
+    },
+    {
+      "state_index": 962,
+      "filename": "observable_sweep_962.jld2",
+      "energy": 1.69440363201127,
+      "sweep": 962
+    },
+    {
+      "state_index": 963,
+      "filename": "observable_sweep_963.jld2",
+      "energy": 1.699728576174728,
+      "sweep": 963
+    },
+    {
+      "state_index": 964,
+      "filename": "observable_sweep_964.jld2",
+      "energy": 1.699728576174729,
+      "sweep": 964
+    },
+    {
+      "state_index": 965,
+      "filename": "observable_sweep_965.jld2",
+      "energy": 1.7388308262251286,
+      "sweep": 965
+    },
+    {
+      "state_index": 966,
+      "filename": "observable_sweep_966.jld2",
+      "energy": 1.7412006493221648,
+      "sweep": 966
+    },
+    {
+      "state_index": 967,
+      "filename": "observable_sweep_967.jld2",
+      "energy": 1.7493617640986399,
+      "sweep": 967
+    },
+    {
+      "state_index": 968,
+      "filename": "observable_sweep_968.jld2",
+      "energy": 1.7543325140584507,
+      "sweep": 968
+    },
+    {
+      "state_index": 969,
+      "filename": "observable_sweep_969.jld2",
+      "energy": 1.7691337255976933,
+      "sweep": 969
+    },
+    {
+      "state_index": 970,
+      "filename": "observable_sweep_970.jld2",
+      "energy": 1.7744586697611526,
+      "sweep": 970
+    },
+    {
+      "state_index": 971,
+      "filename": "observable_sweep_971.jld2",
+      "energy": 1.774458669761153,
+      "sweep": 971
+    },
+    {
+      "state_index": 972,
+      "filename": "observable_sweep_972.jld2",
+      "energy": 1.7875905344974377,
+      "sweep": 972
+    },
+    {
+      "state_index": 973,
+      "filename": "observable_sweep_973.jld2",
+      "energy": 1.8092906461458211,
+      "sweep": 973
+    },
+    {
+      "state_index": 974,
+      "filename": "observable_sweep_974.jld2",
+      "energy": 1.8092906461458216,
+      "sweep": 974
+    },
+    {
+      "state_index": 975,
+      "filename": "observable_sweep_975.jld2",
+      "energy": 1.8290626076448748,
+      "sweep": 975
+    },
+    {
+      "state_index": 976,
+      "filename": "observable_sweep_976.jld2",
+      "energy": 1.8290626076448748,
+      "sweep": 976
+    },
+    {
+      "state_index": 977,
+      "filename": "observable_sweep_977.jld2",
+      "energy": 1.84254866658481,
+      "sweep": 977
+    },
+    {
+      "state_index": 978,
+      "filename": "observable_sweep_978.jld2",
+      "energy": 1.8623206280838625,
+      "sweep": 978
+    },
+    {
+      "state_index": 979,
+      "filename": "observable_sweep_979.jld2",
+      "energy": 1.8840207397322453,
+      "sweep": 979
+    },
+    {
+      "state_index": 980,
+      "filename": "observable_sweep_980.jld2",
+      "energy": 1.8840207397322453,
+      "sweep": 980
+    },
+    {
+      "state_index": 981,
+      "filename": "observable_sweep_981.jld2",
+      "energy": 1.8971526044685307,
+      "sweep": 981
+    },
+    {
+      "state_index": 982,
+      "filename": "observable_sweep_982.jld2",
+      "energy": 1.897152604468531,
+      "sweep": 982
+    },
+    {
+      "state_index": 983,
+      "filename": "observable_sweep_983.jld2",
+      "energy": 1.9037927012312987,
+      "sweep": 983
+    },
+    {
+      "state_index": 984,
+      "filename": "observable_sweep_984.jld2",
+      "energy": 1.9172787601712338,
+      "sweep": 984
+    },
+    {
+      "state_index": 985,
+      "filename": "observable_sweep_985.jld2",
+      "energy": 1.9222495101310422,
+      "sweep": 985
+    },
+    {
+      "state_index": 986,
+      "filename": "observable_sweep_986.jld2",
+      "energy": 1.932780448004555,
+      "sweep": 986
+    },
+    {
+      "state_index": 987,
+      "filename": "observable_sweep_987.jld2",
+      "energy": 1.971882698054955,
+      "sweep": 987
+    },
+    {
+      "state_index": 988,
+      "filename": "observable_sweep_988.jld2",
+      "energy": 1.971882698054955,
+      "sweep": 988
+    },
+    {
+      "state_index": 989,
+      "filename": "observable_sweep_989.jld2",
+      "energy": 1.9718826980549558,
+      "sweep": 989
+    },
+    {
+      "state_index": 990,
+      "filename": "observable_sweep_990.jld2",
+      "energy": 1.9969796037174674,
+      "sweep": 990
+    },
+    {
+      "state_index": 991,
+      "filename": "observable_sweep_991.jld2",
+      "energy": 2.007510541590979,
+      "sweep": 991
+    },
+    {
+      "state_index": 992,
+      "filename": "observable_sweep_992.jld2",
+      "energy": 2.0318115801021355,
+      "sweep": 992
+    },
+    {
+      "state_index": 993,
+      "filename": "observable_sweep_993.jld2",
+      "energy": 2.0318115801021355,
+      "sweep": 993
+    },
+    {
+      "state_index": 994,
+      "filename": "observable_sweep_994.jld2",
+      "energy": 2.046612791641379,
+      "sweep": 994
+    },
+    {
+      "state_index": 995,
+      "filename": "observable_sweep_995.jld2",
+      "energy": 2.0650696005411233,
+      "sweep": 995
+    },
+    {
+      "state_index": 996,
+      "filename": "observable_sweep_996.jld2",
+      "energy": 2.0650696005411233,
+      "sweep": 996
+    },
+    {
+      "state_index": 997,
+      "filename": "observable_sweep_997.jld2",
+      "energy": 2.1065416736885587,
+      "sweep": 997
+    },
+    {
+      "state_index": 998,
+      "filename": "observable_sweep_998.jld2",
+      "energy": 2.1065416736885596,
+      "sweep": 998
+    },
+    {
+      "state_index": 999,
+      "filename": "observable_sweep_999.jld2",
+      "energy": 2.1196735384248457,
+      "sweep": 999
+    },
+    {
+      "state_index": 1000,
+      "filename": "observable_sweep_1000.jld2",
+      "energy": 2.139799694127547,
+      "sweep": 1000
+    },
+    {
+      "state_index": 1001,
+      "filename": "observable_sweep_1001.jld2",
+      "energy": 2.1397996941275483,
+      "sweep": 1001
+    },
+    {
+      "state_index": 1002,
+      "filename": "observable_sweep_1002.jld2",
+      "energy": 2.15530138196087,
+      "sweep": 1002
+    },
+    {
+      "state_index": 1003,
+      "filename": "observable_sweep_1003.jld2",
+      "energy": 2.174631670512216,
+      "sweep": 1003
+    },
+    {
+      "state_index": 1004,
+      "filename": "observable_sweep_1004.jld2",
+      "energy": 2.194403632011269,
+      "sweep": 1004
+    },
+    {
+      "state_index": 1005,
+      "filename": "observable_sweep_1005.jld2",
+      "energy": 2.1944036320112694,
+      "sweep": 1005
+    },
+    {
+      "state_index": 1006,
+      "filename": "observable_sweep_1006.jld2",
+      "energy": 2.2300314755472934,
+      "sweep": 1006
+    },
+    {
+      "state_index": 1007,
+      "filename": "observable_sweep_1007.jld2",
+      "energy": 2.2493617640986403,
+      "sweep": 1007
+    },
+    {
+      "state_index": 1008,
+      "filename": "observable_sweep_1008.jld2",
+      "energy": 2.269133725597694,
+      "sweep": 1008
+    },
+    {
+      "state_index": 1009,
+      "filename": "observable_sweep_1009.jld2",
+      "energy": 2.287590534497438,
+      "sweep": 1009
+    },
+    {
+      "state_index": 1010,
+      "filename": "observable_sweep_1010.jld2",
+      "energy": 2.2981214723709495,
+      "sweep": 1010
+    },
+    {
+      "state_index": 1011,
+      "filename": "observable_sweep_1011.jld2",
+      "energy": 2.3623206280838627,
+      "sweep": 1011
+    },
+    {
+      "state_index": 1012,
+      "filename": "observable_sweep_1012.jld2",
+      "energy": 2.3728515659573732,
+      "sweep": 1012
+    },
+    {
+      "state_index": 1013,
+      "filename": "observable_sweep_1013.jld2",
+      "energy": 2.3971526044685296,
+      "sweep": 1013
+    },
+    {
+      "state_index": 1014,
+      "filename": "observable_sweep_1014.jld2",
+      "energy": 2.4327804480045545,
+      "sweep": 1014
+    },
+    {
+      "state_index": 1015,
+      "filename": "observable_sweep_1015.jld2",
+      "energy": 2.4718826980549555,
+      "sweep": 1015
+    },
+    {
+      "state_index": 1016,
+      "filename": "observable_sweep_1016.jld2",
+      "energy": 2.507510541590979,
+      "sweep": 1016
+    },
+    {
+      "state_index": 1017,
+      "filename": "observable_sweep_1017.jld2",
+      "energy": 2.520642406327264,
+      "sweep": 1017
+    },
+    {
+      "state_index": 1018,
+      "filename": "observable_sweep_1018.jld2",
+      "energy": 2.595372499913689,
+      "sweep": 1018
+    },
+    {
+      "state_index": 1019,
+      "filename": "observable_sweep_1019.jld2",
+      "energy": 2.655301381960869,
+      "sweep": 1019
+    },
+    {
+      "state_index": 1020,
+      "filename": "observable_sweep_1020.jld2",
+      "energy": 2.730031475547293,
+      "sweep": 1020
+    },
+    {
+      "state_index": 1021,
+      "filename": "observable_sweep_1021.jld2",
+      "energy": 2.79812147237095,
+      "sweep": 1021
+    },
+    {
+      "state_index": 1022,
+      "filename": "observable_sweep_1022.jld2",
+      "energy": 2.8728515659573737,
+      "sweep": 1022
+    },
+    {
+      "state_index": 1023,
+      "filename": "observable_sweep_1023.jld2",
+      "energy": 3.020642406327264,
+      "sweep": 1023
+    },
+    {
+      "state_index": 1024,
+      "filename": "observable_sweep_1024.jld2",
+      "energy": 3.095372499913689,
+      "sweep": 1024
+    }
+  ],
+  "sweeps_processed": 1024,
+  "last_update": "2026-02-02T12:27:15.725"
+}

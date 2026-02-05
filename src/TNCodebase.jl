@@ -134,6 +134,18 @@ export get_run_ids, get_run_dirs, load_config
 export list_available_models, list_available_algorithms
 export catalog_summary, open_query_browser, open_query_builder
 
+# ════════════════════════════════════════════════════════════════════════════
+# NEW: Observable Catalog System
+# ════════════════════════════════════════════════════════════════════════════
+include(joinpath(@__DIR__, "Database", "database_observables_catalog.jl"))
+
+include(joinpath(@__DIR__, "Database", "query_observables_catalog.jl"))
+export query_observables, display_observable_results, display_observable_results_compact
+export get_observable_run_ids, get_observable_run_dirs, load_observable_config
+export list_observable_types, list_observable_algorithms
+export observables_catalog_summary, get_observables_for_simulation
+export compare_observables_across_algorithms
+
 # ============================================================================
 # RUNNERS
 # ============================================================================

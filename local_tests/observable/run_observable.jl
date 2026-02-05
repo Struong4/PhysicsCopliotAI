@@ -8,13 +8,13 @@ using JSON
 # LOAD CONFIGURATION
 # ============================================================================
 
-config_file = joinpath(@__DIR__, "analysis_config.json")
+config_file = joinpath(@__DIR__, "ed_time_evolution_analysis.json")
 config = JSON.parsefile(config_file)
 
 # Specify data directory relative to package root
-data_dir = joinpath(@__DIR__, "..","..","data")
+data_dir = joinpath(@__DIR__, "..","..","data_test")
 # Specify observable directory relative to package root
-obs_dir = joinpath(@__DIR__, "..","..","data_obs")
+obs_dir = joinpath(@__DIR__, "..","..","data_obs_test")
 
 obs_run_id, obs_run_dir = run_observable_calculation_from_config(
     config, 

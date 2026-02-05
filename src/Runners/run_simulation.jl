@@ -222,17 +222,13 @@ function _run_tn_simulation(config; base_dir="data", force_rerun=false)
         _finalize_run(run_dir, status="completed")
         println("  ✓ Run marked as completed")
         
-        # Catalog (if available)
-        if isdefined(Main, :_append_to_catalog)
-            _append_to_catalog(config, run_id, "completed", run_dir, base_dir=base_dir)
-        end
+        # Append to catalog
+        _append_to_catalog(config, run_id, "completed", run_dir; base_dir=base_dir)
         
     catch e
         println("\n❌ Simulation failed!")
         _finalize_run(run_dir, status="failed")
-        if isdefined(Main, :_append_to_catalog)
-            _append_to_catalog(config, run_id, "failed", run_dir, base_dir=base_dir)
-        end
+        _append_to_catalog(config, run_id, "failed", run_dir; base_dir=base_dir)
         rethrow(e)
     end
     
@@ -400,17 +396,13 @@ function _run_ed_simulation(config; base_dir="data", force_rerun=false)
         _finalize_run(run_dir, status="completed")
         println("  ✓ Run marked as completed")
         
-        # Catalog (if available)
-        if isdefined(Main, :_append_to_catalog)
-            _append_to_catalog(config, run_id, "completed", run_dir, base_dir=base_dir)
-        end
+        # Append to catalog
+        _append_to_catalog(config, run_id, "completed", run_dir; base_dir=base_dir)
         
     catch e
         println("\n❌ Simulation failed!")
         _finalize_run(run_dir, status="failed")
-        if isdefined(Main, :_append_to_catalog)
-            _append_to_catalog(config, run_id, "failed", run_dir, base_dir=base_dir)
-        end
+        _append_to_catalog(config, run_id, "failed", run_dir; base_dir=base_dir)
         rethrow(e)
     end
     

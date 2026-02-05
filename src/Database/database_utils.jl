@@ -241,7 +241,7 @@ function _setup_run_directory(config::Dict; base_dir::String="data")
     # ═══════════════════════════════════════════════════════════════════
     # Initialize metadata.json
     # ═══════════════════════════════════════════════════════════════════
-    metadata = Dict(
+    metadata = Dict{String, Any}(
         "run_id" => run_id,
         "algorithm" => algorithm,
         "start_time" => string(now()),

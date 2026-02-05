@@ -666,6 +666,12 @@ function run_observable_calculation_from_config(config::Dict;
         println("\nFinalizing...")
         _finalize_observable_run(obs_run_dir, status="completed")
         
+        # ═══════════════════════════════════════════════════════════════════════
+        # Append to observable catalog
+        # ═══════════════════════════════════════════════════════════════════════
+        _append_to_observables_catalog(config, obs_run_id, sim_run_id, "completed", 
+                                        obs_run_dir; obs_base_dir=obs_base_dir)
+        
         # Summary
         println("\n" * "="^70)
         println("Observable Calculation Complete")

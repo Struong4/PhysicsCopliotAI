@@ -294,14 +294,19 @@ function _display_single_result(entry::Dict, index::Int)
     end
     println()
     
-    state = entry["state"]
-    state_display = get(state, "name", state["kind"])
-    print("    State: $state_display")
-    if haskey(state, "params") && !isempty(state["params"])
-        params_str = join(["$k=$v" for (k, v) in state["params"]], ", ")
-        print(" ($params_str)")
+    # State display (only if state exists - ed_spectrum doesn't have initial state)
+    if haskey(entry, "state")
+        state = entry["state"]
+        state_display = get(state, "name", state["kind"])
+        print("    State: $state_display")
+        if haskey(state, "params") && !isempty(state["params"])
+            params_str = join(["$k=$v" for (k, v) in state["params"]], ", ")
+            print(" ($params_str)")
+        end
+        println()
+    else
+        println("    State: N/A (eigenstate calculation)")
     end
-    println()
     
     if haskey(entry, "results_summary") && !isempty(entry["results_summary"])
         summary_str = join(["$k=$v" for (k, v) in entry["results_summary"]], ", ")
@@ -328,7 +333,7 @@ function display_results_compact(results::Vector{Dict{String, Any}})
         algo = entry["core"]["algorithm"]
         N = get(entry["core"], "N", get(entry["core"], "N_spins", "-"))
         model = entry["model"]["name"]
-        state = get(entry["state"], "name", entry["state"]["kind"])
+        state = haskey(entry, "state") ? get(entry["state"], "name", entry["state"]["kind"]) : "N/A"
         
         @printf("%-28s %-10s %-8s %-6s %-20s %-15s\n",
                 run_id, status, algo, N, model, state)
@@ -760,39 +765,42 @@ function _extract_catalog_info(entries::Vector{Dict{String, Any}})
         end
         
         # State: organized by kind, then by name within kind
-        state_kind = entry["state"]["kind"]
-        state_name = get(entry["state"], "name", nothing)
-        
-        if !haskey(info["states_by_kind"], state_kind)
-            info["states_by_kind"][state_kind] = Dict{String, Any}(
-                "names" => Dict{String, Any}(),
-                "params" => Dict{String, Set}()
-            )
-        end
-        
-        # For prebuilt states, track names and their params
-        if state_kind == "prebuilt" && state_name !== nothing
-            if !haskey(info["states_by_kind"][state_kind]["names"], state_name)
-                info["states_by_kind"][state_kind]["names"][state_name] = Dict{String, Set}()
+        # (Only process if state exists - ed_spectrum doesn't have initial state)
+        if haskey(entry, "state")
+            state_kind = entry["state"]["kind"]
+            state_name = get(entry["state"], "name", nothing)
+            
+            if !haskey(info["states_by_kind"], state_kind)
+                info["states_by_kind"][state_kind] = Dict{String, Any}(
+                    "names" => Dict{String, Any}(),
+                    "params" => Dict{String, Set}()
+                )
             end
-            if haskey(entry["state"], "params")
-                for (k, v) in entry["state"]["params"]
-                    if !haskey(info["states_by_kind"][state_kind]["names"][state_name], k)
-                        info["states_by_kind"][state_kind]["names"][state_name][k] = Set()
+            
+            # For prebuilt states, track names and their params
+            if state_kind == "prebuilt" && state_name !== nothing
+                if !haskey(info["states_by_kind"][state_kind]["names"], state_name)
+                    info["states_by_kind"][state_kind]["names"][state_name] = Dict{String, Set}()
+                end
+                if haskey(entry["state"], "params")
+                    for (k, v) in entry["state"]["params"]
+                        if !haskey(info["states_by_kind"][state_kind]["names"][state_name], k)
+                            info["states_by_kind"][state_kind]["names"][state_name][k] = Set()
+                        end
+                        push!(info["states_by_kind"][state_kind]["names"][state_name][k], v)
                     end
-                    push!(info["states_by_kind"][state_kind]["names"][state_name][k], v)
                 end
             end
-        end
-        
-        # For random/custom states, track params at kind level
-        if state_kind in ["random", "custom"]
-            if haskey(entry["state"], "params")
-                for (k, v) in entry["state"]["params"]
-                    if !haskey(info["states_by_kind"][state_kind]["params"], k)
-                        info["states_by_kind"][state_kind]["params"][k] = Set()
+            
+            # For random/custom states, track params at kind level
+            if state_kind in ["random", "custom"]
+                if haskey(entry["state"], "params")
+                    for (k, v) in entry["state"]["params"]
+                        if !haskey(info["states_by_kind"][state_kind]["params"], k)
+                            info["states_by_kind"][state_kind]["params"][k] = Set()
+                        end
+                        push!(info["states_by_kind"][state_kind]["params"][k], v)
                     end
-                    push!(info["states_by_kind"][state_kind]["params"][k], v)
                 end
             end
         end
