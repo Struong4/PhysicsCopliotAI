@@ -3,23 +3,21 @@
     "type": "spin",
     "S": 0.5,
     "dtype": "ComplexF64",
-    "N": 10
+    "N": 8
   },
   "model": {
-    "name": "heisenberg",
+    "name": "transverse_field_ising",
     "params": {
-      "Jx": 1,
-      "Jy": 1,
-      "Jz": 1,
-      "hx": 0,
-      "hy": 0,
-      "hz": 0
+      "J": -1,
+      "h": 0.2,
+      "coupling_dir": "Z",
+      "field_dir": "X"
     }
   },
   "algorithm": {
     "type": "ed_time_evolution",
     "dt": 0.01,
-    "n_steps": 100
+    "n_steps": 1000
   },
   "state": {
     "type": "prebuilt",

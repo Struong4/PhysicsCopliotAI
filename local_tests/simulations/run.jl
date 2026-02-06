@@ -17,7 +17,7 @@ config = JSON.parsefile(config_file)
 
 
 # Specify data directory relative to package root
-data_dir = joinpath(@__DIR__, "..","..","data_test")
+data_dir = joinpath(@__DIR__, "..","..","data")
 
 # Run simulation - returns final state, run_id, and run_directory
 state, run_id, run_dir = run_simulation_from_config(config, base_dir=data_dir)

@@ -527,3 +527,352 @@ function compare_observables_across_algorithms(observable_type::String, model_na
     
     return by_algorithm
 end
+
+# ============================================================================
+# OBSERVABLE QUERY BUILDER (HTML INTERFACE)
+# ============================================================================
+
+"""
+    open_observable_query_builder(; obs_base_dir="observables")
+
+Open an interactive HTML-based query builder for observables in the default browser.
+Generates a user-friendly interface for building query commands.
+
+# Example
+```julia
+open_observable_query_builder()
+open_observable_query_builder(obs_base_dir="custom_obs")
+```
+"""
+function open_observable_query_builder(; obs_base_dir::String="observables")
+    entries = _load_observables_catalog(obs_base_dir=obs_base_dir)
+    
+    if isempty(entries)
+        println("Observable catalog is empty. Run some observable calculations first!")
+        return nothing
+    end
+    
+    # Extract unique values for dropdowns
+    catalog_info = _extract_observable_catalog_info(entries)
+    
+    html = _generate_observable_query_builder_html(catalog_info, obs_base_dir)
+    
+    path = joinpath(tempdir(), "observable_query_builder.html")
+    open(path, "w") do f
+        write(f, html)
+    end
+    
+    if Sys.islinux()
+        run(`xdg-open $path`, wait=false)
+    elseif Sys.isapple()
+        run(`open $path`, wait=false)
+    elseif Sys.iswindows()
+        run(`cmd /c start "" "$path"`, wait=false)
+    else
+        println("Please open manually: $path")
+    end
+    
+    println("✓ Opened observable query builder with $(length(entries)) catalog entries")
+    println("  Temp file: $path")
+    
+    return path
+end
+
+"""
+Extract observable catalog info organized for query builder dropdowns.
+"""
+function _extract_observable_catalog_info(entries::Vector{Dict{String, Any}})
+    info = Dict{String, Any}(
+        "observable_types" => Set{String}(),
+        "sim_algorithms" => Set{String}(),
+        "sim_models" => Set{String}(),
+        "observable_params" => Dict{String, Dict{String, Set}}(),
+        "selection_types" => Set{String}()
+    )
+    
+    for entry in entries
+        # Observable type
+        obs_type = entry["observable"]["type"]
+        push!(info["observable_types"], obs_type)
+        
+        # Track observable params by type
+        if !haskey(info["observable_params"], obs_type)
+            info["observable_params"][obs_type] = Dict{String, Set}()
+        end
+        if haskey(entry["observable"], "params") && !isempty(entry["observable"]["params"])
+            for (k, v) in entry["observable"]["params"]
+                if !haskey(info["observable_params"][obs_type], k)
+                    info["observable_params"][obs_type][k] = Set()
+                end
+                push!(info["observable_params"][obs_type][k], v)
+            end
+        end
+        
+        # Simulation info
+        push!(info["sim_algorithms"], entry["simulation"]["core"]["algorithm"])
+        push!(info["sim_models"], entry["simulation"]["model"]["name"])
+        
+        # Selection type
+        if haskey(entry, "analysis_params")
+            for (key, val) in entry["analysis_params"]
+                if key in ["sweep_selection", "step_selection", "state_selection"]
+                    push!(info["selection_types"], val["type"])
+                end
+            end
+        end
+    end
+    
+    # Convert Sets to sorted Arrays for JSON
+    return _convert_observable_sets_to_arrays(info)
+end
+
+function _convert_observable_sets_to_arrays(obj)
+    if isa(obj, Set)
+        return sort(collect(obj), by=x -> string(x))
+    elseif isa(obj, Dict)
+        return Dict(k => _convert_observable_sets_to_arrays(v) for (k, v) in obj)
+    else
+        return obj
+    end
+end
+
+function _generate_observable_query_builder_html(catalog_info::Dict, obs_base_dir::String)
+    catalog_json = JSON.json(catalog_info)
+    
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observable Query Builder</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { max-width: 1000px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        h1 { text-align: center; color: #333; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .container { display: flex; gap: 30px; }
+        .filters-panel { flex: 1; }
+        .output-panel { flex: 1; }
+        .section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .section h2 { margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid #28a745; color: #28a745; font-size: 1.1em; }
+        .filter-group { margin-bottom: 15px; }
+        .filter-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; font-size: 14px; }
+        .filter-group select, .filter-group input { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .dynamic-params { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none; }
+        .dynamic-params.visible { display: block; }
+        .dynamic-params h4 { margin: 0 0 10px 0; font-size: 13px; color: #666; }
+        .output-box { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; min-height: 150px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; width: 100%; margin-top: 10px; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .info-box { background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 12px; margin-bottom: 15px; font-size: 13px; color: #155724; }
+        .copied-toast { position: fixed; bottom: 20px; right: 20px; background: #28a745; color: white; padding: 12px 24px; border-radius: 6px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>Observable Query Builder</h1>
+    <p class="subtitle">Build query commands for observable calculations</p>
+    
+    <div class="container">
+        <div class="filters-panel">
+            <div class="section">
+                <h2>Observable</h2>
+                <div class="info-box">Query observable calculations from: <code>$obs_base_dir/</code></div>
+                <div class="filter-group">
+                    <label>Observable Type</label>
+                    <select id="filter-observable-type" onchange="onObservableTypeChange()">
+                        <option value="">Any</option>
+                    </select>
+                </div>
+                <div id="observable-params" class="dynamic-params">
+                    <h4>Observable Parameters</h4>
+                    <div id="observable-params-content"></div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Simulation Filters</h2>
+                <div class="filter-group">
+                    <label>Simulation Algorithm</label>
+                    <select id="filter-sim-algorithm" onchange="updateCommand()">
+                        <option value="">Any</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Model</label>
+                    <select id="filter-sim-model" onchange="updateCommand()">
+                        <option value="">Any</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Analysis</h2>
+                <div class="filter-group">
+                    <label>Selection Type</label>
+                    <select id="filter-selection-type" onchange="updateCommand()">
+                        <option value="">Any</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="output-panel">
+            <div class="section">
+                <h2>Generated Command</h2>
+                <div class="output-box" id="command-output">query("obs", obs_base_dir="$obs_base_dir")</div>
+                <button class="btn btn-success" onclick="copyCommand()">📋 Copy Command</button>
+                <button class="btn btn-secondary" onclick="showHelp()">❓ Usage Guide</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="copied-toast" id="copied-toast">✓ Copied to clipboard!</div>
+    
+    <script>
+        const catalogData = $catalog_json;
+        const baseDir = "$obs_base_dir";
+        
+        // Populate dropdowns
+        function populateDropdowns() {
+            // Observable types
+            const obsTypeSelect = document.getElementById('filter-observable-type');
+            catalogData.observable_types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                obsTypeSelect.appendChild(option);
+            });
+            
+            // Sim algorithms
+            const simAlgoSelect = document.getElementById('filter-sim-algorithm');
+            catalogData.sim_algorithms.forEach(algo => {
+                const option = document.createElement('option');
+                option.value = algo;
+                option.textContent = algo;
+                simAlgoSelect.appendChild(option);
+            });
+            
+            // Sim models
+            const simModelSelect = document.getElementById('filter-sim-model');
+            catalogData.sim_models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                simModelSelect.appendChild(option);
+            });
+            
+            // Selection types
+            const selTypeSelect = document.getElementById('filter-selection-type');
+            catalogData.selection_types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                selTypeSelect.appendChild(option);
+            });
+        }
+        
+        function onObservableTypeChange() {
+            const obsType = document.getElementById('filter-observable-type').value;
+            const paramsDiv = document.getElementById('observable-params');
+            const contentDiv = document.getElementById('observable-params-content');
+            
+            contentDiv.innerHTML = '';
+            
+            if (obsType && catalogData.observable_params[obsType]) {
+                const params = catalogData.observable_params[obsType];
+                for (const [param, values] of Object.entries(params)) {
+                    const group = document.createElement('div');
+                    group.className = 'filter-group';
+                    group.innerHTML = \`
+                        <label>\${param}</label>
+                        <select id="filter-obs-\${param}" onchange="updateCommand()">
+                            <option value="">Any</option>
+                            \${values.map(v => \`<option value="\${v}">\${v}</option>\`).join('')}
+                        </select>
+                    \`;
+                    contentDiv.appendChild(group);
+                }
+                paramsDiv.classList.add('visible');
+            } else {
+                paramsDiv.classList.remove('visible');
+            }
+            
+            updateCommand();
+        }
+        
+        function updateCommand() {
+            const filters = [];
+            
+            // Observable type
+            const obsType = document.getElementById('filter-observable-type').value;
+            if (obsType) filters.push(\`observable_type="\${obsType}"\`);
+            
+            // Observable params
+            if (obsType && catalogData.observable_params[obsType]) {
+                for (const param of Object.keys(catalogData.observable_params[obsType])) {
+                    const val = document.getElementById(\`filter-obs-\${param}\`)?.value;
+                    if (val) filters.push(\`observable_\${param}="\${val}"\`);
+                }
+            }
+            
+            // Sim algorithm
+            const simAlgo = document.getElementById('filter-sim-algorithm').value;
+            if (simAlgo) filters.push(\`sim_algorithm="\${simAlgo}"\`);
+            
+            // Sim model
+            const simModel = document.getElementById('filter-sim-model').value;
+            if (simModel) filters.push(\`sim_model_name="\${simModel}"\`);
+            
+            // Selection type
+            const selType = document.getElementById('filter-selection-type').value;
+            if (selType) filters.push(\`analysis_selection_type="\${selType}"\`);
+            
+            // Build command
+            let command = 'query("obs"';
+            if (baseDir !== 'observables' || filters.length > 0) {
+                command += ', ';
+            }
+            if (baseDir !== 'observables') {
+                command += \`obs_base_dir="\${baseDir}"\`;
+                if (filters.length > 0) command += ', ';
+            }
+            command += filters.join(', ');
+            command += ')';
+            
+            document.getElementById('command-output').textContent = command;
+        }
+        
+        function copyCommand() {
+            const command = document.getElementById('command-output').textContent;
+            navigator.clipboard.writeText(command).then(() => {
+                const toast = document.getElementById('copied-toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            });
+        }
+        
+        function showHelp() {
+            alert(\`Observable Query Builder Help:
+
+1. Select filters to narrow your search
+2. Copy the generated command
+3. Paste and run in Julia REPL
+4. Use display_observable_results(results) to view
+
+Example:
+> results = query_observables(observable_type="entanglement_entropy")
+> display_observable_results(results)\`);
+        }
+        
+        // Initialize
+        populateDropdowns();
+        updateCommand();
+    </script>
+</body>
+</html>
+"""
+end

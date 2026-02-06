@@ -1,0 +1,33 @@
+{
+    "system": {
+        "type": "spin",
+        "N": 10
+    },
+    "model": {
+        "name": "heisenberg",
+        "params": {
+            "N": 10,
+            "Jx": 1.0,
+            "Jy": 1.0,
+            "Jz": 1.0,
+            "hx": 0.0,
+            "hy": 0.0,
+            "hz": 0.0,
+            "dtype": "ComplexF64"
+        }
+    },
+    "state": {
+        "type": "prebuilt",
+        "name": "polarized",
+        "params": {
+            "spin_direction": "Z",
+            "eigenstate": 1
+        }
+    },
+    "algorithm": {
+        "type": "ed_time_evolution",
+        "dt": 0.05,
+        "n_steps": 200
+    },
+    "description": "Heisenberg model - Time evolution from polarized state"
+}

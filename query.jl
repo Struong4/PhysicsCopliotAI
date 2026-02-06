@@ -3,16 +3,13 @@ Pkg.activate(@__DIR__)
 using TNCodebase
 
 # open query browser
-#open_query_browser()
+#build_query("sim", base_dir="data")
 
-#open_query_builder()
-
-results = query_catalog(
+results = query("sim", 
     status="completed",
     system_type="spin",
-    N_lt=12,
     algorithm="ed_time_evolution",
-    state_kind="prebuilt"
+    model_name="heisenberg"
 )
 
 display_results(results)

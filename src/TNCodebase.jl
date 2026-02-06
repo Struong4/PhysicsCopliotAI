@@ -145,6 +145,35 @@ export get_observable_run_ids, get_observable_run_dirs, load_observable_config
 export list_observable_types, list_observable_algorithms
 export observables_catalog_summary, get_observables_for_simulation
 export compare_observables_across_algorithms
+export open_observable_query_builder
+
+# ════════════════════════════════════════════════════════════════════════════
+# UNIFIED QUERY INTERFACE (Recommended API)
+# ════════════════════════════════════════════════════════════════════════════
+# Use these unified functions that work for both simulations and observables:
+#
+#   query("sim", ...)              # Query simulations
+#   query("obs", ...)              # Query observables
+#   display_results(results)       # Display any results
+#   display_results_compact(...)   # Compact display
+#   get_run_ids(results)           # Extract IDs from any results
+#   get_run_dirs(results)          # Extract directories
+#   load_config(result)            # Load config from any result
+#   catalog_summary("sim"|"obs")   # Show catalog stats
+#   build_query("sim"|"obs")       # Open HTML query builder
+#   open_query(...)                # Alias for build_query
+#
+# ════════════════════════════════════════════════════════════════════════════
+
+include(joinpath(@__DIR__, "Database", "query_builder.jl"))
+export query                       # 🌟 Main query function
+export display_results             # 🌟 Display results (unified)
+export display_results_compact     # 🌟 Compact display (unified)
+export get_run_ids                 # 🌟 Extract IDs (unified)
+export get_run_dirs                # 🌟 Extract directories (unified)
+export load_config                 # 🌟 Load config (unified)
+export catalog_summary             # 🌟 Catalog stats (unified)
+export build_query, open_query     # 🌟 HTML query builder (unified)
 
 # ============================================================================
 # RUNNERS

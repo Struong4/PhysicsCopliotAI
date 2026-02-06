@@ -913,7 +913,7 @@ function _generate_query_builder_html(catalog_info::Dict, base_dir::String)
             <div class="section">
                 <h2>Generated Julia Command</h2>
                 <div class="info-box">Copy this command and run in Julia REPL to execute the query.</div>
-                <div class="output-box" id="output-command">results = query_catalog()</div>
+                <div class="output-box" id="output-command">results = query("sim")</div>
                 <button class="btn btn-success" onclick="copyCommand()">📋 Copy Command</button>
                 <div class="workflow-box">
                     <h4>Workflow</h4>
@@ -1145,8 +1145,9 @@ config = load_config(results[1])
             if (stateName) filters.push(\`state_name="\${stateName}"\`);
             collectDynamicFilters('state-params-content', 'state_', filters);
             
-            let cmd = 'results = query_catalog(';
+            let cmd = 'results = query("sim"';
             if (filters.length > 0) {
+                cmd += ', ';
                 if (filters.length <= 2) { cmd += filters.join(', '); }
                 else { cmd += '\\n    ' + filters.join(',\\n    ') + '\\n'; }
             }
