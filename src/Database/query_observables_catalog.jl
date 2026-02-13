@@ -71,6 +71,9 @@ results = query_observables(sim_run_id="20241104_153045_a3f5b2c1")
 ```
 """
 function query_observables(; obs_base_dir::String="observables", filters...)
+
+    obs_base_dir = abspath(obs_base_dir)
+
     entries = _load_observables_catalog(obs_base_dir=obs_base_dir)
     
     if isempty(entries)
@@ -301,6 +304,9 @@ end
 # ============================================================================
 
 function _compute_obs_run_dir(entry::Dict, obs_base_dir::String)
+
+    obs_base_dir = abspath(obs_base_dir)
+
     algorithm = entry["simulation"]["core"]["algorithm"]
     sim_run_id = entry["sim_run_id"]
     obs_run_id = entry["obs_run_id"]
@@ -412,6 +418,9 @@ function get_observable_run_dirs(results::Vector{Dict{String, Any}})
 end
 
 function load_observable_config(result::Dict; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     obs_run_dir = get(result, "obs_run_dir", nothing)
     
     if obs_run_dir === nothing
@@ -428,6 +437,9 @@ function load_observable_config(result::Dict; obs_base_dir::String="observables"
 end
 
 function list_observable_types(; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     entries = _load_observables_catalog(obs_base_dir=obs_base_dir)
     types = Set{String}()
     for entry in entries
@@ -437,6 +449,9 @@ function list_observable_types(; obs_base_dir::String="observables")
 end
 
 function list_observable_algorithms(; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     entries = _load_observables_catalog(obs_base_dir=obs_base_dir)
     algorithms = Set{String}()
     for entry in entries
@@ -446,6 +461,9 @@ function list_observable_algorithms(; obs_base_dir::String="observables")
 end
 
 function observables_catalog_summary(; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     entries = _load_observables_catalog(obs_base_dir=obs_base_dir)
     
     if isempty(entries)
@@ -496,6 +514,9 @@ end
 Get all observable calculations for a specific simulation run.
 """
 function get_observables_for_simulation(sim_run_id::String; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     return query_observables(sim_run_id=sim_run_id, obs_base_dir=obs_base_dir)
 end
 
@@ -507,8 +528,10 @@ Compare same observable calculated across different algorithms.
 # Returns
 Dict with algorithm names as keys, results as values.
 """
-function compare_observables_across_algorithms(observable_type::String, model_name::String;
-                                               obs_base_dir::String="observables")
+function compare_observables_across_algorithms(observable_type::String, model_name::String; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     results = query_observables(
         observable_type=observable_type,
         sim_model_name=model_name,
@@ -545,6 +568,9 @@ open_observable_query_builder(obs_base_dir="custom_obs")
 ```
 """
 function open_observable_query_builder(; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     entries = _load_observables_catalog(obs_base_dir=obs_base_dir)
     
     if isempty(entries)
@@ -637,6 +663,9 @@ function _convert_observable_sets_to_arrays(obj)
 end
 
 function _generate_observable_query_builder_html(catalog_info::Dict, obs_base_dir::String)
+
+    obs_base_dir = abspath(obs_base_dir)
+
     catalog_json = JSON.json(catalog_info)
     
     return """

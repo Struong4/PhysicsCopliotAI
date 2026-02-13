@@ -1,6 +1,6 @@
 {
-  "system": {"type": "spin","dtype": "ComplexF64","N": 10,"S": 0.5},
-  "model": {"name": "transverse_field_ising","params": {"dtype": "Float64","N": 10,"J": -1,"h": 0.5,"coupling_dir": "Z","field_dir": "X"}},
+  "system": {"type": "spin","dtype": "ComplexF64","N": 14,"S": 0.5},
+  "model": {"name": "transverse_field_ising","params": {"dtype": "Float64","N": 14,"J": -1,"h": 0.5,"coupling_dir": "Z","field_dir": "X"}},
   "state": {"type": "prebuilt","name": "polarized","params": {"spin_direction": "Z","eigenstate": 2}},
   "algorithm": {"type": "tdvp","solver": {"type": "krylov_exponential","krylov_dim": 14,"tol": 1e-8,"evol_type": "real"},
                 "options": {"dt": 0.02,"chi_max": 100,"cutoff": 1e-8,"local_dim": 2},

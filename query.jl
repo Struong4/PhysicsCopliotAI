@@ -8,7 +8,8 @@ using TNCodebase
 results = query("sim", 
     status="completed",
     system_type="spin",
-    algorithm="ed_time_evolution",
+    N_lte=12,
+    algorithm="ed_spectrum",
     model_name="heisenberg"
 )
 

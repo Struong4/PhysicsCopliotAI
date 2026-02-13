@@ -266,6 +266,9 @@ Extract summary of observable calculation results from metadata.
 Called after calculation completes.
 """
 function _extract_observable_results_summary(config::Dict, obs_run_dir::String)
+
+    obs_run_dir = abspath(obs_run_dir)
+
     summary = Dict{String, Any}()
     
     # Load metadata if available
@@ -332,9 +335,10 @@ Extract full catalog entry from observable config and results.
 This function reuses ALL simulation extraction logic from database_catalog.jl
 to ensure the observable catalog has COMPLETE simulation information.
 """
-function _extract_observable_catalog_entry(config::Dict, obs_run_id::String, 
-                                           sim_run_id::String, status::String,
-                                           obs_run_dir::String)
+function _extract_observable_catalog_entry(config::Dict, obs_run_id::String, sim_run_id::String, status::String,obs_run_dir::String)
+
+    obs_run_dir = abspath(obs_run_dir)
+
     # Compute observable config hash (reuse from database_observables_utils.jl)
     obs_config_hash = _compute_observable_config_hash(config)
     
@@ -374,13 +378,13 @@ Creates catalog file if it doesn't exist.
 # Returns
 - Dict: The catalog entry that was appended
 """
-function _append_to_observables_catalog(config::Dict, obs_run_id::String,
-                                        sim_run_id::String, status::String,
-                                        obs_run_dir::String; 
-                                        obs_base_dir::String="observables")
+function _append_to_observables_catalog(config::Dict, obs_run_id::String,sim_run_id::String, status::String,obs_run_dir::String; obs_base_dir::String="observables")
+
+    obs_run_dir = abspath(obs_run_dir)
+    obs_base_dir = abspath(obs_base_dir)
+
     # Extract catalog entry
-    entry = _extract_observable_catalog_entry(config, obs_run_id, sim_run_id, 
-                                              status, obs_run_dir)
+    entry = _extract_observable_catalog_entry(config, obs_run_id, sim_run_id, status, obs_run_dir)
     
     # Ensure base directory exists
     mkpath(obs_base_dir)
@@ -404,6 +408,9 @@ Load all observable catalog entries from jsonl file.
 Returns empty vector if catalog doesn't exist.
 """
 function _load_observables_catalog(; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     catalog_path = joinpath(obs_base_dir, OBSERVABLES_CATALOG_FILENAME)
     
     if !isfile(catalog_path)
@@ -431,6 +438,7 @@ end
 Check if observables catalog file exists.
 """
 function _observables_catalog_exists(; obs_base_dir::String="observables")
+    obs_base_dir = abspath(obs_base_dir)
     return isfile(joinpath(obs_base_dir, OBSERVABLES_CATALOG_FILENAME))
 end
 
@@ -440,6 +448,9 @@ end
 Count entries in observables catalog without loading all into memory.
 """
 function _observables_catalog_count(; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     catalog_path = joinpath(obs_base_dir, OBSERVABLES_CATALOG_FILENAME)
     
     if !isfile(catalog_path)

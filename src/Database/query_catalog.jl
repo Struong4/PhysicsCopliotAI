@@ -60,6 +60,9 @@ results = query_catalog(state_kind="random")
 ```
 """
 function query_catalog(; base_dir::String="data", filters...)
+
+    base_dir = abspath(base_dir)
+
     entries = _load_catalog(base_dir=base_dir)
     
     if isempty(entries)
@@ -241,6 +244,9 @@ end
 # ============================================================================
 
 function _compute_run_dir(entry::Dict, base_dir::String)
+
+    base_dir = abspath(base_dir)
+
     algorithm = entry["core"]["algorithm"]
     run_id = entry["run_id"]
     return joinpath(base_dir, algorithm, run_id)
@@ -356,6 +362,9 @@ function get_run_dirs(results::Vector{Dict{String, Any}})
 end
 
 function load_config(result::Dict; base_dir::String="data")
+
+    base_dir = abspath(base_dir)    
+
     run_dir = get(result, "run_dir", nothing)
     
     if run_dir === nothing
@@ -372,6 +381,9 @@ function load_config(result::Dict; base_dir::String="data")
 end
 
 function list_available_models(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     entries = _load_catalog(base_dir=base_dir)
     models = Set{String}()
     for entry in entries
@@ -381,6 +393,9 @@ function list_available_models(; base_dir::String="data")
 end
 
 function list_available_algorithms(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     entries = _load_catalog(base_dir=base_dir)
     algorithms = Set{String}()
     for entry in entries
@@ -390,6 +405,9 @@ function list_available_algorithms(; base_dir::String="data")
 end
 
 function catalog_summary(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     entries = _load_catalog(base_dir=base_dir)
     
     if isempty(entries)
@@ -451,6 +469,9 @@ open_query_browser()
 ```
 """
 function open_query_browser(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     entries = _load_catalog(base_dir=base_dir)
     
     for entry in entries
@@ -687,6 +708,9 @@ open_query_builder()
 ```
 """
 function open_query_builder(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     entries = _load_catalog(base_dir=base_dir)
     
     # Extract unique values for dropdowns

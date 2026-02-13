@@ -8,7 +8,7 @@ using JSON
 # LOAD CONFIGURATION
 # ============================================================================
 
-config_file = joinpath(@__DIR__, "ed_time_evolution_simulation.json")
+config_file = joinpath(@__DIR__, "simulation_config_tdvp.json")
 config = JSON.parsefile(config_file)
 
 # ============================================================================

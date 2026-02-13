@@ -3,15 +3,17 @@
     "type": "spin",
     "S": 0.5,
     "dtype": "ComplexF64",
-    "N": 8
+    "N": 12
   },
   "model": {
-    "name": "transverse_field_ising",
+    "name": "heisenberg",
     "params": {
-      "J": -1,
-      "h": 0.2,
-      "coupling_dir": "Z",
-      "field_dir": "X"
+      "Jx": 1,
+      "Jy": 1,
+      "Jz": 1.2,
+      "hx": 0,
+      "hy": 0,
+      "hz": 0
     }
   },
   "algorithm": {

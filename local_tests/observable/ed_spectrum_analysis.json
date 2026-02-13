@@ -4,15 +4,17 @@
       "type": "spin",
       "S": 0.5,
       "dtype": "ComplexF64",
-      "N": 10
+      "N": 12
     },
     "model": {
-      "name": "transverse_field_ising",
+      "name": "heisenberg",
       "params": {
-        "J": -1,
-        "h": 0.5,
-        "coupling_dir": "Z",
-        "field_dir": "X"
+        "Jx": 1,
+        "Jy": 1,
+        "Jz": 0.8,
+        "hx": 0,
+        "hy": 0,
+        "hz": 0
       }
     },
     "algorithm": {
@@ -25,10 +27,12 @@
       "selection": "all"
     },
     "observable": {
-      "type": "single_site_expectation",
+      "type": "two_site_expectation",
       "params": {
-        "site": 1,
-        "operator": "Z"
+        "site_i": 4,
+        "site_j": 6,
+        "operator_i": "Z",
+        "operator_j": "Z"
       }
     }
   }

@@ -174,10 +174,10 @@ obs_run_id, obs_run_dir = _setup_observable_directory(
 )
 ```
 """
-function _setup_observable_directory(config::Dict, 
-                                    sim_run_id::String, 
-                                    algorithm::String; 
-                                    obs_base_dir::String="observables")
+function _setup_observable_directory(config::Dict, sim_run_id::String, algorithm::String; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     # Generate unique observable run ID (uses normalized config hash)
     obs_run_id = _generate_observable_run_id(config)
     
@@ -257,11 +257,10 @@ This enables quick lookup of all observables calculated for a simulation.
 The obs_run_dir is NOT stored. It is computed on query as:
     obs_run_dir = joinpath(obs_base_dir, algorithm, sim_run_id, obs_run_id)
 """
-function _update_observable_index(config::Dict, 
-                                sim_run_id::String,
-                                obs_run_id::String, 
-                                algorithm::String,
-                                obs_base_dir::String)
+function _update_observable_index(config::Dict, sim_run_id::String,obs_run_id::String, algorithm::String,obs_base_dir::String)
+
+    obs_base_dir = abspath(obs_base_dir)
+
     index_file = joinpath(obs_base_dir, "observables_index.json")
     
     # Load existing index or create new
@@ -331,8 +330,10 @@ for sweep in sweeps_to_process
 end
 ```
 """
-function _save_observable_sweep(obs_value, obs_run_dir::String, sweep::Int; 
-                               extra_data::Dict=Dict())
+function _save_observable_sweep(obs_value, obs_run_dir::String, sweep::Int; extra_data::Dict=Dict())
+
+    obs_run_dir = abspath(obs_run_dir)
+
     # ════════════════════════════════════════════════════════════════════════
     # 1. Save observable to binary file
     # ════════════════════════════════════════════════════════════════════════
@@ -383,6 +384,9 @@ Mark observable calculation as completed or failed.
 - `status::String`: Final status ("completed" or "failed")
 """
 function _finalize_observable_run(obs_run_dir::String; status::String="completed")
+
+    obs_run_dir = abspath(obs_run_dir)
+
     metadata_path = joinpath(obs_run_dir, "metadata.json")
     metadata = JSON.parsefile(metadata_path)
     
@@ -415,6 +419,9 @@ Load observable value for a specific sweep.
 - `(observable_value, extra_data)`: Observable value and metadata
 """
 function load_observable_sweep(obs_run_dir::String, sweep::Int)
+
+    obs_run_dir = abspath(obs_run_dir)
+
     filename = @sprintf("observable_sweep_%d.jld2", sweep)
     filepath = joinpath(obs_run_dir, filename)
     
@@ -437,6 +444,9 @@ Load all observable results from a calculation run.
 - Vector of (sweep, observable_value) tuples sorted by sweep number
 """
 function load_all_observable_results(obs_run_dir::String)
+
+    obs_run_dir = abspath(obs_run_dir)
+
     metadata_path = joinpath(obs_run_dir, "metadata.json")
     metadata = JSON.parsefile(metadata_path)
     
@@ -484,8 +494,10 @@ for obs in obs_calcs
 end
 ```
 """
-function find_observables_for_simulation(sim_run_id::String; 
-                                        obs_base_dir::String="observables")
+function find_observables_for_simulation(sim_run_id::String; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     index_file = joinpath(obs_base_dir, "observables_index.json")
     
     if !isfile(index_file)
@@ -526,9 +538,10 @@ Check if an observable with this exact config has already been calculated.
 
 Uses normalized config hash to detect duplicates.
 """
-function observable_already_calculated(config::Dict, 
-                                      sim_run_id::String; 
-                                      obs_base_dir::String="observables")
+function observable_already_calculated(config::Dict, sim_run_id::String; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     obs_hash = _compute_observable_config_hash(config)
     observables = find_observables_for_simulation(sim_run_id, obs_base_dir=obs_base_dir)
     
@@ -551,9 +564,10 @@ Only returns runs with status="completed" in metadata.
 
 Mirrors `_get_completed_run()` from simulation database.
 """
-function _get_completed_observable_run(config::Dict, 
-                                       sim_run_id::String; 
-                                       obs_base_dir::String="observables")
+function _get_completed_observable_run(config::Dict, sim_run_id::String; obs_base_dir::String="observables")
+
+    obs_base_dir = abspath(obs_base_dir)
+
     obs_hash = _compute_observable_config_hash(config)
     observables = find_observables_for_simulation(sim_run_id, obs_base_dir=obs_base_dir)
     
@@ -616,9 +630,11 @@ for run in runs
 end
 ```
 """
-function find_observable_runs_by_config(config::Dict; 
-                                        base_dir::String="data",
-                                        obs_base_dir::String="observables")
+function find_observable_runs_by_config(config::Dict; base_dir::String="data",obs_base_dir::String="observables")
+
+    base_dir = abspath(base_dir)
+    obs_base_dir = abspath(obs_base_dir)
+
     # Simulation config is embedded under "simulation" key
     sim_config = config["simulation"]
     
@@ -665,9 +681,11 @@ else
 end
 ```
 """
-function get_latest_observable_run_for_config(config::Dict;
-                                             base_dir::String="data",
-                                             obs_base_dir::String="observables")
+function get_latest_observable_run_for_config(config::Dict;base_dir::String="data",obs_base_dir::String="observables")
+
+    base_dir = abspath(base_dir)
+    obs_base_dir = abspath(obs_base_dir)
+
     runs = find_observable_runs_by_config(config, base_dir=base_dir, obs_base_dir=obs_base_dir)
     
     if isempty(runs)

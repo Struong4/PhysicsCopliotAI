@@ -217,6 +217,9 @@ _finalize_run(run_dir)
 """
 
 function _setup_run_directory(config::Dict; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     # Generate unique ID
     run_id = _generate_run_id(config)
     
@@ -333,6 +336,9 @@ This ensures the index works regardless of where you run from.
 """
 
 function _update_index(config::Dict, run_id::String, base_dir::String)
+
+    base_dir = abspath(base_dir)
+
     index_file = joinpath(base_dir, "runs_index.json")
     
     # Load existing index or create new
@@ -455,6 +461,9 @@ end
 """
 
 function _save_mps_sweep(state::MPSState, run_dir::String, sweep::Int; extra_data::Dict=Dict())
+
+    run_dir = abspath(run_dir)
+
     # ════════════════════════════════════════════════════════════════════════
     # 1. Save MPS to binary file
     # ════════════════════════════════════════════════════════════════════════
@@ -499,6 +508,9 @@ function _save_mps_sweep(state::MPSState, run_dir::String, sweep::Int; extra_dat
 end
 
 function _finalize_run(run_dir::String; status::String="completed")
+
+    run_dir = abspath(run_dir) 
+
     metadata_path = joinpath(run_dir, "metadata.json")
     metadata = JSON.parsefile(metadata_path)
     
@@ -537,6 +549,9 @@ This ensures the function works regardless of where the original
 simulation was run from.
 """
 function _find_runs_by_config(config::Dict, base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     # Compute hash
     config_hash = _compute_config_hash(config)
     
@@ -574,6 +589,7 @@ function _find_runs_by_config(config::Dict, base_dir::String="data")
 end
 
 function _config_already_run(config::Dict, base_dir::String="data")
+    base_dir = abspath(base_dir)
     return !isempty(_find_runs_by_config(config, base_dir))
 end
 
@@ -586,6 +602,9 @@ Returns the run info dict if found, nothing otherwise.
 Only returns runs with status="completed" in metadata.
 """
 function _get_completed_run(config::Dict; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     # Find all runs matching this config's hash
     runs = _find_runs_by_config(config, base_dir)
     
@@ -618,6 +637,7 @@ function _get_completed_run(config::Dict; base_dir::String="data")
 end
 
 function _get_latest_run_for_config(config::Dict; base_dir::String="data")
+    base_dir = abspath(base_dir)
     runs = _find_runs_by_config(config, base_dir)
     
     if isempty(runs)
@@ -635,6 +655,9 @@ end
 # ============================================================================
 
 function load_mps_sweep(run_dir::String, sweep::Int)
+
+    run_dir = abspath(run_dir)
+
     # Construct filename
     filename = @sprintf("mps_sweep_%d.jld2", sweep)
     filepath = joinpath(run_dir, filename)
@@ -658,6 +681,9 @@ function load_mps_sweep(run_dir::String, sweep::Int)
 end
 
 function load_mps_at_time(run_dir::String; time::Float64=1.0, tol::Float64=1e-9)
+
+    run_dir = abspath(run_dir)
+
     # Load metadata
     metadata_path = joinpath(run_dir, "metadata.json")
     
@@ -733,6 +759,9 @@ function load_mps_at_time(run_dir::String; time::Float64=1.0, tol::Float64=1e-9)
 end
 
 function list_times(run_dir::String)
+
+    run_dir = abspath(run_dir)
+
     metadata_path = joinpath(run_dir, "metadata.json")
     
     if !isfile(metadata_path)
@@ -782,8 +811,9 @@ Save ED spectrum results (all eigenvalues and eigenstates).
 - `results.jld2`: Binary file with energies and states
 - `metadata.json`: Updated with summary (ground_energy, gap, n_states)
 """
-function _save_ed_spectrum(energies::Vector, states::AbstractMatrix, 
-                           run_dir::String; extra_data::Dict=Dict())
+function _save_ed_spectrum(energies::Vector, states::AbstractMatrix, run_dir::String; extra_data::Dict=Dict())
+
+    run_dir = abspath(run_dir)
     # ════════════════════════════════════════════════════════════════════════
     # 1. Save to binary file
     # ════════════════════════════════════════════════════════════════════════
@@ -835,8 +865,9 @@ Parallel to _save_mps_sweep() for TDVP.
 - `step::Int`: Step number (1, 2, 3, ...)
 - `extra_data::Dict`: Must include "time" for time-based queries
 """
-function _save_ed_step(psi::AbstractVector, run_dir::String, step::Int; 
-                       extra_data::Dict=Dict())
+function _save_ed_step(psi::AbstractVector, run_dir::String, step::Int; extra_data::Dict=Dict())
+
+    run_dir = abspath(run_dir)
     # ════════════════════════════════════════════════════════════════════════
     # 1. Save state to binary file
     # ════════════════════════════════════════════════════════════════════════
@@ -886,6 +917,9 @@ Load ED spectrum results.
 - `extra_data::Dict`: Additional saved data
 """
 function load_ed_spectrum(run_dir::String)
+
+    run_dir = abspath(run_dir)
+
     filepath = joinpath(run_dir, "results.jld2")
     
     if !isfile(filepath)
@@ -907,6 +941,9 @@ end
 Load ED state vector at a specific step.
 """
 function load_ed_step(run_dir::String, step::Int)
+
+    run_dir = abspath(run_dir)
+
     filename = @sprintf("state_step_%d.jld2", step)
     filepath = joinpath(run_dir, filename)
     
@@ -927,6 +964,9 @@ end
 Load ED state vector at a specific time.
 """
 function load_ed_at_time(run_dir::String; time::Float64, tol::Float64=1e-9)
+
+    run_dir = abspath(run_dir) 
+
     metadata_path = joinpath(run_dir, "metadata.json")
     
     if !isfile(metadata_path)
@@ -978,6 +1018,9 @@ end
 List available (step, time) pairs for ED time evolution.
 """
 function list_ed_times(run_dir::String)
+
+    run_dir = abspath(run_dir)
+
     metadata_path = joinpath(run_dir, "metadata.json")
     
     if !isfile(metadata_path)

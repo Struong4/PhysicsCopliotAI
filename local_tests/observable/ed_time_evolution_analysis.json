@@ -4,14 +4,14 @@
       "type": "spin",
       "S": 0.5,
       "dtype": "ComplexF64",
-      "N": 10
+      "N": 12
     },
     "model": {
       "name": "heisenberg",
       "params": {
         "Jx": 1,
         "Jy": 1,
-        "Jz": 1,
+        "Jz": 1.2,
         "hx": 0,
         "hy": 0,
         "hz": 0
@@ -20,7 +20,7 @@
     "algorithm": {
       "type": "ed_time_evolution",
       "dt": 0.01,
-      "n_steps": 100
+      "n_steps": 1000
     },
     "state": {
       "type": "prebuilt",

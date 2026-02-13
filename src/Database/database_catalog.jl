@@ -665,8 +665,7 @@ Extract full catalog entry from simulation config and results.
 # Returns
 - Dict: Complete catalog entry ready for storage
 """
-function _extract_catalog_entry(config::Dict, run_id::String, status::String, 
-                                run_dir::String)
+function _extract_catalog_entry(config::Dict, run_id::String, status::String, run_dir::String)
     # Compute config hash (reuse from database_utils.jl)
     config_hash = _compute_config_hash(config)
     
@@ -711,8 +710,11 @@ Creates catalog file if it doesn't exist.
 # Returns
 - Dict: The catalog entry that was appended
 """
-function _append_to_catalog(config::Dict, run_id::String, status::String, 
-                            run_dir::String; base_dir::String="data")
+function _append_to_catalog(config::Dict, run_id::String, status::String, run_dir::String; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+    run_dir = abspath(run_dir)
+
     # Extract catalog entry
     entry = _extract_catalog_entry(config, run_id, status, run_dir)
     
@@ -738,6 +740,9 @@ Load all catalog entries from jsonl file.
 Returns empty vector if catalog doesn't exist.
 """
 function _load_catalog(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     catalog_path = joinpath(base_dir, CATALOG_FILENAME)
     
     if !isfile(catalog_path)
@@ -765,6 +770,9 @@ end
 Check if catalog file exists.
 """
 function _catalog_exists(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     return isfile(joinpath(base_dir, CATALOG_FILENAME))
 end
 
@@ -774,6 +782,9 @@ end
 Count entries in catalog without loading all into memory.
 """
 function _catalog_count(; base_dir::String="data")
+
+    base_dir = abspath(base_dir)
+
     catalog_path = joinpath(base_dir, CATALOG_FILENAME)
     
     if !isfile(catalog_path)
