@@ -8,7 +8,7 @@ using JSON
 # LOAD CONFIGURATION
 # ============================================================================
 
-config_file = joinpath(@__DIR__, "simulation_config_tdvp.json")
+config_file = joinpath(@__DIR__, "dmrg_simulation.json")
 config = JSON.parsefile(config_file)
 
 # ============================================================================

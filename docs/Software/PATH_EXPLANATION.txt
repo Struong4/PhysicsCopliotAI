@@ -1,0 +1,303 @@
+TNSoftware PIPELINE AUTOMATION - PATH RESOLUTION
+================================================
+
+HOW THE SERVER FINDS EVERYTHING IN YOUR COMPUTER
+=================================================
+
+
+YOUR DIRECTORY STRUCTURE:
+========================
+
+/home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/   ← PROJECT ROOT (@__DIR__)
+│
+├── start_server.jl              ← You run this (julia start_server.jl)
+├── pipeline_server.jl           ← Loaded by start_server.jl
+│
+├── tools/                       ← TOOLS_DIR = PROJECT_ROOT + "tools"
+│   ├── config_builder_v4.html   ← Served at http://localhost:8080/
+│   └── pipeline_automation.js   ← Served at http://localhost:8080/pipeline_automation.js
+│
+├── src/                         ← SRC_DIR = PROJECT_ROOT + "src"
+│   ├── Database/
+│   │   ├── database_utils.jl           ← include(SRC_DIR + "Database/database_utils.jl")
+│   │   ├── database_catalog.jl
+│   │   ├── database_observables_utils.jl
+│   │   └── database_observables_catalog.jl
+│   │
+│   ├── Runners/
+│   │   ├── run_simulation.jl           ← include(SRC_DIR + "Runners/run_simulation.jl")
+│   │   └── run_Observable.jl
+│   │
+│   ├── Builders/
+│   │   ├── mpo_builder.jl              ← Auto-loaded by start_server.jl
+│   │   ├── mps_builder.jl
+│   │   └── hamiltonian_builder.jl
+│   │
+│   └── Algorithms/
+│       ├── dmrg.jl                     ← Auto-loaded by start_server.jl
+│       ├── tdvp.jl
+│       └── ed.jl
+│
+├── data/                        ← DATA_DIR = PROJECT_ROOT + "data"
+│   ├── run_catalog.jsonl        ← Created automatically
+│   ├── runs_index.json          ← Created automatically
+│   │
+│   ├── dmrg/
+│   │   └── 20241104_153045_a3f5b2c1/   ← Simulation run directory
+│   │       ├── config.json
+│   │       ├── metadata.json
+│   │       └── state_sweep_*.jld2
+│   │
+│   ├── tdvp/
+│   │   └── 20241104_160230_b4c3d2e1/
+│   │       └── ...
+│   │
+│   └── ed_spectrum/
+│       └── ...
+│
+└── data_obs/                    ← OBSERVABLES_DIR = PROJECT_ROOT + "data_obs"
+    ├── observables_index.json   ← Created automatically
+    │
+    ├── dmrg/
+    │   └── 20241104_153045_a3f5b2c1/     ← Sim run ID (links to data/)
+    │       └── 20241104_161500_f5d3e2f1/ ← Observable run ID
+    │           ├── observable_config.json
+    │           ├── metadata.json
+    │           └── observable_sweep_*.jld2
+    │
+    └── tdvp/
+        └── ...
+
+
+HOW PATH DETECTION WORKS:
+=========================
+
+1. You Start Server From Anywhere:
+-----------------------------------
+
+Terminal:
+    cd /tmp/                                    ← Current directory = /tmp
+    julia /home/nishan/.../TNSoftware/start_server.jl
+
+start_server.jl executes:
+    const PROJECT_ROOT = @__DIR__               ← Magic Julia variable!
+    
+    @__DIR__ = directory containing start_server.jl
+             = /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
+    
+    NOT pwd() = /tmp  ← Current working directory (where you ran julia from)
+
+
+2. All Paths Built From PROJECT_ROOT:
+--------------------------------------
+
+    const SRC_DIR         = joinpath(PROJECT_ROOT, "src")
+    const TOOLS_DIR       = joinpath(PROJECT_ROOT, "tools")
+    const DATA_DIR        = joinpath(PROJECT_ROOT, "data")
+    const OBSERVABLES_DIR = joinpath(PROJECT_ROOT, "data_obs")
+
+    Results in:
+        SRC_DIR         = "/home/nishan/.../TNSoftware/src"
+        TOOLS_DIR       = "/home/nishan/.../TNSoftware/tools"
+        DATA_DIR        = "/home/nishan/.../TNSoftware/data"
+        OBSERVABLES_DIR = "/home/nishan/.../TNSoftware/data_obs"
+
+
+3. Loading Modules:
+-------------------
+
+    include(joinpath(SRC_DIR, "Database", "database_utils.jl"))
+    
+    Expands to:
+        include("/home/nishan/.../TNSoftware/src/Database/database_utils.jl")
+    
+    This is an ABSOLUTE PATH → works from any directory!
+
+
+4. Server Serves Files:
+------------------------
+
+    Browser requests: http://localhost:8080/
+    
+    Server looks at: joinpath(TOOLS_DIR, "config_builder_v4.html")
+                   = "/home/nishan/.../TNSoftware/tools/config_builder_v4.html"
+    
+    Browser receives: The HTML file
+
+
+5. Simulation Saves Data:
+--------------------------
+
+    User clicks "Run Pipeline"
+    → Server calls: run_simulation_from_config(config; base_dir=DATA_DIR)
+    → Runner creates: joinpath(DATA_DIR, "dmrg", run_id)
+                    = "/home/nishan/.../TNSoftware/data/dmrg/20241104_153045_a3f5b2c1"
+
+
+COMPARISON: WITH vs WITHOUT ABSOLUTE PATHS
+===========================================
+
+WITHOUT Absolute Paths (BROKEN):
+---------------------------------
+
+    # Relative paths - depends on where you run julia from!
+    
+    cd /tmp/
+    julia /home/nishan/.../TNSoftware/start_server.jl
+    
+    include("src/database_utils.jl")     → Looks for /tmp/src/database_utils.jl  ✗
+    base_dir = "data"                    → Creates /tmp/data/                      ✗
+    html_path = "tools/config.html"      → Looks for /tmp/tools/config.html       ✗
+
+
+WITH Absolute Paths (WORKS):
+----------------------------
+
+    # Absolute paths - works from anywhere!
+    
+    cd /tmp/
+    julia /home/nishan/.../TNSoftware/start_server.jl
+    
+    PROJECT_ROOT = @__DIR__              = /home/nishan/.../TNSoftware/           ✓
+    include(PROJECT_ROOT + "src/...")    → Loads correct file                      ✓
+    base_dir = PROJECT_ROOT + "data"     → Creates data in correct location       ✓
+    html_path = PROJECT_ROOT + "tools/..." → Serves correct HTML                  ✓
+
+
+WHAT IF YOU HAVE MULTIPLE VERSIONS?
+====================================
+
+Scenario: Three different projects on same computer
+----------------------------------------------------
+
+    /home/nishan/projects/
+    ├── TNSoftware_v1/
+    │   ├── start_server.jl      ← Uses @__DIR__ → knows it's in v1
+    │   ├── src/
+    │   └── data/                → Saves v1 data here
+    │
+    ├── TNSoftware_v2/
+    │   ├── start_server.jl      ← Uses @__DIR__ → knows it's in v2
+    │   ├── src/
+    │   └── data/                → Saves v2 data here
+    │
+    └── TNSoftware_dev/
+        ├── start_server.jl      ← Uses @__DIR__ → knows it's in dev
+        ├── src/
+        └── data/                → Saves dev data here
+
+Each can run simultaneously on different ports:
+
+    Terminal 1:
+        cd /home/nishan/projects/TNSoftware_v1/
+        julia start_server.jl                        # Port 8080
+        → Uses v1 code, saves to v1 data
+    
+    Terminal 2:
+        cd /home/nishan/projects/TNSoftware_v2/
+        sed -i 's/8080/8081/' start_server.jl        # Change to port 8081
+        julia start_server.jl                        # Port 8081
+        → Uses v2 code, saves to v2 data
+    
+    Terminal 3:
+        cd /home/nishan/projects/TNSoftware_dev/
+        sed -i 's/8080/8082/' start_server.jl        # Change to port 8082
+        julia start_server.jl                        # Port 8082
+        → Uses dev code, saves to dev data
+
+Access each at:
+    - http://localhost:8080  → v1
+    - http://localhost:8081  → v2
+    - http://localhost:8082  → dev
+
+
+JULIA @__DIR__ vs pwd()
+=======================
+
+    @__DIR__  = Directory containing the currently executing file
+                (compile-time constant)
+    
+    pwd()     = Current working directory 
+                (where you ran julia from)
+
+Example:
+
+    Your structure:
+        /home/nishan/TNSoftware/start_server.jl
+    
+    You run from /tmp/:
+        cd /tmp/
+        julia /home/nishan/TNSoftware/start_server.jl
+    
+    Inside start_server.jl:
+        @__DIR__  = "/home/nishan/TNSoftware"     ✓ CORRECT - where file is
+        pwd()     = "/tmp"                        ✗ WRONG   - where you ran from
+
+
+VERIFICATION COMMANDS
+=====================
+
+To check paths are correct, add this to start_server.jl:
+
+    println("="^70)
+    println("PATH VERIFICATION")
+    println("="^70)
+    println("@__DIR__ (script location): ", @__DIR__)
+    println("pwd() (current directory):  ", pwd())
+    println()
+    println("PROJECT_ROOT:       ", PROJECT_ROOT)
+    println("SRC_DIR:            ", SRC_DIR)
+    println("TOOLS_DIR:          ", TOOLS_DIR)
+    println("DATA_DIR:           ", DATA_DIR)
+    println("OBSERVABLES_DIR:    ", OBSERVABLES_DIR)
+    println()
+    println("Checking existence:")
+    println("  SRC_DIR exists?         ", isdir(SRC_DIR))
+    println("  TOOLS_DIR exists?       ", isdir(TOOLS_DIR))
+    println("  config.html exists?     ", isfile(joinpath(TOOLS_DIR, "config_builder_v4.html")))
+    println("="^70)
+
+Example output:
+
+    ======================================================================
+    PATH VERIFICATION
+    ======================================================================
+    @__DIR__ (script location): /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
+    pwd() (current directory):  /tmp
+    
+    PROJECT_ROOT:       /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
+    SRC_DIR:            /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/src
+    TOOLS_DIR:          /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/tools
+    DATA_DIR:           /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/data
+    OBSERVABLES_DIR:    /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/data_obs
+    
+    Checking existence:
+      SRC_DIR exists?         true
+      TOOLS_DIR exists?       true
+      config.html exists?     true
+    ======================================================================
+
+
+SUMMARY
+=======
+
+Q: How does the server know where files are?
+A: Uses @__DIR__ to get absolute path to project root, then builds all paths from there.
+
+Q: What if I have multiple TNSoftware copies?
+A: Each uses its own @__DIR__, so they're completely independent.
+
+Q: Can I run server from a different directory?
+A: YES! Because of absolute paths. Works from anywhere.
+
+Q: Where does data get saved?
+A: Always to PROJECT_ROOT/data/ and PROJECT_ROOT/data_obs/, regardless of where you start server.
+
+Q: What if I move the project to a different location?
+A: Works fine! @__DIR__ automatically detects new location.
+
+
+═══════════════════════════════════════════════════════════════════════
+KEY TAKEAWAY: 
+@__DIR__ makes everything location-independent and fool-proof!
+═══════════════════════════════════════════════════════════════════════

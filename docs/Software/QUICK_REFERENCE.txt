@@ -1,0 +1,259 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║           TNSoftware Pipeline Automation - Quick Reference              ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ INSTALLATION (One Time)                                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  1. Copy files to project root:
+     
+     cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
+     cp /downloads/start_server.jl .
+     cp /downloads/pipeline_server.jl .
+     cp /downloads/pipeline_automation.js tools/
+
+  2. Install HTTP.jl:
+     
+     julia -e 'using Pkg; Pkg.add("HTTP")'
+
+  3. Edit tools/config_builder_v4.html (add before </body>):
+     
+     <script src="pipeline_automation.js"></script>
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ DAILY USAGE                                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  START SERVER:
+    cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
+    julia start_server.jl
+
+  OPEN GUI:
+    Browser → http://localhost:8080
+
+  RUN PIPELINE:
+    1. Configure simulation in GUI
+    2. Click "▶ Run Pipeline"
+    3. Watch status updates
+    4. Results saved automatically
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ FILE LOCATIONS                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  YOUR PROJECT:
+    /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
+    ├── start_server.jl           ← Run this to start
+    ├── pipeline_server.jl        ← HTTP server
+    ├── tools/
+    │   ├── config_builder_v4.html  ← GUI (modified)
+    │   └── pipeline_automation.js  ← New JavaScript
+    ├── src/                      ← Your code (unchanged)
+    ├── data/                     ← Simulation results
+    └── data_obs/                 ← Observable results
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ DATA STORAGE                                                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  SIMULATION DATA:
+    data/{algorithm}/{run_id}/
+    └── 20241104_153045_a3f5b2c1/
+        ├── config.json
+        ├── metadata.json
+        └── state_sweep_*.jld2
+
+  OBSERVABLE DATA:
+    data_obs/{algorithm}/{sim_run_id}/{obs_run_id}/
+    └── dmrg/20241104_153045_a3f5b2c1/20241104_161500_f5d3e2f1/
+        ├── observable_config.json
+        ├── metadata.json
+        └── observable_sweep_*.jld2
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ API ENDPOINTS                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  http://localhost:8080/               ← Web GUI
+  http://localhost:8080/api/run        ← Start pipeline (POST)
+  http://localhost:8080/api/status/:id ← Check status (GET)
+  http://localhost:8080/api/catalog    ← List all runs (GET)
+  http://localhost:8080/api/active     ← Running pipelines (GET)
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ COMMON COMMANDS                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  START SERVER:
+    julia start_server.jl
+
+  START IN BACKGROUND (screen):
+    screen -S tn_server
+    julia start_server.jl
+    # Press Ctrl+A, then D to detach
+
+  REATTACH TO BACKGROUND:
+    screen -r tn_server
+
+  STOP SERVER:
+    # Press Ctrl+C in terminal
+    # Or: screen -X -S tn_server quit
+
+  CHECK SERVER IS RUNNING:
+    curl http://localhost:8080/api/catalog
+
+  VIEW RECENT RUNS:
+    ls -lt data/dmrg/ | head
+
+  VIEW RUN DETAILS:
+    cat data/dmrg/20241104_153045_a3f5b2c1/metadata.json | jq
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  SERVER WON'T START:
+    ✗ Error: Module not found
+    ✓ Check: src/ directory has your .jl files
+    ✓ Edit: start_server.jl to add missing include()
+
+  BUTTON DOESN'T APPEAR:
+    ✗ No "Run Pipeline" button in GUI
+    ✓ Check: tools/pipeline_automation.js exists
+    ✓ Check: <script> tag added to HTML
+    ✓ Hard refresh: Ctrl+Shift+R
+
+  CONNECTION REFUSED:
+    ✗ Browser can't connect
+    ✓ Check: julia start_server.jl is running
+    ✓ Check: No errors in terminal
+
+  PIPELINE FAILS:
+    ✗ Shows "Failed" status
+    ✓ Check: Server terminal for Julia errors
+    ✓ Test: Your runners work independently
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ BROWSER STATUS INDICATORS                                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  ⏳ Queued        → Request received, waiting to start
+  ⚙️  Running       → Simulation/analysis in progress
+  ✓  Completed     → Pipeline finished successfully
+  ✗  Failed        → Error occurred (check terminal)
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ WORKFLOW EXAMPLES                                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  SIMPLE SIMULATION:
+    1. Mode: Simulation
+    2. Algorithm: DMRG
+    3. System: N=4 spin chain
+    4. Model: Heisenberg
+    5. Click "Run Pipeline"
+    → Saves to: data/dmrg/YYYYMMDD_HHMMSS_hash/
+
+  FULL ANALYSIS:
+    1. Mode: Analysis
+    2. Configure simulation (as above)
+    3. Observable: Single site magnetization
+    4. Sweeps: All
+    5. Click "Run Pipeline"
+    → Simulation: data/dmrg/sim_id/
+    → Observable: data_obs/dmrg/sim_id/obs_id/
+
+  RERUN SAME CONFIG:
+    1. Configure same simulation again
+    2. Click "Run Pipeline"
+    → Instant result: "Already completed (deduplication)"
+    → No computation, uses existing data
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ADVANCED TIPS                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  MULTIPLE VERSIONS:
+    Run different versions on different ports:
+    
+    v1: julia start_server.jl          # Port 8080
+    v2: PORT=8081 julia start_server.jl # Port 8081 (modify script)
+
+  DIFFERENT DATA LOCATION:
+    Edit pipeline_server.jl to change DATA_DIR and OBSERVABLES_DIR
+
+  VIEW SERVER LOGS:
+    All output goes to terminal where you ran julia
+    Or redirect: julia start_server.jl > server.log 2>&1
+
+  MONITOR ACTIVE RUNS:
+    curl http://localhost:8080/api/active
+
+  FORCE RERUN (ignore deduplication):
+    Edit pipeline_server.jl:
+    force_rerun=true in execute_*_pipeline()
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ KEYBOARD SHORTCUTS                                                      │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  Ctrl+C          Stop server
+  Ctrl+Shift+R    Hard refresh browser (reload JavaScript)
+  F12             Open browser developer tools
+  Ctrl+A, D       Detach from screen session
+  Ctrl+L          Clear terminal
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PATHS CHEAT SHEET                                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  PROJECT_ROOT  = @__DIR__  (where start_server.jl is located)
+  SRC_DIR       = PROJECT_ROOT/src
+  TOOLS_DIR     = PROJECT_ROOT/tools
+  DATA_DIR      = PROJECT_ROOT/data
+  OBSERVABLES   = PROJECT_ROOT/data_obs
+
+  All paths are ABSOLUTE → works from any directory!
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ WHAT YOUR CODE DOESN'T NEED TO CHANGE                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  ✓ src/Database/database_utils.jl      (unchanged)
+  ✓ src/Runners/run_simulation.jl       (unchanged)
+  ✓ src/Runners/run_Observable.jl       (unchanged)
+  ✓ All your algorithms                  (unchanged)
+  ✓ All your builders                    (unchanged)
+
+  Only additions:
+  • start_server.jl     (new, in root)
+  • pipeline_server.jl  (new, in root)
+  • pipeline_automation.js (new, in tools/)
+  • One line in config_builder_v4.html
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║  QUICK START:                                                            ║
+║                                                                          ║
+║    cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware             ║
+║    julia start_server.jl                                                 ║
+║    # Browser → http://localhost:8080                                     ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝

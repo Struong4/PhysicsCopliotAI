@@ -1,0 +1,41 @@
+{
+  "system": {
+    "type": "spin",
+    "S": 0.5,
+    "dtype": "ComplexF64",
+    "N": 18
+  },
+  "model": {
+    "name": "transverse_field_ising",
+    "params": {
+      "N": 18,
+      "J": -1,
+      "h": 1.5,
+      "coupling_dir": "Z",
+      "field_dir": "X"
+    }
+  },
+  "algorithm": {
+    "type": "dmrg",
+    "solver": {
+      "type": "lanczos",
+      "krylov_dim": 20,
+      "max_iter": 10
+    },
+    "options": {
+      "chi_max": 64,
+      "cutoff": 1e-10,
+      "local_dim": 2
+    },
+    "run": {
+      "n_sweeps": 20
+    }
+  },
+  "state": {
+    "type": "random",
+    "params": {
+      "bond_dim": 5
+    }
+  },
+  "description": "dmrg test"
+}
