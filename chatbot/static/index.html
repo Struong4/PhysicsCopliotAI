@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TNCodebase — ED Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f4f5f7;
+      color: #1a1a2e;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a1a2e;
+      color: #e0e0f0;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
+    header span { color: #7c86ff; }
+
+    /* ── Main layout ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Chat panel ── */
+    .chat-panel {
+      flex: 0 0 54%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-right: 1px solid #dde1ea;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .bubble {
+      max-width: 82%;
+      padding: 0.6rem 1rem;
+      border-radius: 1.1rem;
+      line-height: 1.5;
+      font-size: 0.92rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.user {
+      background: #4f6ef7;
+      color: #fff;
+      margin-left: auto;
+      border-radius: 1.1rem 1.1rem 0.25rem 1.1rem;
+    }
+    .bubble.assistant {
+      background: #f0f1f5;
+      color: #1a1a2e;
+      margin-right: auto;
+      border-radius: 1.1rem 1.1rem 1.1rem 0.25rem;
+    }
+    .bubble.info {
+      background: #fffbe6;
+      color: #7a5c00;
+      margin: 0 auto;
+      font-size: 0.82rem;
+      border-radius: 0.5rem;
+      border: 1px solid #ffe97a;
+      max-width: 96%;
+    }
+
+    .typing-indicator {
+      padding: 0.3rem 1rem;
+      font-size: 0.82rem;
+      color: #9a9db0;
+      font-style: italic;
+      height: 1.5rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #dde1ea;
+      background: #fff;
+    }
+    .input-row textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid #c8ccd8;
+      border-radius: 0.6rem;
+      padding: 0.55rem 0.85rem;
+      font-family: inherit;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      height: 44px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-row textarea:focus { border-color: #4f6ef7; }
+    .input-row textarea:disabled { background: #f4f5f7; }
+    .input-row button {
+      padding: 0 1.2rem;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 0.6rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .input-row button:hover { background: #3a57d4; }
+    .input-row button:disabled { background: #b0b8d8; cursor: not-allowed; }
+
+    /* ── Config panel ── */
+    .config-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .placeholder-msg {
+      text-align: center;
+      color: #9a9db0;
+      margin-top: 4rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .placeholder-msg strong { display: block; font-size: 1.05rem; color: #6b6f82; margin-bottom: 0.4rem; }
+
+    #config-card { display: none; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #dde1ea;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .card-header {
+      background: #f0f1f8;
+      padding: 0.6rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b6f8a;
+    }
+
+    .summary-text {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: #2a2d4a;
+      background: #f7f8ff;
+      border-bottom: 1px solid #dde1ea;
+      line-height: 1.5;
+    }
+
+    .config-json {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      padding: 1rem;
+      overflow: auto;
+      max-height: 340px;
+      white-space: pre;
+      margin: 0;
+    }
+
+    /* Edit textarea replaces the JSON display */
+    #edit-area {
+      display: none;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Consolas', 'Cascadia Code', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      padding: 1rem;
+      border: none;
+      width: 100%;
+      min-height: 280px;
+      resize: vertical;
+      outline: none;
+    }
+
+    .edit-error {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      color: #c0392b;
+      background: #fdf0ef;
+      display: none;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #dde1ea;
+      background: #fafbff;
+    }
+    .btn { padding: 0.45rem 1.1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.87; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-confirm  { background: #22a06b; color: #fff; }
+    .btn-edit     { background: #4f6ef7; color: #fff; }
+    .btn-save     { background: #22a06b; color: #fff; display: none; }
+    .btn-discard  { background: #6c757d; color: #fff; display: none; }
+    .btn-cancel   { background: #6c757d; color: #fff; }
+
+    /* ── Status card ── */
+    #status-card { display: none; }
+
+    .status-inner { padding: 0.85rem 1rem; }
+    .status-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-queued   { background: #fff0b3; color: #7a5700; }
+    .badge-running  { background: #deebff; color: #0747a6; }
+    .badge-completed{ background: #e3fcef; color: #006644; }
+    .badge-failed   { background: #ffebe6; color: #bf2600; }
+
+    .status-msg { font-size: 0.85rem; color: #5a5d72; }
+
+    .run-info {
+      display: none;
+      margin-top: 0.6rem;
+      background: #f4f5f7;
+      border-radius: 0.4rem;
+      padding: 0.5rem 0.75rem;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid #4f6ef7;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>TNCodebase &nbsp;<span>ED</span>&nbsp; Simulation Assistant</header>
+
+<div class="main">
+
+  <!-- ── Chat panel ── -->
+  <div class="chat-panel">
+    <div class="messages" id="messages">
+      <div class="bubble assistant">
+        Hi! I can help you set up and run an Exact Diagonalization (ED) simulation.<br><br>
+        What kind of simulation are you thinking about? For example:<br>
+        &bull; "Find the ground state of a Heisenberg chain"<br>
+        &bull; "Time-evolve an Ising model after a quench"<br>
+        &bull; "Compute the energy spectrum of a long-range Ising model"
+      </div>
+    </div>
+    <div class="typing-indicator" id="typing"></div>
+    <div class="input-row">
+      <textarea id="msg-input" placeholder="Describe your simulation…" rows="1"
+                onkeydown="handleKey(event)"></textarea>
+      <button id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- ── Config panel ── -->
+  <div class="config-panel">
+
+    <div class="placeholder-msg" id="placeholder">
+      <strong>Config will appear here</strong>
+      Describe your simulation in the chat and Claude<br>will build the config for you to review.
+    </div>
+
+    <!-- Config card -->
+    <div class="card" id="config-card">
+      <div class="card-header">Simulation Config</div>
+      <div class="summary-text" id="summary-text"></div>
+      <pre class="config-json" id="config-json"></pre>
+      <textarea id="edit-area" spellcheck="false"></textarea>
+      <div class="edit-error" id="edit-error"></div>
+      <div class="action-row">
+        <button class="btn btn-confirm"  id="btn-confirm"  onclick="confirmRun()">▶ Confirm &amp; Run</button>
+        <button class="btn btn-edit"     id="btn-edit"     onclick="startEdit()">✎ Edit</button>
+        <button class="btn btn-save"     id="btn-save"     onclick="saveEdit()">✔ Save</button>
+        <button class="btn btn-discard"  id="btn-discard"  onclick="discardEdit()">✕ Discard</button>
+        <button class="btn btn-cancel"   id="btn-cancel"   onclick="cancelConfig()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Status card -->
+    <div class="card" id="status-card">
+      <div class="card-header">Pipeline Status</div>
+      <div class="status-inner">
+        <div class="status-row">
+          <span class="badge" id="status-badge"></span>
+          <span id="status-spinner"></span>
+        </div>
+        <div class="status-msg" id="status-msg"></div>
+        <div class="run-info" id="run-info"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  let sessionId = localStorage.getItem("tn_ed_session") || null;
+  let currentConfig = null;
+  let pollTimer = null;
+
+  // ── Chat helpers ──────────────────────────────────────────────────────────
+  function addBubble(text, role) {
+    const el = document.createElement("div");
+    el.className = `bubble ${role}`;
+    el.textContent = text;
+    document.getElementById("messages").appendChild(el);
+    el.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function setThinking(on) {
+    const t = document.getElementById("typing");
+    t.textContent = on ? "Claude is thinking…" : "";
+    document.getElementById("msg-input").disabled = on;
+    document.getElementById("send-btn").disabled = on;
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // ── Send message ──────────────────────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById("msg-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = "";
+    addBubble(text, "user");
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: text }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Error: " + (err.detail || res.statusText), "info");
+        return;
+      }
+
+      const data = await res.json();
+      sessionId = data.session_id;
+      localStorage.setItem("tn_ed_session", sessionId);
+
+      if (data.text) addBubble(data.text, "assistant");
+
+      if (data.config) {
+        currentConfig = data.config;
+        showConfigCard(data.config, data.summary);
+      }
+    } catch (e) {
+      addBubble("Could not reach the server. Is it running on port 8000?", "info");
+    } finally {
+      setThinking(false);
+      document.getElementById("msg-input").focus();
+    }
+  }
+
+  // ── Config card ───────────────────────────────────────────────────────────
+  function showConfigCard(config, summary) {
+    document.getElementById("placeholder").style.display = "none";
+    document.getElementById("config-card").style.display = "block";
+    document.getElementById("summary-text").textContent = summary || "Review the config below.";
+    document.getElementById("config-json").textContent = JSON.stringify(config, null, 2);
+
+    // Reset edit mode
+    document.getElementById("edit-area").style.display = "none";
+    document.getElementById("config-json").style.display = "block";
+    document.getElementById("btn-confirm").style.display = "";
+    document.getElementById("btn-edit").style.display = "";
+    document.getElementById("btn-save").style.display = "none";
+    document.getElementById("btn-discard").style.display = "none";
+    document.getElementById("edit-error").style.display = "none";
+  }
+
+  function cancelConfig() {
+    currentConfig = null;
+    document.getElementById("config-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+    addBubble("Config cancelled. What would you like to change?", "info");
+  }
+
+  // ── Edit mode ─────────────────────────────────────────────────────────────
+  function startEdit() {
+    const ta = document.getElementById("edit-area");
+    ta.value = JSON.stringify(currentConfig, null, 2);
+    ta.style.display = "block";
+    document.getElementById("config-json").style.display = "none";
+    document.getElementById("btn-confirm").style.display = "none";
+    document.getElementById("btn-edit").style.display = "none";
+    document.getElementById("btn-save").style.display = "inline-block";
+    document.getElementById("btn-discard").style.display = "inline-block";
+    document.getElementById("edit-error").style.display = "none";
+    ta.focus();
+  }
+
+  function discardEdit() {
+    document.getElementById("edit-area").style.display = "none";
+    document.getElementById("config-json").style.display = "block";
+    document.getElementById("btn-confirm").style.display = "";
+    document.getElementById("btn-edit").style.display = "";
+    document.getElementById("btn-save").style.display = "none";
+    document.getElementById("btn-discard").style.display = "none";
+    document.getElementById("edit-error").style.display = "none";
+  }
+
+  function saveEdit() {
+    const ta = document.getElementById("edit-area");
+    let parsed;
+    try {
+      parsed = JSON.parse(ta.value);
+    } catch (e) {
+      const errEl = document.getElementById("edit-error");
+      errEl.textContent = "Invalid JSON: " + e.message;
+      errEl.style.display = "block";
+      return;
+    }
+    currentConfig = parsed;
+    document.getElementById("config-json").textContent = JSON.stringify(parsed, null, 2);
+    discardEdit();
+  }
+
+  // ── Confirm & run ─────────────────────────────────────────────────────────
+  async function confirmRun() {
+    if (!currentConfig) return;
+
+    // Disable action buttons
+    ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+      document.getElementById(id).disabled = true
+    );
+
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: currentConfig, mode: "simulation" }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Failed to start simulation: " + (data.detail || res.statusText), "info");
+        ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+          document.getElementById(id).disabled = false
+        );
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.tracking_id) {
+        showStatusCard("queued", "Pipeline queued…");
+        startPolling(data.tracking_id);
+      } else {
+        addBubble("Unexpected response from pipeline: " + JSON.stringify(data), "info");
+      }
+    } catch (e) {
+      addBubble("Network error reaching server: " + e.message, "info");
+      ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+        document.getElementById(id).disabled = false
+      );
+    }
+  }
+
+  // ── Status polling ────────────────────────────────────────────────────────
+  function showStatusCard(status, msg) {
+    document.getElementById("status-card").style.display = "block";
+
+    const badge = document.getElementById("status-badge");
+    badge.textContent = status;
+    badge.className = `badge badge-${status}`;
+
+    document.getElementById("status-msg").textContent = msg;
+
+    const spinner = document.getElementById("status-spinner");
+    spinner.innerHTML = (status === "running" || status === "queued")
+      ? '<span class="spinner"></span>'
+      : "";
+  }
+
+  function startPolling(trackingId) {
+    if (pollTimer) clearInterval(pollTimer);
+    let done = false;
+
+    pollTimer = setInterval(async () => {
+      if (done) return;
+      try {
+        const res = await fetch(`/api/status/${trackingId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const status = data.status || "unknown";
+        const msg = data.last_message || "";
+        showStatusCard(status, msg);
+
+        if (status === "completed") {
+          done = true;
+          clearInterval(pollTimer);
+          const result = data.result || {};
+          let info = "";
+          if (result.run_id)  info += `Run ID:  ${result.run_id}\n`;
+          if (result.run_dir) info += `Output:  ${result.run_dir}`;
+          if (result.deduplicated) info += "\n(Existing run found — no recomputation needed)";
+          if (info) {
+            const el = document.getElementById("run-info");
+            el.textContent = info;
+            el.style.display = "block";
+          }
+          addBubble(`Simulation complete! Run ID: ${result.run_id || "N/A"}`, "info");
+          currentConfig = null;
+
+        } else if (status === "failed") {
+          done = true;
+          clearInterval(pollTimer);
+          addBubble("Simulation failed. Check the Julia server output for details.", "info");
+        }
+      } catch (_) { /* keep trying */ }
+    }, 2000);
+  }
+</script>
+</body>
+</html>
