@@ -1,6 +1,5 @@
 """
 TNCodebase ED Simulation Chatbot
----------------------------------
 FastAPI backend that uses AWS Bedrock (Claude) to build ED simulation configs
 from natural language, then submits them to the Julia pipeline server.
 
