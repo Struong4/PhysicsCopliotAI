@@ -11,8 +11,10 @@ Prerequisites:
 Run:
   pip install -r chatbot/requirements.txt
   uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload
+  python -m uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload 
 """
 
+# libraries needed for connecting this AWS bedrock, HTTP requests, and UI for web
 import asyncio
 import json
 import os
@@ -26,12 +28,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+
 # Required on Windows for asyncio subprocess support
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-# ── Config ────────────────────────────────────────────────────────────────────
 
+# access to the frontend html file, julia simulations, and LLM model
 STATIC_DIR = Path(__file__).parent / "static"
 JULIA_URL = "http://127.0.0.1:8080"
 MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
@@ -44,10 +47,8 @@ _session = boto3.Session(
 )
 bedrock = _session.client("bedrock-runtime")
 
-# In-memory sessions: session_id → list of Bedrock message dicts
-SESSIONS: dict[str, list] = {}
-
-# ── System prompt ─────────────────────────────────────────────────────────────
+# In-memory sessions: session_id → { "history": [...], "last_config": dict | None }
+SESSIONS: dict[str, dict] = {}
 
 SYSTEM_PROMPT = """You are a simulation assistant for TNCodebase, a quantum physics framework.
 Your job is to help users configure and run Exact Diagonalization (ED) simulations
@@ -139,10 +140,36 @@ Domain wall (kink):
    Do NOT show raw JSON in chat text — always use the tool.
 8. After proposing a config, if the user asks for changes, gather the new values
    and call submit_config again with the complete updated config.
+
+━━━ GENERAL QUESTIONS ━━━
+If the user asks what you can do, what models are available, or any other
+general question about TNCodebase or ED simulations, answer conversationally
+and helpfully. Do NOT try to gather simulation parameters in response to a
+general question. Only begin collecting parameters when the user expresses
+a clear intent to run a simulation.
+
+Available models: transverse_field_ising, heisenberg (XXX/XXZ),
+long_range_ising (power-law decay). All use Exact Diagonalization (ED),
+limited to N ≤ 14 sites. Two algorithm types: ed_spectrum (ground state /
+energy levels) and ed_time_evolution (quench dynamics).
+
+━━━ INTERPRETING SIMULATION RESULTS ━━━
+When a message begins with "[SIMULATION RESULT]", the Julia pipeline has
+just completed a run. Interpret it for the user in plain English:
+  • For ed_spectrum: comment on what the energy spectrum implies about the
+    phase (gapped vs. gapless), and invite the user to ask follow-up
+    questions or request a new simulation.
+  • For ed_time_evolution: acknowledge the run and invite the user to ask
+    about observable calculations or to re-run with different parameters.
+  • If deduplicated=true, explain that an identical simulation already
+    existed in the catalog so no recomputation was needed.
+After interpreting, stay ready for follow-up questions or a new simulation
+request. Do NOT call submit_config in response to a result message.
 """
 
-# ── Bedrock tool spec ─────────────────────────────────────────────────────────
-
+# gives structure that the json should look like to claude/LLM
+# it has instructions to tell claude when to use it and what arguments
+# arguments it should pass for a structured result
 SUBMIT_CONFIG_TOOL = {
     "name": "submit_config",
     "description": (
@@ -192,31 +219,32 @@ class RunRequest(BaseModel):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
-
+# calls on index.html and gets it as a webpage as a UI
 @app.get("/")
 def index():
     return HTMLResponse((STATIC_DIR / "index.html").read_text(encoding="utf-8"))
 
-
+# creates convo for this session, appends user msg to LLM's prompt (role, content)
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """Send a user message to Claude and return its response + optional proposed config."""
     sid = req.session_id or str(uuid.uuid4())
     if sid not in SESSIONS:
-        SESSIONS[sid] = []
-    history = SESSIONS[sid]
+        SESSIONS[sid] = {"history": [], "last_config": None}
+    history = SESSIONS[sid]["history"]
 
     # Append user turn (Bedrock format)
     history.append({"role": "user", "content": [{"text": req.message}]})
 
     # Call Bedrock in a thread so we don't block the event loop
+    # tells Bedrock what tools are available to LLM 
     def _call_bedrock():
         return bedrock.converse(
             modelId=MODEL_ID,
             system=[{"text": SYSTEM_PROMPT}],
             messages=history,
             toolConfig={"tools": [{"toolSpec": SUBMIT_CONFIG_TOOL}]},
-            inferenceConfig={"maxTokens": 2048, "temperature": 0.3},
+            inferenceConfig={"maxTokens": 2048, "temperature": 0.5},
         )
 
     try:
@@ -232,6 +260,7 @@ async def chat(req: ChatRequest):
     proposed_config = None
     summary = ""
 
+    # extracts user response if it it text of config file
     for block in content:
         if "text" in block:
             reply_text += block["text"]
@@ -239,8 +268,12 @@ async def chat(req: ChatRequest):
             tool = block["toolUse"]
             proposed_config = tool["input"].get("config")
             summary = tool["input"].get("summary", "")
+            SESSIONS[sid]["last_config"] = proposed_config
 
             # Append tool result so the next user turn stays valid
+            # Bedrock requiers every toolUse to get a toolResult appended to history
+            # or next API call will result in validation errors, so this takes care of it
+
             history.append({
                 "role": "user",
                 "content": [{"toolResult": {
@@ -249,6 +282,7 @@ async def chat(req: ChatRequest):
                 }}],
             })
             # Synthetic assistant acknowledgment keeps conversation history valid
+            # Bedrock expects the next turn to be the model so keep a flowing conversation
             ack = (
                 reply_text
                 or "I've prepared your simulation config. "
@@ -266,6 +300,7 @@ async def chat(req: ChatRequest):
     }
 
 
+# when user confirms a run with config, it will send to julia pipeline for simulation
 @app.post("/api/run")
 async def run_pipeline(req: RunRequest):
     """Forward a confirmed config to the Julia pipeline server."""
@@ -291,6 +326,7 @@ async def run_pipeline(req: RunRequest):
         return r.json()
 
 
+# checks status of the run to see if the endpoint is done yet
 @app.get("/api/status/{tracking_id}")
 async def poll_status(tracking_id: str):
     """Proxy a status poll to the Julia pipeline server."""

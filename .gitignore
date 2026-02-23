@@ -19,6 +19,7 @@ Manifest.toml
 
 # Claude Code local settings
 .claude/
+CLAUDE.md
 
 # Local planning notes
 plan.md

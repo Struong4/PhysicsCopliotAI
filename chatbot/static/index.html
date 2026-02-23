@@ -6,7 +6,7 @@
   <title>TNCodebase — ED Assistant</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    /* Index.html uses CSS for appearance, HTML for content, and JS for the logic, state, and interactivity */
     body {
       font-family: system-ui, -apple-system, sans-serif;
       height: 100vh;
@@ -339,12 +339,15 @@
 </div>
 
 <script>
+  // JS to store states and make api calls to the backend or bedrock
   // ── State ─────────────────────────────────────────────────────────────────
   let sessionId = localStorage.getItem("tn_ed_session") || null;
   let currentConfig = null;
+  let lastSubmittedConfig = null;
   let pollTimer = null;
 
   // ── Chat helpers ──────────────────────────────────────────────────────────
+  // creates bubble for the message
   function addBubble(text, role) {
     const el = document.createElement("div");
     el.className = `bubble ${role}`;
@@ -353,6 +356,7 @@
     el.scrollIntoView({ behavior: "smooth" });
   }
 
+  // when claude is thinking to disable input and send button while its creating response
   function setThinking(on) {
     const t = document.getElementById("typing");
     t.textContent = on ? "Claude is thinking…" : "";
@@ -360,6 +364,7 @@
     document.getElementById("send-btn").disabled = on;
   }
 
+  // sees enter as a key to send the response
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -367,7 +372,8 @@
     }
   }
 
-  // ── Send message ──────────────────────────────────────────────────────────
+  // reads the users text and sends the message by making a POST Api call to
+  // the chat andf adds claude's reply text as a assistant bubble.
   async function sendMessage() {
     const input = document.getElementById("msg-input");
     const text = input.value.trim();
@@ -398,6 +404,7 @@
 
       if (data.config) {
         currentConfig = data.config;
+        lastSubmittedConfig = data.config;
         showConfigCard(data.config, data.summary);
       }
     } catch (e) {
@@ -408,14 +415,14 @@
     }
   }
 
-  // ── Config card ───────────────────────────────────────────────────────────
+  // Shows the config builder to aaccess and send data to julia pipeline
   function showConfigCard(config, summary) {
     document.getElementById("placeholder").style.display = "none";
     document.getElementById("config-card").style.display = "block";
     document.getElementById("summary-text").textContent = summary || "Review the config below.";
     document.getElementById("config-json").textContent = JSON.stringify(config, null, 2);
 
-    // Reset edit mode
+    // Reset edit mode and re-enable buttons (may have been disabled by a previous run)
     document.getElementById("edit-area").style.display = "none";
     document.getElementById("config-json").style.display = "block";
     document.getElementById("btn-confirm").style.display = "";
@@ -423,8 +430,12 @@
     document.getElementById("btn-save").style.display = "none";
     document.getElementById("btn-discard").style.display = "none";
     document.getElementById("edit-error").style.display = "none";
+    ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+      document.getElementById(id).disabled = false
+    );
   }
 
+  // cancel config to not be sent to pipeline
   function cancelConfig() {
     currentConfig = null;
     document.getElementById("config-card").style.display = "none";
@@ -432,7 +443,7 @@
     addBubble("Config cancelled. What would you like to change?", "info");
   }
 
-  // ── Edit mode ─────────────────────────────────────────────────────────────
+  // allows user to edit the config json manually if they would want to
   function startEdit() {
     const ta = document.getElementById("edit-area");
     ta.value = JSON.stringify(currentConfig, null, 2);
@@ -446,6 +457,7 @@
     ta.focus();
   }
 
+  // clears config
   function discardEdit() {
     document.getElementById("edit-area").style.display = "none";
     document.getElementById("config-json").style.display = "block";
@@ -456,6 +468,8 @@
     document.getElementById("edit-error").style.display = "none";
   }
 
+
+  // saves user edit of the config they edited
   function saveEdit() {
     const ta = document.getElementById("edit-area");
     let parsed;
@@ -472,7 +486,9 @@
     discardEdit();
   }
 
-  // ── Confirm & run ─────────────────────────────────────────────────────────
+  // confirms the run and sends the config json to the julia pipeline by sending a POST
+  // API call which will store data if successful and give a analysis, on error let you run again,
+  // and adding more features for now
   async function confirmRun() {
     if (!currentConfig) return;
 
@@ -501,6 +517,9 @@
 
       if (data.tracking_id) {
         showStatusCard("queued", "Pipeline queued…");
+        // Keep input locked while simulation runs and Claude interprets results
+        document.getElementById("msg-input").disabled = true;
+        document.getElementById("send-btn").disabled = true;
         startPolling(data.tracking_id);
       } else {
         addBubble("Unexpected response from pipeline: " + JSON.stringify(data), "info");
@@ -513,7 +532,7 @@
     }
   }
 
-  // ── Status polling ────────────────────────────────────────────────────────
+  // shows status of the run (queued, running, completed, failed)
   function showStatusCard(status, msg) {
     document.getElementById("status-card").style.display = "block";
 
@@ -529,12 +548,15 @@
       : "";
   }
 
+  // lets system know if simulations are completed or failed.
   function startPolling(trackingId) {
     if (pollTimer) clearInterval(pollTimer);
     let done = false;
+    let polling = false;
 
     pollTimer = setInterval(async () => {
-      if (done) return;
+      if (done || polling) return;
+      polling = true;
       try {
         const res = await fetch(`/api/status/${trackingId}`);
         if (!res.ok) return;
@@ -557,16 +579,64 @@
             el.textContent = info;
             el.style.display = "block";
           }
-          addBubble(`Simulation complete! Run ID: ${result.run_id || "N/A"}`, "info");
           currentConfig = null;
+          await injectResultAndChat(result, trackingId);
 
         } else if (status === "failed") {
           done = true;
           clearInterval(pollTimer);
+          setThinking(false);
           addBubble("Simulation failed. Check the Julia server output for details.", "info");
         }
       } catch (_) { /* keep trying */ }
+      finally { polling = false; }
     }, 2000);
+  }
+
+  // Creating a feedback loop with the LLM (Claude currently) to have a flowing conversation
+  // for btter user friendliness.
+  async function injectResultAndChat(result, trackingId) {
+    // Build a terse summary for Claude — it knows how to interpret each field
+    const summary = {
+      tracking_id: trackingId,
+      status: result.status || "completed",
+      run_id: result.run_id || null,
+      run_dir: result.run_dir || null,
+      deduplicated: result.deduplicated || false,
+      algorithm: lastSubmittedConfig?.algorithm?.type || "unknown",
+      model: lastSubmittedConfig?.model?.type || "unknown",
+      N: lastSubmittedConfig?.system?.N || null,
+    };
+
+    const injectedText = "[SIMULATION RESULT]\n" + JSON.stringify(summary, null, 2);
+
+    addBubble("Simulation completed. Asking Claude to interpret the results…", "info");
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: injectedText }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Could not get result interpretation: " + (err.detail || res.statusText), "info");
+        return;
+      }
+
+      const data = await res.json();
+      sessionId = data.session_id;
+      localStorage.setItem("tn_ed_session", sessionId);
+
+      if (data.text) addBubble(data.text, "assistant");
+    } catch (e) {
+      addBubble("Network error getting result interpretation: " + e.message, "info");
+    } finally {
+      setThinking(false);
+      document.getElementById("msg-input").focus();
+    }
   }
 </script>
 </body>
