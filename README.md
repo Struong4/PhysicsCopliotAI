@@ -198,6 +198,120 @@ config = load_config(results[1])
 
 ---
 
+## AI Simulation Chatbot
+
+TNCodebase includes a natural-language chatbot that lets you set up and run Exact Diagonalization simulations through a conversational interface — no Julia or JSON knowledge required.
+
+**Architecture:**
+```
+Browser (port 8000)
+  ↕ HTTP
+FastAPI server (chatbot/app.py)
+  ↕ AWS Bedrock API
+Claude 3 Haiku  ←  builds simulation configs from natural language
+  ↕ HTTP
+Julia pipeline server (port 8080)
+  ↕ in-process
+TNCodebase.run_simulation_from_config(...)
+```
+
+**Supported via chatbot:**
+- Models: `transverse_field_ising`, `heisenberg`, `long_range_ising`
+- Algorithms: `ed_spectrum` (energy levels), `ed_time_evolution` (dynamics)
+- System sizes: N ≤ 14 (ED constraint — for larger systems use the Julia API directly)
+
+---
+
+### Chatbot Setup
+
+#### 1. AWS CLI
+
+Install the AWS CLI for your platform:
+
+```bash
+# macOS
+brew install awscli
+
+# Linux
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip && sudo ./aws/install
+
+# Windows — download and run the MSI installer from:
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+```
+
+Verify installation:
+```bash
+aws --version
+```
+
+#### 2. Enable Claude 3 Haiku in AWS Bedrock
+
+1. Sign in to the [AWS Console](https://console.aws.amazon.com)
+2. Navigate to **Amazon Bedrock → Model access → Manage model access**
+3. Enable **Anthropic → Claude 3 Haiku**
+4. Your IAM user/role needs the `bedrock:InvokeModel` permission
+
+The chatbot uses model ID `anthropic.claude-3-haiku-20240307-v1:0` in region `us-east-1`.
+
+#### 3. Configure AWS Credentials
+
+**Option A — IAM access keys:**
+```bash
+aws configure
+# Enter your AWS Access Key ID, Secret Access Key, default region (us-east-1), and output format
+```
+
+**Option B — SSO (recommended for organizations):**
+```bash
+aws configure sso
+# Follow the prompts to set up your SSO profile, then:
+aws sso login --profile <your-profile-name>
+
+# Tell the chatbot which profile to use:
+export AWS_PROFILE=<your-profile-name>
+```
+
+#### 4. Python Dependencies
+
+```bash
+pip install -r chatbot/requirements.txt
+```
+
+---
+
+### Running the Chatbot
+
+The Julia pipeline server **must be started first** — the chatbot forwards confirmed simulation configs to it.
+
+**Terminal 1 — Julia pipeline server:**
+```bash
+julia --project=. start_server.jl
+# Starts HTTP server at http://127.0.0.1:8080
+# Auto-opens the config builder GUI in your browser
+```
+
+**Terminal 2 — Chatbot server:**
+```bash
+uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Open **http://127.0.0.1:8000** in your browser.
+
+---
+
+### How It Works
+
+1. **Describe your simulation** in plain English — e.g. *"I want the ground state energy levels of a 10-site Heisenberg chain"*
+2. **Claude 3 Haiku** (via AWS Bedrock) asks any clarifying questions and assembles a complete JSON simulation config
+3. **Review the config** in the right panel — you can edit the JSON manually before running
+4. **Click Confirm & Run** — the config is sent to the Julia pipeline server and executed
+5. **Results are interpreted** — Claude reads the output and explains what the results mean in the context of your physics question
+
+The conversation history is stored in memory and your `session_id` is saved in browser `localStorage`, so reloading the page resumes where you left off.
+
+---
+
 ## Example: Ground State Energy Convergence (DMRG)
 
 ```julia
@@ -440,7 +554,16 @@ TNCodebase/
 │   ├── CATALOG_QUERY_INTEGRATION.md     # Complete workflows
 │   ├── ED_USER_GUIDE.md                 # Using ED
 │   └── ED_ARCHITECTURE_GUIDE.md         # ED internals
-│ 
+│
+├── chatbot/                    # AI simulation chatbot
+│   ├── app.py                 # FastAPI server (AWS Bedrock + Julia pipeline proxy)
+│   ├── requirements.txt       # Python dependencies
+│   └── static/
+│       └── index.html         # Two-column chat + config review UI
+│
+├── pipeline_server.jl          # HTTP pipeline automation server (REST API)
+├── start_server.jl             # Server startup (loads TNCodebase → starts HTTP server)
+│
 └── test/                       # Unit tests
 ```
 
