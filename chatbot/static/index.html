@@ -333,6 +333,9 @@
         <div class="status-msg" id="status-msg"></div>
         <div class="run-info" id="run-info"></div>
       </div>
+      <div class="action-row" id="status-action-row" style="display:none;">
+        <button class="btn btn-cancel" onclick="dismissStatus()">✕ Dismiss</button>
+      </div>
     </div>
 
   </div>
@@ -418,6 +421,7 @@
   // Shows the config builder to aaccess and send data to julia pipeline
   function showConfigCard(config, summary) {
     document.getElementById("placeholder").style.display = "none";
+    document.getElementById("status-card").style.display = "none";
     document.getElementById("config-card").style.display = "block";
     document.getElementById("summary-text").textContent = summary || "Review the config below.";
     document.getElementById("config-json").textContent = JSON.stringify(config, null, 2);
@@ -433,6 +437,13 @@
     ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
       document.getElementById(id).disabled = false
     );
+  }
+
+  // dismisses the status card after a completed or failed run
+  function dismissStatus() {
+    document.getElementById("status-card").style.display = "none";
+    document.getElementById("status-action-row").style.display = "none";
+    document.getElementById("run-info").style.display = "none";
   }
 
   // cancel config to not be sent to pipeline
@@ -579,12 +590,14 @@
             el.textContent = info;
             el.style.display = "block";
           }
+          document.getElementById("status-action-row").style.display = "";
           currentConfig = null;
           await injectResultAndChat(result, trackingId);
 
         } else if (status === "failed") {
           done = true;
           clearInterval(pollTimer);
+          document.getElementById("status-action-row").style.display = "";
           setThinking(false);
           addBubble("Simulation failed. Check the Julia server output for details.", "info");
         }
