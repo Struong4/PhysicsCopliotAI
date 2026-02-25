@@ -74,18 +74,35 @@ Every config has four required keys: system, model, algorithm, state.
 
 ── MODELS ──
 
+CRITICAL: The model block MUST use "name" (not "type") and ALL params MUST be nested under "params".
+
 transverse_field_ising  →  H = J Σ σ_coupling_dir(i) σ_coupling_dir(i+1) + h Σ σ_field_dir(i)
-  Required params: N, J, h, coupling_dir, field_dir
+{
+  "model": {
+    "name": "transverse_field_ising",
+    "params": { "J": -1, "h": 0.5, "coupling_dir": "Z", "field_dir": "X" }
+  }
+}
   coupling_dir / field_dir ∈ {"X", "Y", "Z"}
   Typical: J=-1 (ferromagnet), coupling_dir="Z", field_dir="X"
 
 heisenberg  →  H = Jx Σ σˣσˣ + Jy Σ σʸσʸ + Jz Σ σᶻσᶻ + hx Σ σˣ + hy Σ σʸ + hz Σ σᶻ
-  Required params: N, Jx, Jy, Jz
-  Optional: hx, hy, hz (all default to 0)
+{
+  "model": {
+    "name": "heisenberg",
+    "params": { "Jx": 1, "Jy": 1, "Jz": 1, "hx": 0, "hy": 0, "hz": 0 }
+  }
+}
+  ALWAYS include hx, hy, hz in params (default to 0 if not specified by user).
   Note: Jx=Jy=Jz → isotropic XXX; Jx=Jy≠Jz → XXZ
 
 long_range_ising  →  H = J Σ_{i<j} σᶻᵢσᶻⱼ / |i-j|^alpha + h Σ σˣᵢ
-  Required params: N, J, alpha, h, coupling_dir, field_dir
+{
+  "model": {
+    "name": "long_range_ising",
+    "params": { "J": -1, "alpha": 1.5, "h": 0.5, "coupling_dir": "Z", "field_dir": "X" }
+  }
+}
   Note: NO n_exp needed for ED (ED uses exact power law, unlike tensor network methods)
 
 ── ALGORITHMS ──
@@ -94,9 +111,10 @@ ed_spectrum — find eigenvalues/eigenstates:
 {
   "algorithm": {
     "type": "ed_spectrum",
-    "use_sparse": false    (use false for N≤12, true for N=13 or 14)
+    "use_sparse": false
   }
 }
+  ALWAYS include use_sparse: false for N≤12, use_sparse: true for N=13 or 14.
 Optional: "n_states": <int>  (compute only first n_states eigenvalues)
 
 ed_time_evolution — time-evolve an initial state:
@@ -115,8 +133,9 @@ Random state:
 
 Polarized (all spins aligned):
 { "state": {"type": "prebuilt", "name": "polarized",
-            "params": {"spin_direction": "Z", "eigenstate": 1}} }
+            "params": {"spin_direction": "Z", "eigenstate": 2}} }
   spin_direction ∈ {"X","Y","Z"}, eigenstate: 1=spin-down, 2=spin-up
+  For quench dynamics (ed_time_evolution), default to eigenstate: 2 (spin-up / all spins aligned up).
 
 Néel (alternating ↑↓↑↓):
 { "state": {"type": "prebuilt", "name": "neel",
