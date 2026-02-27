@@ -1,0 +1,46 @@
+{
+  "system": {
+    "type": "spin",
+    "S": 0.5,
+    "dtype": "ComplexF64",
+    "N": 18
+  },
+  "model": {
+    "name": "transverse_field_ising",
+    "params": {
+      "N": 18,
+      "J": -1,
+      "h": 0.5,
+      "coupling_dir": "Z",
+      "field_dir": "X"
+    }
+  },
+  "algorithm": {
+    "type": "tdvp",
+    "solver": {
+      "type": "krylov_exponential",
+      "krylov_dim": 30,
+      "tol": 1e-8,
+      "evol_type": "real"
+    },
+    "options": {
+      "dt": 0.05,
+      "chi_max": 64,
+      "cutoff": 1e-10,
+      "local_dim": 2
+    },
+    "run": {
+      "n_sweeps": 100
+    }
+  },
+  "state": {
+    "type": "prebuilt",
+    "name": "kink",
+    "params": {
+      "spin_direction": "Z",
+      "position": 10,
+      "left_state": 1,
+      "right_state": 2
+    }
+  }
+}
