@@ -8,7 +8,7 @@
 #
 # USAGE:
 #   cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-#   julia start_server.jl
+#   julia server/start_server.jl
 #
 # ============================================================================
 
@@ -21,14 +21,14 @@ println()
 # PROJECT ROOT DETECTION
 # ============================================================================
 
-# This script should be in the project root
-const PROJECT_ROOT = @__DIR__
+# This script is in the server/ subdirectory — project root is one level up
+const PROJECT_ROOT = dirname(@__DIR__)
 
 println("Project root: $PROJECT_ROOT")
 println()
 
 # Verify we're in the right place
-required_dirs = ["src", "tools", "data"]
+required_dirs = ["src", "frontend", "data"]
 for dir in required_dirs
     path = joinpath(PROJECT_ROOT, dir)
     if !isdir(path)
@@ -40,13 +40,13 @@ end
 # CONFIGURATION - Data Directories
 # ============================================================================
 
-const TOOLS_DIR = joinpath(PROJECT_ROOT, "tools")
+const FRONTEND_DIR = joinpath(PROJECT_ROOT, "frontend")
 const DATA_DIR = joinpath(PROJECT_ROOT, "data")
 const OBSERVABLES_DIR = joinpath(PROJECT_ROOT, "data_obs")
 
 println("Configuration:")
 println("  Source code:   $(joinpath(PROJECT_ROOT, "src"))")
-println("  Tools (GUI):   $TOOLS_DIR")
+println("  Frontend:      $FRONTEND_DIR")
 println("  Data:          $DATA_DIR")
 println("  Observables:   $OBSERVABLES_DIR")
 println()
@@ -99,16 +99,16 @@ println()
 global const SERVER_DATA_DIR = DATA_DIR
 global const SERVER_OBSERVABLES_DIR = OBSERVABLES_DIR
 global const SERVER_PROJECT_ROOT = PROJECT_ROOT
-global const SERVER_TOOLS_DIR = TOOLS_DIR
+global const SERVER_FRONTEND_DIR = FRONTEND_DIR
 
 # ============================================================================
 # LOAD SERVER
 # ============================================================================
 
-server_script = joinpath(PROJECT_ROOT, "pipeline_server.jl")
+server_script = joinpath(PROJECT_ROOT, "server", "pipeline_server.jl")
 if !isfile(server_script)
     error("pipeline_server.jl not found at: $server_script\n" *
-          "Make sure you copied pipeline_server.jl to the project root!")
+          "Make sure pipeline_server.jl is in the server/ directory!")
 end
 
 include(server_script)
@@ -123,7 +123,7 @@ println("="^70)
 println()
 println("Server will:")
 println("  • Serve GUI from:  http://127.0.0.1:8080")
-println("  • Load config from: $TOOLS_DIR/config_builder.html")
+println("  • Load config from: $FRONTEND_DIR/config_builder.html")
 println("  • Save data to:     $DATA_DIR")
 println("  • Save obs to:      $OBSERVABLES_DIR")
 println()

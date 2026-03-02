@@ -8,12 +8,14 @@ HOW THE SERVER FINDS EVERYTHING IN YOUR COMPUTER
 YOUR DIRECTORY STRUCTURE:
 ========================
 
-/home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/   ← PROJECT ROOT (@__DIR__)
+/home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/   ← PROJECT ROOT
 │
-├── start_server.jl              ← You run this (julia start_server.jl)
-├── pipeline_server.jl           ← Loaded by start_server.jl
+├── server/
+│   ├── start_server.jl          ← You run this (julia server/start_server.jl)
+│   ├── pipeline_server.jl       ← Loaded by start_server.jl
+│   └── query.jl                 ← CLI query utility
 │
-├── tools/                       ← TOOLS_DIR = PROJECT_ROOT + "tools"
+├── frontend/                    ← FRONTEND_DIR = PROJECT_ROOT + "frontend"
 │   ├── config_builder.html      ← Served at http://localhost:8080/
 │   └── pipeline_automation.js   ← Served at http://localhost:8080/pipeline_automation.js
 │
@@ -80,11 +82,12 @@ Terminal:
     julia /home/nishan/.../TNSoftware/start_server.jl
 
 start_server.jl executes:
-    const PROJECT_ROOT = @__DIR__               ← Magic Julia variable!
-    
+    const PROJECT_ROOT = dirname(@__DIR__)      ← Parent of server/ directory!
+
     @__DIR__ = directory containing start_server.jl
-             = /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-    
+             = /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/server
+    dirname(@__DIR__) = /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
+
     NOT pwd() = /tmp  ← Current working directory (where you ran julia from)
 
 
@@ -92,13 +95,13 @@ start_server.jl executes:
 --------------------------------------
 
     const SRC_DIR         = joinpath(PROJECT_ROOT, "src")
-    const TOOLS_DIR       = joinpath(PROJECT_ROOT, "tools")
+    const FRONTEND_DIR    = joinpath(PROJECT_ROOT, "frontend")
     const DATA_DIR        = joinpath(PROJECT_ROOT, "data")
     const OBSERVABLES_DIR = joinpath(PROJECT_ROOT, "data_obs")
 
     Results in:
         SRC_DIR         = "/home/nishan/.../TNSoftware/src"
-        TOOLS_DIR       = "/home/nishan/.../TNSoftware/tools"
+        FRONTEND_DIR    = "/home/nishan/.../TNSoftware/frontend"
         DATA_DIR        = "/home/nishan/.../TNSoftware/data"
         OBSERVABLES_DIR = "/home/nishan/.../TNSoftware/data_obs"
 
@@ -119,8 +122,10 @@ start_server.jl executes:
 
     Browser requests: http://localhost:8080/
     
-    Server looks at: joinpath(TOOLS_DIR, "config_builder.html")
-                   = "/home/nishan/.../TNSoftware/tools/config_builder.html"
+    Server looks at: joinpath(FRONTEND_DIR, "config_builder.html")
+                   = "/home/nishan/.../TNSoftware/frontend/config_builder.html"
+
+    (FRONTEND_DIR was "tools" before, now "frontend")
     
     Browser receives: The HTML file
 
@@ -143,25 +148,25 @@ WITHOUT Absolute Paths (BROKEN):
     # Relative paths - depends on where you run julia from!
     
     cd /tmp/
-    julia /home/nishan/.../TNSoftware/start_server.jl
-    
+    julia /home/nishan/.../TNSoftware/server/start_server.jl
+
     include("src/database_utils.jl")     → Looks for /tmp/src/database_utils.jl  ✗
     base_dir = "data"                    → Creates /tmp/data/                      ✗
-    html_path = "tools/config.html"      → Looks for /tmp/tools/config.html       ✗
+    html_path = "frontend/config.html"   → Looks for /tmp/frontend/config.html    ✗
 
 
 WITH Absolute Paths (WORKS):
 ----------------------------
 
     # Absolute paths - works from anywhere!
-    
+
     cd /tmp/
-    julia /home/nishan/.../TNSoftware/start_server.jl
-    
-    PROJECT_ROOT = @__DIR__              = /home/nishan/.../TNSoftware/           ✓
+    julia /home/nishan/.../TNSoftware/server/start_server.jl
+
+    PROJECT_ROOT = dirname(@__DIR__)     = /home/nishan/.../TNSoftware/           ✓
     include(PROJECT_ROOT + "src/...")    → Loads correct file                      ✓
     base_dir = PROJECT_ROOT + "data"     → Creates data in correct location       ✓
-    html_path = PROJECT_ROOT + "tools/..." → Serves correct HTML                  ✓
+    html_path = PROJECT_ROOT + "frontend/..." → Serves correct HTML                  ✓
 
 
 WHAT IF YOU HAVE MULTIPLE VERSIONS?
@@ -190,19 +195,19 @@ Each can run simultaneously on different ports:
 
     Terminal 1:
         cd /home/nishan/projects/TNSoftware_v1/
-        julia start_server.jl                        # Port 8080
+        julia server/start_server.jl                        # Port 8080
         → Uses v1 code, saves to v1 data
     
     Terminal 2:
         cd /home/nishan/projects/TNSoftware_v2/
         sed -i 's/8080/8081/' start_server.jl        # Change to port 8081
-        julia start_server.jl                        # Port 8081
+        julia server/start_server.jl                        # Port 8081
         → Uses v2 code, saves to v2 data
     
     Terminal 3:
         cd /home/nishan/projects/TNSoftware_dev/
         sed -i 's/8080/8082/' start_server.jl        # Change to port 8082
-        julia start_server.jl                        # Port 8082
+        julia server/start_server.jl                        # Port 8082
         → Uses dev code, saves to dev data
 
 Access each at:
@@ -223,21 +228,22 @@ JULIA @__DIR__ vs pwd()
 Example:
 
     Your structure:
-        /home/nishan/TNSoftware/start_server.jl
-    
+        /home/nishan/TNSoftware/server/start_server.jl
+
     You run from /tmp/:
         cd /tmp/
-        julia /home/nishan/TNSoftware/start_server.jl
-    
+        julia /home/nishan/TNSoftware/server/start_server.jl
+
     Inside start_server.jl:
-        @__DIR__  = "/home/nishan/TNSoftware"     ✓ CORRECT - where file is
-        pwd()     = "/tmp"                        ✗ WRONG   - where you ran from
+        @__DIR__         = "/home/nishan/TNSoftware/server"  ← where file is
+        dirname(@__DIR__) = "/home/nishan/TNSoftware"        ✓ PROJECT ROOT
+        pwd()            = "/tmp"                            ✗ where you ran from
 
 
 VERIFICATION COMMANDS
 =====================
 
-To check paths are correct, add this to start_server.jl:
+To check paths are correct, add this to server/start_server.jl:
 
     println("="^70)
     println("PATH VERIFICATION")
@@ -247,14 +253,14 @@ To check paths are correct, add this to start_server.jl:
     println()
     println("PROJECT_ROOT:       ", PROJECT_ROOT)
     println("SRC_DIR:            ", SRC_DIR)
-    println("TOOLS_DIR:          ", TOOLS_DIR)
+    println("FRONTEND_DIR:       ", FRONTEND_DIR)
     println("DATA_DIR:           ", DATA_DIR)
     println("OBSERVABLES_DIR:    ", OBSERVABLES_DIR)
     println()
     println("Checking existence:")
     println("  SRC_DIR exists?         ", isdir(SRC_DIR))
-    println("  TOOLS_DIR exists?       ", isdir(TOOLS_DIR))
-    println("  config.html exists?     ", isfile(joinpath(TOOLS_DIR, "config_builder.html")))
+    println("  FRONTEND_DIR exists?    ", isdir(FRONTEND_DIR))
+    println("  config.html exists?     ", isfile(joinpath(FRONTEND_DIR, "config_builder.html")))
     println("="^70)
 
 Example output:
@@ -262,18 +268,18 @@ Example output:
     ======================================================================
     PATH VERIFICATION
     ======================================================================
-    @__DIR__ (script location): /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
+    @__DIR__ (script location): /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/server
     pwd() (current directory):  /tmp
-    
+
     PROJECT_ROOT:       /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
     SRC_DIR:            /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/src
-    TOOLS_DIR:          /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/tools
+    FRONTEND_DIR:       /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/frontend
     DATA_DIR:           /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/data
     OBSERVABLES_DIR:    /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/data_obs
     
     Checking existence:
       SRC_DIR exists?         true
-      TOOLS_DIR exists?       true
+      FRONTEND_DIR exists?    true
       config.html exists?     true
     ======================================================================
 
@@ -282,7 +288,7 @@ SUMMARY
 =======
 
 Q: How does the server know where files are?
-A: Uses @__DIR__ to get absolute path to project root, then builds all paths from there.
+A: Uses dirname(@__DIR__) to get absolute path to project root, then builds all paths from there.
 
 Q: What if I have multiple TNSoftware copies?
 A: Each uses its own @__DIR__, so they're completely independent.
@@ -298,6 +304,6 @@ A: Works fine! @__DIR__ automatically detects new location.
 
 
 ═══════════════════════════════════════════════════════════════════════
-KEY TAKEAWAY: 
-@__DIR__ makes everything location-independent and fool-proof!
+KEY TAKEAWAY:
+dirname(@__DIR__) makes everything location-independent and fool-proof!
 ═══════════════════════════════════════════════════════════════════════

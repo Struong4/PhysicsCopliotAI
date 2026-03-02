@@ -3563,12 +3563,10 @@
                     siteConfigs.push([dir, es]);
                 }
                 if (systemType === 'spinboson') {
-                    state.params = {
-                        boson_level:  parseInt(document.getElementById('custom-state-boson_level').value) || 0,
-                        site_configs: siteConfigs
-                    };
+                    state.boson_level = parseInt(document.getElementById('custom-state-boson_level').value) || 0;
+                    state.spin_label  = siteConfigs;
                 } else {
-                    state.site_configs = siteConfigs;
+                    state.spin_label = siteConfigs;
                 }
 
             } else if (stateType === 'saved') {
@@ -3578,15 +3576,13 @@
                 state.type = 'custom';
                 if (savedEntry) {
                     if (savedEntry.system_type === 'spinboson') {
-                        state.params = {
-                            boson_level:  savedEntry.boson_level ?? 0,
-                            site_configs: savedEntry.site_configs
-                        };
+                        state.boson_level = savedEntry.boson_level ?? 0;
+                        state.spin_label  = savedEntry.site_configs;
                     } else {
-                        state.site_configs = savedEntry.site_configs;
+                        state.spin_label = savedEntry.site_configs;
                     }
                 }
-                // If registry not loaded, backend will receive type=custom with no site_configs —
+                // If registry not loaded, backend will receive type=custom with no spin_label —
                 // the runner should surface a clear error in that case.
 
             } else {

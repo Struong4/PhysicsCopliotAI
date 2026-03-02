@@ -50,7 +50,7 @@ The MCP server is **fully independent** of the Julia backend — it reads JSON r
                        ▼
      ┌─────────────────────────────────────┐
      │       Julia Pipeline Server          │
-     │       (pipeline_server.jl)           │
+     │       (server/pipeline_server.jl)    │
      │                                      │
      │  Dispatches to TNCodebase engine:    │
      │  - DMRG / TDVP (tensor network)     │
@@ -132,7 +132,7 @@ mcp_bridge/
 ├── registry/
 │   └── loader.py              # Reads & caches registry/*.json
 │
-├── tools/
+├── tools/                     # MCP tool modules (not to be confused with frontend/)
 │   ├── discovery.py           # search_registry, get_model_schema, suggest_algorithm
 │   ├── builder.py             # build_config, fill_defaults
 │   ├── validator.py           # validate_config
@@ -494,7 +494,7 @@ The MCP pipeline shares these existing components with the GUI pipeline:
 | Component | Location | Used by GUI | Used by MCP |
 |-----------|----------|:-----------:|:-----------:|
 | Registry files | `registry/*.json` | Yes (fetched via API) | Yes (read directly) |
-| Julia server | `pipeline_server.jl` | Yes (POST /api/run) | Yes (POST /api/run) |
+| Julia server | `server/pipeline_server.jl` | Yes (POST /api/run) | Yes (POST /api/run) |
 | Config format | JSON with 4 blocks | Yes (built by JS) | Yes (built by Python) |
 | Data storage | `data/`, `data_obs/` | Yes | Yes |
 | Catalog system | JSONL catalogs | Yes (GET /api/catalog) | Yes (GET /api/catalog) |

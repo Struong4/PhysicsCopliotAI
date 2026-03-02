@@ -3,7 +3,7 @@
 # ============================================================================
 #
 # Customized for TNSoftware project structure:
-#   - HTML GUI in tools/
+#   - HTML GUI in frontend/
 #   - Data in data/
 #   - Observables in data_obs/
 #
@@ -18,26 +18,26 @@ using Dates
 # ============================================================================
 
 # Get configuration from start_server.jl globals
-const DATA_DIR = isdefined(Main, :SERVER_DATA_DIR) ? 
-                 Main.SERVER_DATA_DIR : 
-                 joinpath(@__DIR__, "data")
+const DATA_DIR = isdefined(Main, :SERVER_DATA_DIR) ?
+                 Main.SERVER_DATA_DIR :
+                 joinpath(dirname(@__DIR__), "data")
 
-const OBSERVABLES_DIR = isdefined(Main, :SERVER_OBSERVABLES_DIR) ? 
-                        Main.SERVER_OBSERVABLES_DIR : 
-                        joinpath(@__DIR__, "data_obs")
+const OBSERVABLES_DIR = isdefined(Main, :SERVER_OBSERVABLES_DIR) ?
+                        Main.SERVER_OBSERVABLES_DIR :
+                        joinpath(dirname(@__DIR__), "data_obs")
 
-const TOOLS_DIR = isdefined(Main, :SERVER_TOOLS_DIR) ?
-                  Main.SERVER_TOOLS_DIR :
-                  joinpath(@__DIR__, "tools")
+const FRONTEND_DIR = isdefined(Main, :SERVER_FRONTEND_DIR) ?
+                     Main.SERVER_FRONTEND_DIR :
+                     joinpath(dirname(@__DIR__), "frontend")
 
 const REGISTRY_DIR = isdefined(Main, :SERVER_REGISTRY_DIR) ?
                      Main.SERVER_REGISTRY_DIR :
-                     joinpath(@__DIR__, "registry")
+                     joinpath(dirname(@__DIR__), "registry")
 
 println("Server configured with:")
 println("  Data directory:        $DATA_DIR")
 println("  Observables directory: $OBSERVABLES_DIR")
-println("  Tools directory:       $TOOLS_DIR")
+println("  Frontend directory:    $FRONTEND_DIR")
 println("  Registry directory:    $REGISTRY_DIR")
 println()
 
@@ -294,10 +294,10 @@ end
 
 """
 GET /
-Serve HTML GUI from tools/ directory
+Serve HTML GUI from frontend/ directory
 """
 function handle_root(req::HTTP.Request)
-    html_path = joinpath(TOOLS_DIR, "config_builder.html")
+    html_path = joinpath(FRONTEND_DIR, "config_builder.html")
 
     if isfile(html_path)
         html_content = read(html_path, String)
@@ -309,17 +309,17 @@ function handle_root(req::HTTP.Request)
         return HTTP.Response(404, """
             <h1>Config Builder Not Found</h1>
             <p>Expected location: $html_path</p>
-            <p>Please make sure config_builder.html is in the tools/ directory.</p>
+            <p>Please make sure config_builder.html is in the frontend/ directory.</p>
         """)
     end
 end
 
 """
 GET /pipeline_automation.js
-Serve JavaScript file from tools/ directory
+Serve JavaScript file from frontend/ directory
 """
 function handle_js(req::HTTP.Request)
-    js_path = joinpath(TOOLS_DIR, "pipeline_automation.js")
+    js_path = joinpath(FRONTEND_DIR, "pipeline_automation.js")
 
     if isfile(js_path)
         js_content = read(js_path, String)

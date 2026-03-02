@@ -398,7 +398,7 @@ histogram(eigenvalues, bins=50,
 
 ```
 TNCodebase/
-├── src/
+├── src/                        # Engine (Julia package source)
 │   ├── Core/                   # Types, operators, finite state machines
 │   ├── TensorOps/             # Canonicalization, SVD, environments
 │   ├── Algorithms/            # DMRG, TDVP, solvers
@@ -420,6 +420,17 @@ TNCodebase/
 │   ├── Runners/               # Simulation execution
 │   └── Analysis/              # Observable calculations
 │
+├── server/                     # HTTP server layer
+│   ├── start_server.jl        # Server startup script
+│   ├── pipeline_server.jl     # REST API & request handling
+│   └── query.jl               # CLI query utility
+│
+├── frontend/                   # Web GUI
+│   ├── config_builder.html    # Interactive config builder
+│   └── pipeline_automation.js # JavaScript client for REST API
+│
+├── registry/                   # Shared registry (models, systems, states, algorithms)
+│
 ├── examples/                   # Complete working examples
 │   ├── 00_quickstart_dmrg/    # DMRG ground state search
 │   ├── 01_quickstart_tdvp/    # TDVP time evolution
@@ -440,7 +451,9 @@ TNCodebase/
 │   ├── CATALOG_QUERY_INTEGRATION.md     # Complete workflows
 │   ├── ED_USER_GUIDE.md                 # Using ED
 │   └── ED_ARCHITECTURE_GUIDE.md         # ED internals
-│ 
+│
+├── data/                       # Simulation results (auto-generated)
+├── data_obs/                   # Observable results (auto-generated)
 └── test/                       # Unit tests
 ```
 
