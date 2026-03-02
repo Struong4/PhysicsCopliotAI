@@ -20,7 +20,7 @@
      
      julia -e 'using Pkg; Pkg.add("HTTP")'
 
-  3. Edit tools/config_builder_v4.html (add before </body>):
+  3. Edit tools/config_builder.html (add before </body>):
      
      <script src="pipeline_automation.js"></script>
 
@@ -52,7 +52,7 @@
     ├── start_server.jl           ← Run this to start
     ├── pipeline_server.jl        ← HTTP server
     ├── tools/
-    │   ├── config_builder_v4.html  ← GUI (modified)
+    │   ├── config_builder.html     ← GUI
     │   └── pipeline_automation.js  ← New JavaScript
     ├── src/                      ← Your code (unchanged)
     ├── data/                     ← Simulation results
@@ -245,7 +245,7 @@
   • start_server.jl     (new, in root)
   • pipeline_server.jl  (new, in root)
   • pipeline_automation.js (new, in tools/)
-  • One line in config_builder_v4.html
+  • One line in config_builder.html
 
 
 ╔══════════════════════════════════════════════════════════════════════════╗

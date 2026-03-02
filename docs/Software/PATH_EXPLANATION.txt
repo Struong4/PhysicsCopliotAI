@@ -14,7 +14,7 @@ YOUR DIRECTORY STRUCTURE:
 ├── pipeline_server.jl           ← Loaded by start_server.jl
 │
 ├── tools/                       ← TOOLS_DIR = PROJECT_ROOT + "tools"
-│   ├── config_builder_v4.html   ← Served at http://localhost:8080/
+│   ├── config_builder.html      ← Served at http://localhost:8080/
 │   └── pipeline_automation.js   ← Served at http://localhost:8080/pipeline_automation.js
 │
 ├── src/                         ← SRC_DIR = PROJECT_ROOT + "src"
@@ -119,8 +119,8 @@ start_server.jl executes:
 
     Browser requests: http://localhost:8080/
     
-    Server looks at: joinpath(TOOLS_DIR, "config_builder_v4.html")
-                   = "/home/nishan/.../TNSoftware/tools/config_builder_v4.html"
+    Server looks at: joinpath(TOOLS_DIR, "config_builder.html")
+                   = "/home/nishan/.../TNSoftware/tools/config_builder.html"
     
     Browser receives: The HTML file
 
@@ -254,7 +254,7 @@ To check paths are correct, add this to start_server.jl:
     println("Checking existence:")
     println("  SRC_DIR exists?         ", isdir(SRC_DIR))
     println("  TOOLS_DIR exists?       ", isdir(TOOLS_DIR))
-    println("  config.html exists?     ", isfile(joinpath(TOOLS_DIR, "config_builder_v4.html")))
+    println("  config.html exists?     ", isfile(joinpath(TOOLS_DIR, "config_builder.html")))
     println("="^70)
 
 Example output:

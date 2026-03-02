@@ -5,7 +5,7 @@
 ```
 /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
 ├── src/                    ← Your engines (Database, Runners, etc.)
-├── tools/                  ← config_builder_v4.html is here
+├── tools/                  ← config_builder.html is here
 ├── data/                   ← Simulation data saves here
 ├── data_obs/               ← Observable data saves here
 ├── examples/
@@ -35,7 +35,7 @@ TNSoftware/
 ├── start_server.jl          ← NEW
 ├── pipeline_server.jl       ← NEW
 ├── tools/
-│   ├── config_builder_v4.html
+│   ├── config_builder.html
 │   └── pipeline_automation.js  ← NEW
 ├── src/
 │   ├── Database/
@@ -56,9 +56,9 @@ TNSoftware/
 julia -e 'using Pkg; Pkg.add("HTTP")'
 ```
 
-### Step 3: Modify config_builder_v4.html
+### Step 3: Modify config_builder.html
 
-Open `tools/config_builder_v4.html` and add **ONE LINE** before the closing `</body>` tag:
+Open `tools/config_builder.html` and add **ONE LINE** before the closing `</body>` tag:
 
 Find the end of the file (around line 2563):
 
@@ -371,7 +371,7 @@ pkill -f start_server.jl
 - Calls your existing functions:
   - `run_simulation_from_config()`
   - `run_observable_calculation_from_config()`
-- Serves HTML from `tools/config_builder_v4.html`
+- Serves HTML from `tools/config_builder.html`
 
 **pipeline_automation.js:**
 - Adds "Run Pipeline" button to GUI
@@ -408,7 +408,7 @@ Before starting server:
 - [x] `start_server.jl` in project root
 - [x] `pipeline_server.jl` in project root
 - [x] `pipeline_automation.js` in `tools/`
-- [x] Modified `tools/config_builder_v4.html` (added script tag)
+- [x] Modified `tools/config_builder.html` (added script tag)
 - [x] HTTP.jl installed
 - [x] All your existing code in `src/`
 
