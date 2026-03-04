@@ -1,0 +1,332 @@
+{
+  "registry_type": "states",
+  "version": "1.0.0",
+  "description": "Defines all available initial state types for quantum simulations. States are product states or random states used to initialize TN and ED algorithms. The state block is REQUIRED for DMRG, TDVP, and ED time evolution, and must be OMITTED for ED Spectrum.",
+
+  "algorithm_requirement": {
+    "ed_spectrum":       "NO state block. ED Spectrum diagonalizes H directly and does not need an initial state.",
+    "dmrg":              "REQUIRES state block. Initial MPS is variationally optimized toward the ground state.",
+    "tdvp":              "REQUIRES state block. Time evolution propagates from this initial state.",
+    "ed_time_evolution": "REQUIRES state block. Exact unitary evolution starts from this state vector."
+  },
+
+  "state_types": {
+
+    "random": {
+      "display_name": "Random State",
+      "type_value": "random",
+      "system_types": ["spin", "spinboson"],
+      "description": "Random normalized initial state. For TN (DMRG/TDVP): random MPS with specified bond dimension over all sites. For ED time evolution: random normalized vector in the full Hilbert space. Recommended for DMRG as it avoids symmetry trapping. Use seed for reproducibility.",
+      "backend_function": {
+        "tn_spin":      "random_state(sites, bond_dim) in mpsbuilder.jl",
+        "tn_spinboson": "random_state(sites, bond_dim) in mpsbuilder.jl — sites includes boson site at index 1",
+        "ed_spin":      "build_random(N, S) in ed_states.jl",
+        "ed_spinboson": "build_spinboson_random(N_spins, nmax, S) in ed_states.jl"
+      },
+      "params": {
+        "bond_dim": {
+          "type": "int",
+          "required_for": ["dmrg", "tdvp"],
+          "not_used_for": ["ed_time_evolution"],
+          "description": "Initial MPS bond dimension for TN algorithms. DMRG will grow this up to chi_max during sweeps. Start small for efficiency.",
+          "minimum": 1,
+          "default": 10,
+          "example_values": [5, 10, 20]
+        },
+        "seed": {
+          "type": "int",
+          "required": false,
+          "description": "Random seed for reproducibility. If omitted, result is non-deterministic across runs.",
+          "default": null,
+          "example_values": [42, 12345, 99]
+        }
+      },
+      "example_config_tn": {
+        "state": {"type": "random", "params": {"bond_dim": 10, "seed": 42}}
+      },
+      "example_config_ed": {
+        "state": {"type": "random", "params": {"seed": 42}}
+      }
+    },
+
+    "prebuilt": {
+      "display_name": "Prebuilt Pattern State",
+      "type_value": "prebuilt",
+      "system_types": ["spin", "spinboson"],
+      "description": "Structured product state with a regular spin pattern. Available patterns: polarized, neel, kink, domain. For spinboson systems, all patterns include an additional boson_level parameter that sets the initial Fock state of the boson site.",
+      "backend_function": {
+        "tn_spin":      "_build_spin_prebuilt_state in statebuilder.jl",
+        "tn_spinboson": "_build_spinboson_prebuilt_state in statebuilder.jl",
+        "ed_spin":      "_build_spin_prebuilt_state in ed_states.jl",
+        "ed_spinboson": "_build_spinboson_prebuilt_state in ed_states.jl"
+      },
+      "required_fields": ["type", "name"],
+      "optional_fields": ["params"],
+      "spinboson_note": "For spinboson systems, all patterns accept an additional 'boson_level' param (default 0) that sets the initial boson Fock state. All spin pattern params (spin_direction, eigenstate indices, position, etc.) refer to the spin sites only.",
+
+      "patterns": {
+
+        "polarized": {
+          "display_name": "Polarized",
+          "description": "All spin sites in the same eigenstate of the chosen quantization axis. Represents a fully ordered ferromagnetic-like initial state.",
+          "physics": "Tensor product: |s> ⊗ |s> ⊗ ... ⊗ |s>. Useful for magnetization dynamics, ferromagnetic initialization, or studying symmetry breaking.",
+          "required_params": [],
+          "optional_params": ["spin_direction", "eigenstate"],
+          "spinboson_optional_params": ["boson_level", "spin_direction", "spin_eigenstate"],
+          "params": {
+            "spin_direction": {
+              "type": "string",
+              "description": "Quantization axis. All spins are eigenstates of this direction's operator.",
+              "allowed_values": ["X", "Y", "Z"],
+              "default": "Z"
+            },
+            "eigenstate": {
+              "type": "int",
+              "description": "Which eigenstate to use (spin systems only). Ascending by eigenvalue: 1=lowest, d=highest. For spin-1/2 Z: 1=down, 2=up.",
+              "minimum": 1,
+              "maximum": "d = 2S+1",
+              "default": 2,
+              "spin_half_guide": {"1": "spin-down |↓>", "2": "spin-up |↑>"}
+            },
+            "spin_eigenstate": {
+              "type": "int",
+              "description": "Which eigenstate to use (spinboson systems only). Same convention as 'eigenstate' above.",
+              "minimum": 1,
+              "maximum": "d = 2S+1",
+              "default": 2
+            },
+            "boson_level": {
+              "type": "int",
+              "description": "Spinboson only. Initial Fock occupation of the boson site. 0=vacuum, 1=single photon, etc.",
+              "minimum": 0,
+              "maximum": "nmax",
+              "default": 0
+            }
+          },
+          "example_config_spin": {
+            "state": {"type": "prebuilt", "name": "polarized", "params": {"spin_direction": "Z", "eigenstate": 2}}
+          },
+          "example_config_spinboson": {
+            "state": {"type": "prebuilt", "name": "polarized", "params": {"boson_level": 0, "spin_direction": "Z", "spin_eigenstate": 2}}
+          }
+        },
+
+        "neel": {
+          "display_name": "Neel State",
+          "description": "Alternating spin pattern. Odd-indexed sites get one eigenstate; even-indexed sites get another. Classic antiferromagnetic initial state.",
+          "physics": "Default pattern: |↓↑↓↑↓↑...> (site 1 = odd_state=2, site 2 = even_state=1). Useful for antiferromagnetic order or spin-wave initialization.",
+          "required_params": [],
+          "optional_params": ["spin_direction", "even_state", "odd_state"],
+          "spinboson_optional_params": ["boson_level", "spin_direction", "even_state", "odd_state"],
+          "params": {
+            "spin_direction": {"type": "string", "description": "Quantization axis for the alternating pattern.", "allowed_values": ["X", "Y", "Z"], "default": "Z"},
+            "even_state": {
+              "type": "int",
+              "description": "Eigenstate index for even-numbered sites (2, 4, 6, ...).",
+              "minimum": 1, "maximum": "d = 2S+1", "default": 1
+            },
+            "odd_state": {
+              "type": "int",
+              "description": "Eigenstate index for odd-numbered sites (1, 3, 5, ...).",
+              "minimum": 1, "maximum": "d = 2S+1", "default": 2
+            },
+            "boson_level": {"type": "int", "description": "Spinboson only. Initial boson Fock level.", "minimum": 0, "maximum": "nmax", "default": 0}
+          },
+          "example_config_spin": {
+            "state": {"type": "prebuilt", "name": "neel", "params": {"spin_direction": "Z", "even_state": 1, "odd_state": 2}}
+          },
+          "example_config_spinboson": {
+            "state": {"type": "prebuilt", "name": "neel", "params": {"boson_level": 0, "spin_direction": "Z", "even_state": 1, "odd_state": 2}}
+          }
+        },
+
+        "kink": {
+          "display_name": "Kink (Domain Wall)",
+          "description": "Single domain wall at a specified position. Sites 1 to position are in left_state; sites position+1 to N are in right_state.",
+          "physics": "Two-region structure: |↓↓↓↓↓↑↑↑↑↑> (kink in middle). Useful for domain wall dynamics, kink excitations, or confinement studies.",
+          "required_params": ["position"],
+          "optional_params": ["spin_direction", "left_state", "right_state"],
+          "spinboson_required_params": ["position"],
+          "spinboson_optional_params": ["boson_level", "spin_direction", "left_state", "right_state"],
+          "params": {
+            "spin_direction": {"type": "string", "description": "Quantization axis for both regions.", "allowed_values": ["X", "Y", "Z"], "default": "Z"},
+            "position": {
+              "type": "int",
+              "required": true,
+              "description": "Kink position. Sites 1 to position are in left_state; sites position+1 to N (or N_spins for spinboson) are in right_state.",
+              "minimum": 1,
+              "maximum": "N-1 (spin) or N_spins-1 (spinboson)"
+            },
+            "left_state":  {"type": "int", "description": "Eigenstate for the left region.",  "minimum": 1, "maximum": "d = 2S+1", "default": 1},
+            "right_state": {"type": "int", "description": "Eigenstate for the right region.", "minimum": 1, "maximum": "d = 2S+1", "default": 2},
+            "boson_level": {"type": "int", "description": "Spinboson only. Initial boson Fock level.", "minimum": 0, "maximum": "nmax", "default": 0}
+          },
+          "example_config_spin": {
+            "state": {"type": "prebuilt", "name": "kink", "params": {"spin_direction": "Z", "position": 5, "left_state": 1, "right_state": 2}}
+          },
+          "example_config_spinboson": {
+            "state": {"type": "prebuilt", "name": "kink", "params": {"boson_level": 0, "spin_direction": "Z", "position": 4, "left_state": 1, "right_state": 2}}
+          }
+        },
+
+        "domain": {
+          "display_name": "Domain State",
+          "description": "A finite-size flipped domain embedded in a uniform background. Sites outside the domain are in base_state; sites from start_index to start_index+domain_size-1 are in flip_state.",
+          "physics": "Bubble domain: |↓↓↓↑↑↑↓↓↓↓> (flipped region). Useful for domain nucleation, bubble dynamics, or excitation propagation studies.",
+          "required_params": ["start_index", "domain_size"],
+          "optional_params": ["spin_direction", "base_state", "flip_state"],
+          "spinboson_required_params": ["start_index", "domain_size"],
+          "spinboson_optional_params": ["boson_level", "spin_direction", "base_state", "flip_state"],
+          "params": {
+            "spin_direction": {"type": "string", "description": "Quantization axis for all sites.", "allowed_values": ["X", "Y", "Z"], "default": "Z"},
+            "start_index": {
+              "type": "int",
+              "required": true,
+              "description": "First site of the flipped domain. Must be in [1, N] (spin) or [1, N_spins] (spinboson).",
+              "minimum": 1
+            },
+            "domain_size": {
+              "type": "int",
+              "required": true,
+              "description": "Number of consecutive flipped sites. Domain runs from start_index to min(start_index + domain_size - 1, N).",
+              "minimum": 1
+            },
+            "base_state": {"type": "int", "description": "Eigenstate for background sites (outside the domain).", "minimum": 1, "maximum": "d = 2S+1", "default": 1},
+            "flip_state": {"type": "int", "description": "Eigenstate for sites inside the domain.", "minimum": 1, "maximum": "d = 2S+1", "default": 2},
+            "boson_level": {"type": "int", "description": "Spinboson only. Initial boson Fock level.", "minimum": 0, "maximum": "nmax", "default": 0}
+          },
+          "example_config_spin": {
+            "state": {"type": "prebuilt", "name": "domain", "params": {"spin_direction": "Z", "start_index": 4, "domain_size": 3, "base_state": 1, "flip_state": 2}}
+          },
+          "example_config_spinboson": {
+            "state": {"type": "prebuilt", "name": "domain", "params": {"boson_level": 0, "spin_direction": "Z", "start_index": 3, "domain_size": 4, "base_state": 1, "flip_state": 2}}
+          }
+        }
+      }
+    },
+
+    "custom": {
+      "display_name": "Custom State",
+      "type_value": "custom",
+      "system_types": ["spin", "spinboson"],
+      "description": "Fully user-specified product state. Every spin site is independently configured by the user. For spin systems: an array of N [direction, eigenstate] pairs. For spinboson systems: a boson Fock level plus an array of N_spins [direction, eigenstate] pairs.",
+      "backend_function": {
+        "tn_spin":      "_build_spin_custom_state in statebuilder.jl",
+        "tn_spinboson": "_build_spinboson_custom_state in statebuilder.jl",
+        "ed_spin":      "_build_spin_custom_state in ed_states.jl — reads state.site_configs",
+        "ed_spinboson": "_build_spinboson_custom_state in ed_states.jl — reads state.params.boson_level and state.params.site_configs"
+      },
+
+      "spin_config": {
+        "description": "For spin systems: provide site_configs directly on the state object.",
+        "config_structure": {
+          "state": {
+            "type": "custom",
+            "site_configs": "<array of N pairs, each [direction, eigenstate]>"
+          }
+        },
+        "params": {
+          "site_configs": {
+            "type": "array",
+            "required": true,
+            "description": "Array of N entries ordered site 1 to N. Each entry is [direction, eigenstate].",
+            "entry_format": {
+              "direction":  {"type": "string", "allowed_values": ["X", "Y", "Z"]},
+              "eigenstate": {"type": "int",    "description": "Eigenstate index ascending by eigenvalue. For spin-1/2: 1=down, 2=up."}
+            }
+          }
+        },
+        "example_config": {
+          "state": {
+            "type": "custom",
+            "site_configs": [["Z", 2], ["Z", 1], ["Z", 2], ["X", 1], ["Z", 2]]
+          }
+        },
+        "note": "site_configs length must exactly equal N."
+      },
+
+      "spinboson_config": {
+        "description": "For spinboson systems: provide boson_level and site_configs inside a params object.",
+        "config_structure": {
+          "state": {
+            "type": "custom",
+            "params": {
+              "boson_level": "<int, Fock level of boson site, 0 to nmax>",
+              "site_configs": "<array of N_spins pairs, each [direction, eigenstate]>"
+            }
+          }
+        },
+        "params": {
+          "boson_level": {
+            "type": "int",
+            "required": true,
+            "description": "Initial Fock state occupation of the boson site. Must be in [0, nmax].",
+            "minimum": 0,
+            "maximum": "nmax"
+          },
+          "site_configs": {
+            "type": "array",
+            "required": true,
+            "description": "Array of N_spins entries ordered spin site 1 to N_spins. Each entry is [direction, eigenstate].",
+            "entry_format": {
+              "direction":  {"type": "string", "allowed_values": ["X", "Y", "Z"]},
+              "eigenstate": {"type": "int",    "description": "Eigenstate index ascending by eigenvalue."}
+            }
+          }
+        },
+        "example_config": {
+          "state": {
+            "type": "custom",
+            "params": {
+              "boson_level": 2,
+              "site_configs": [["Z", 2], ["Z", 1], ["Z", 2], ["X", 1], ["Z", 2]]
+            }
+          }
+        },
+        "note": "site_configs length must exactly equal N_spins. boson_level must be in [0, nmax]."
+      }
+    }
+  },
+
+  "user_states": {
+    "description": "User-registered named custom states. Built using the custom state builder in the GUI and saved for reuse across sessions. Added automatically via POST /api/registry/states. The engine looks these up when a named state is referenced.",
+    "states": {}
+  },
+
+  "registration_schema": {
+    "description": "Schema for a user_states entry. When a custom state is registered, this structure is saved to user_states.states.",
+    "fields": {
+      "display_name":  {"type": "string", "description": "Human-readable label shown in the GUI state dropdown."},
+      "description":   {"type": "string", "description": "User-provided description of what this state represents physically."},
+      "system_type":   {"type": "string", "description": "'spin' or 'spinboson'. Determines which builder is called at runtime.", "allowed_values": ["spin", "spinboson"]},
+      "registered_at": {"type": "string", "description": "ISO 8601 timestamp of registration."},
+      "site_configs":  {"type": "array",  "description": "For spin: array of N [direction, eigenstate] pairs. For spinboson: use spinboson_level + site_configs."},
+      "boson_level":   {"type": "int",    "description": "Spinboson only. Fock level for the boson site."}
+    },
+    "example_entry_spin": {
+      "neel_with_defect": {
+        "display_name": "Neel with Central Defect",
+        "description": "Neel-like state with a single spin flip at site 5",
+        "system_type": "spin",
+        "registered_at": "2025-01-15T14:35:00",
+        "site_configs": [
+          ["Z", 2], ["Z", 1], ["Z", 2], ["Z", 1],
+          ["Z", 2],
+          ["Z", 1], ["Z", 2], ["Z", 1], ["Z", 2], ["Z", 1]
+        ]
+      }
+    },
+    "example_entry_spinboson": {
+      "vacuum_neel": {
+        "display_name": "Vacuum + Neel Spins",
+        "description": "Boson vacuum with Neel spin pattern",
+        "system_type": "spinboson",
+        "registered_at": "2025-01-15T14:40:00",
+        "boson_level": 0,
+        "site_configs": [
+          ["Z", 2], ["Z", 1], ["Z", 2], ["Z", 1], ["Z", 2], ["Z", 1]
+        ]
+      }
+    }
+  }
+}

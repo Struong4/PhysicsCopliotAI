@@ -30,10 +30,15 @@ const TOOLS_DIR = isdefined(Main, :SERVER_TOOLS_DIR) ?
                   Main.SERVER_TOOLS_DIR :
                   joinpath(@__DIR__, "tools")
 
+const REGISTRY_DIR = isdefined(Main, :SERVER_REGISTRY_DIR) ?
+                     Main.SERVER_REGISTRY_DIR :
+                     joinpath(@__DIR__, "registry")
+
 println("Server configured with:")
 println("  Data directory:        $DATA_DIR")
 println("  Observables directory: $OBSERVABLES_DIR")
 println("  Tools directory:       $TOOLS_DIR")
+println("  Registry directory:    $REGISTRY_DIR")
 println()
 
 # Track active runs for progress updates
@@ -45,7 +50,7 @@ const ACTIVE_RUNS = Dict{String, Dict{String, Any}}()
 
 function add_cors_headers(response::HTTP.Response)
     HTTP.setheader(response, "Access-Control-Allow-Origin" => "*")
-    HTTP.setheader(response, "Access-Control-Allow-Methods" => "GET, POST, OPTIONS")
+    HTTP.setheader(response, "Access-Control-Allow-Methods" => "GET, POST, DELETE, OPTIONS")
     HTTP.setheader(response, "Access-Control-Allow-Headers" => "Content-Type")
     return response
 end
@@ -292,18 +297,19 @@ GET /
 Serve HTML GUI from tools/ directory
 """
 function handle_root(req::HTTP.Request)
-    html_path = joinpath(TOOLS_DIR, "config_builder_v4.html")
-    
+    html_path = joinpath(TOOLS_DIR, "config_builder.html")
+
     if isfile(html_path)
         html_content = read(html_path, String)
         response = HTTP.Response(200, html_content)
         HTTP.setheader(response, "Content-Type" => "text/html")
+        HTTP.setheader(response, "Cache-Control" => "no-cache, no-store, must-revalidate")
         return response
     else
         return HTTP.Response(404, """
             <h1>Config Builder Not Found</h1>
             <p>Expected location: $html_path</p>
-            <p>Please make sure config_builder_v4.html is in the tools/ directory.</p>
+            <p>Please make sure config_builder.html is in the tools/ directory.</p>
         """)
     end
 end
@@ -314,14 +320,264 @@ Serve JavaScript file from tools/ directory
 """
 function handle_js(req::HTTP.Request)
     js_path = joinpath(TOOLS_DIR, "pipeline_automation.js")
-    
+
     if isfile(js_path)
         js_content = read(js_path, String)
         response = HTTP.Response(200, js_content)
         HTTP.setheader(response, "Content-Type" => "application/javascript")
+        HTTP.setheader(response, "Cache-Control" => "no-cache, no-store, must-revalidate")
         return response
     else
         return HTTP.Response(404, "// JavaScript file not found at: $js_path")
+    end
+end
+
+# ============================================================================
+# REGISTRY HANDLERS
+# ============================================================================
+
+"""
+GET /api/registry/:name
+Serve one of the four registry JSON files (models, systems, states, algorithms).
+"""
+function handle_registry_get(req::HTTP.Request)
+    parts = split(req.target, '/')
+    name = parts[end]  # last segment: models, systems, states, algorithms
+
+    allowed = ["models", "systems", "states", "algorithms"]
+    if !(name in allowed)
+        return HTTP.Response(404, JSON.json(Dict(
+            "error" => "Unknown registry: $name",
+            "allowed" => allowed
+        )))
+    end
+
+    path = joinpath(REGISTRY_DIR, "$(name).json")
+    if !isfile(path)
+        return HTTP.Response(404, JSON.json(Dict(
+            "error" => "Registry file not found",
+            "path"  => path
+        )))
+    end
+
+    try
+        content = read(path, String)
+        response = HTTP.Response(200, content)
+        HTTP.setheader(response, "Content-Type" => "application/json")
+        return response
+    catch e
+        return HTTP.Response(500, JSON.json(Dict("error" => string(e))))
+    end
+end
+
+"""
+POST /api/registry/models
+Register a new named user model.
+Body: { "name", "display_name", "system_type", "backend" ("tn"|"ed"),
+        "channels" (TN) or "terms" (ED), "description" (optional) }
+"""
+function handle_registry_post_models(req::HTTP.Request)
+    try
+        body = JSON.parse(String(req.body))
+
+        for field in ["name", "display_name", "system_type", "backend"]
+            if !haskey(body, field)
+                return HTTP.Response(400, JSON.json(Dict(
+                    "error" => "Missing required field: $field"
+                )))
+            end
+        end
+
+        backend = body["backend"]
+        if !(backend in ["tn", "ed"])
+            return HTTP.Response(400, JSON.json(Dict(
+                "error" => "backend must be 'tn' or 'ed', got: $backend"
+            )))
+        end
+
+        data_field = backend == "tn" ? "channels" : "terms"
+        if !haskey(body, data_field)
+            return HTTP.Response(400, JSON.json(Dict(
+                "error" => "Missing '$data_field' for backend='$backend'"
+            )))
+        end
+
+        path = joinpath(REGISTRY_DIR, "models.json")
+        registry = JSON.parsefile(path)
+
+        name = body["name"]
+        if haskey(registry["user_models"]["models"], name)
+            return HTTP.Response(409, JSON.json(Dict(
+                "error" => "A user model named '$name' already exists. Choose a different name."
+            )))
+        end
+
+        entry = Dict(
+            "display_name"  => body["display_name"],
+            "description"   => get(body, "description", ""),
+            "system_type"   => body["system_type"],
+            "backend"       => backend,
+            "registered_at" => string(Dates.now()),
+            data_field      => body[data_field]
+        )
+
+        registry["user_models"]["models"][name] = entry
+
+        open(path, "w") do f
+            JSON.print(f, registry, 2)
+        end
+
+        println("[Registry] Registered user model: $name ($(body["system_type"]), $backend)")
+
+        response = HTTP.Response(201, JSON.json(Dict(
+            "status"  => "created",
+            "name"    => name,
+            "message" => "Model '$name' registered successfully"
+        )))
+        HTTP.setheader(response, "Content-Type" => "application/json")
+        return response
+
+    catch e
+        return HTTP.Response(500, JSON.json(Dict("error" => string(e))))
+    end
+end
+
+"""
+POST /api/registry/states
+Register a new named user state. Appends to user_states.states in states.json.
+Body: { "name": "...", "display_name": "...", "description": "...",
+        "system_type": "spin"|"spinboson", "site_configs": [...],
+        "boson_level": 0 }   ← boson_level only required for spinboson
+"""
+function handle_registry_post_states(req::HTTP.Request)
+    try
+        body = JSON.parse(String(req.body))
+
+        for field in ["name", "display_name", "system_type", "site_configs"]
+            if !haskey(body, field)
+                return HTTP.Response(400, JSON.json(Dict(
+                    "error" => "Missing required field: $field"
+                )))
+            end
+        end
+
+        path = joinpath(REGISTRY_DIR, "states.json")
+        registry = JSON.parsefile(path)
+
+        name = body["name"]
+        if haskey(registry["user_states"]["states"], name)
+            return HTTP.Response(409, JSON.json(Dict(
+                "error" => "A user state named '$name' already exists. Choose a different name."
+            )))
+        end
+
+        entry = Dict(
+            "display_name"  => body["display_name"],
+            "description"   => get(body, "description", ""),
+            "system_type"   => body["system_type"],
+            "registered_at" => string(Dates.now()),
+            "site_configs"  => body["site_configs"]
+        )
+        if haskey(body, "boson_level")
+            entry["boson_level"] = body["boson_level"]
+        end
+
+        registry["user_states"]["states"][name] = entry
+
+        open(path, "w") do f
+            JSON.print(f, registry, 2)
+        end
+
+        println("[Registry] Registered user state: $name ($(body["system_type"]))")
+
+        response = HTTP.Response(201, JSON.json(Dict(
+            "status"  => "created",
+            "name"    => name,
+            "message" => "State '$name' registered successfully"
+        )))
+        HTTP.setheader(response, "Content-Type" => "application/json")
+        return response
+
+    catch e
+        return HTTP.Response(500, JSON.json(Dict("error" => string(e))))
+    end
+end
+
+"""
+DELETE /api/registry/models/:name
+Remove a user model from models.json by key name.
+"""
+function handle_registry_delete_models(req::HTTP.Request)
+    try
+        parts = split(req.target, '/')
+        name  = parts[end]
+
+        path = joinpath(REGISTRY_DIR, "models.json")
+        registry = JSON.parsefile(path)
+
+        if !haskey(registry["user_models"]["models"], name)
+            return HTTP.Response(404, JSON.json(Dict(
+                "error" => "Model '$name' not found in user_models"
+            )))
+        end
+
+        delete!(registry["user_models"]["models"], name)
+
+        open(path, "w") do f
+            JSON.print(f, registry, 2)
+        end
+
+        println("[Registry] Deleted user model: $name")
+
+        response = HTTP.Response(200, JSON.json(Dict(
+            "status"  => "deleted",
+            "name"    => name,
+            "message" => "Model '$name' deleted successfully"
+        )))
+        HTTP.setheader(response, "Content-Type" => "application/json")
+        return response
+
+    catch e
+        return HTTP.Response(500, JSON.json(Dict("error" => string(e))))
+    end
+end
+
+"""
+DELETE /api/registry/states/:name
+Remove a user state from states.json by key name.
+"""
+function handle_registry_delete_states(req::HTTP.Request)
+    try
+        parts = split(req.target, '/')
+        name  = parts[end]
+
+        path = joinpath(REGISTRY_DIR, "states.json")
+        registry = JSON.parsefile(path)
+
+        if !haskey(registry["user_states"]["states"], name)
+            return HTTP.Response(404, JSON.json(Dict(
+                "error" => "State '$name' not found in user_states"
+            )))
+        end
+
+        delete!(registry["user_states"]["states"], name)
+
+        open(path, "w") do f
+            JSON.print(f, registry, 2)
+        end
+
+        println("[Registry] Deleted user state: $name")
+
+        response = HTTP.Response(200, JSON.json(Dict(
+            "status"  => "deleted",
+            "name"    => name,
+            "message" => "State '$name' deleted successfully"
+        )))
+        HTTP.setheader(response, "Content-Type" => "application/json")
+        return response
+
+    catch e
+        return HTTP.Response(500, JSON.json(Dict("error" => string(e))))
     end
 end
 
@@ -347,6 +603,16 @@ function route_request(req::HTTP.Request)
         handle_catalog(req)
     elseif req.method == "GET" && path == "/api/active"
         handle_active(req)
+    elseif req.method == "POST" && path == "/api/registry/models"
+        handle_registry_post_models(req)
+    elseif req.method == "POST" && path == "/api/registry/states"
+        handle_registry_post_states(req)
+    elseif req.method == "DELETE" && startswith(path, "/api/registry/models/")
+        handle_registry_delete_models(req)
+    elseif req.method == "DELETE" && startswith(path, "/api/registry/states/")
+        handle_registry_delete_states(req)
+    elseif req.method == "GET" && startswith(path, "/api/registry/")
+        handle_registry_get(req)
     elseif req.method == "GET" && path == "/pipeline_automation.js"
         handle_js(req)
     elseif req.method == "GET" && path == "/"
@@ -369,12 +635,17 @@ function start_server(port::Int=8080, host::String="127.0.0.1")
     println("Starting server on http://$host:$port")
     println()
     println("Endpoints:")
-    println("  POST   /api/run              - Run pipeline")
-    println("  GET    /api/status/:id       - Check status")
-    println("  GET    /api/catalog          - List all runs")
-    println("  GET    /api/active           - List running pipelines")
-    println("  GET    /                     - Web interface")
-    println("  GET    /pipeline_automation.js - JavaScript")
+    println("  POST   /api/run                    - Run pipeline")
+    println("  GET    /api/status/:id             - Check status")
+    println("  GET    /api/catalog                - List all runs")
+    println("  GET    /api/active                 - List running pipelines")
+    println("  GET    /api/registry/:name         - Get registry (models/systems/states/algorithms)")
+    println("  POST   /api/registry/models        - Register a user model")
+    println("  POST   /api/registry/states        - Register a user state")
+    println("  DELETE /api/registry/models/:name  - Delete a user model")
+    println("  DELETE /api/registry/states/:name  - Delete a user state")
+    println("  GET    /                           - Web interface")
+    println("  GET    /pipeline_automation.js     - JavaScript")
     println()
     println("Open http://$host:$port in your browser to use the GUI")
     println()

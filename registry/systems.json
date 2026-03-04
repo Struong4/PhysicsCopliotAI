@@ -1,0 +1,197 @@
+{
+  "registry_type": "systems",
+  "version": "1.0.0",
+  "description": "Defines all valid physical system types, numerical data types, spin values, boson cutoffs, and system size constraints. The system block is the first block in every config file and determines which fields, operators, and algorithms are available.",
+
+  "system_types": {
+
+    "spin": {
+      "display_name": "Spin Chain",
+      "config_value": "spin",
+      "description": "Homogeneous spin chain. All N sites are identical spin-S sites. Local Hilbert space dimension d = 2S+1 per site. Total Hilbert space dimension D = d^N.",
+      "required_fields": ["type", "dtype", "N", "S"],
+      "fields": {
+        "type": {
+          "type": "string",
+          "value": "spin",
+          "description": "System type identifier. Always 'spin' for spin chain systems."
+        },
+        "dtype": {
+          "type": "string",
+          "description": "Numerical data type for all matrices, operators, and state vectors.",
+          "allowed_values": ["ComplexF64", "Float64"],
+          "default": "ComplexF64",
+          "rules": {
+            "Float64":    "Safe only when ALL operators in the Hamiltonian and state are real. This means only X, Z, and I spin operators. Never use Float64 with Y, Sp, or Sm.",
+            "ComplexF64": "Always safe. Required when any operator is Y, Sp, or Sm. Use this when in doubt."
+          }
+        },
+        "N": {
+          "type": "int",
+          "description": "Number of spin sites in the chain. Determines total Hilbert space size D = d^N. ED scales exponentially — keep N small.",
+          "minimum": 2,
+          "constraints_by_algorithm": {
+            "ed_spectrum": {
+              "description": "ED memory scales as D^2 = d^(2N). Hard practical limits by spin value.",
+              "limits_by_S": {
+                "0.5": {"max": 14, "recommended_max": 12, "note": "N=14 requires ~4 GB RAM. N<=12 recommended for development."},
+                "1.0": {"max": 10, "recommended_max": 8,  "note": "d=3, D=3^N grows fast. N=10 requires ~30 GB RAM."},
+                "1.5": {"max": 8,  "recommended_max": 6,  "note": "d=4, D=4^N. Very memory intensive."},
+                "2.0": {"max": 7,  "recommended_max": 5,  "note": "d=5, D=5^N. Extreme memory usage."}
+              }
+            },
+            "dmrg": {"description": "No hard limit. Practical range N=10 to N=1000.", "minimum": 3},
+            "tdvp": {"description": "No hard limit. Practical range N=10 to N=1000.", "minimum": 3}
+          }
+        },
+        "S": {
+          "type": "float",
+          "description": "Spin quantum number per site. Determines local Hilbert space dimension d = 2S+1.",
+          "allowed_values": [0.5, 1.0, 1.5, 2.0],
+          "default": 0.5,
+          "local_dimensions": {
+            "0.5": {"d": 2, "label": "spin-1/2", "eigenstates": [1, 2], "note": "Most common. For Z direction: eigenstate 1 = spin-down, 2 = spin-up."},
+            "1.0": {"d": 3, "label": "spin-1",   "eigenstates": [1, 2, 3], "note": "Eigenstates ordered ascending by eigenvalue."},
+            "1.5": {"d": 4, "label": "spin-3/2", "eigenstates": [1, 2, 3, 4]},
+            "2.0": {"d": 5, "label": "spin-2",   "eigenstates": [1, 2, 3, 4, 5]}
+          }
+        }
+      },
+      "hilbert_space_table": {
+        "description": "Total Hilbert space dimension D = 2^N for spin-1/2. Dense ED matrix requires D^2 * 16 bytes.",
+        "spin_half_examples": {
+          "N=8":  {"D": 256,   "matrix_size_GB": 0.0005, "feasibility": "trivial"},
+          "N=10": {"D": 1024,  "matrix_size_GB": 0.008,  "feasibility": "fast"},
+          "N=12": {"D": 4096,  "matrix_size_GB": 0.13,   "feasibility": "practical"},
+          "N=14": {"D": 16384, "matrix_size_GB": 4.0,    "feasibility": "slow, near limit"},
+          "N=16": {"D": 65536, "matrix_size_GB": 68.0,   "feasibility": "impractical for ED"}
+        }
+      },
+      "example_config": {
+        "system": {"type": "spin", "dtype": "ComplexF64", "N": 10, "S": 0.5}
+      }
+    },
+
+    "spinboson": {
+      "display_name": "Spin-Boson",
+      "config_value": "spinboson",
+      "description": "Heterogeneous spin-boson system. One bosonic cavity mode (site 1) followed by N_spins spin-S sites. Total sites = N_spins + 1. Total Hilbert space dimension D = (nmax+1) * d^N_spins.",
+      "required_fields": ["type", "dtype", "N_spins", "nmax", "S"],
+      "fields": {
+        "type": {
+          "type": "string",
+          "value": "spinboson",
+          "description": "System type identifier. Always 'spinboson' for spin-boson systems."
+        },
+        "dtype": {
+          "type": "string",
+          "description": "Numerical data type for all matrices, operators, and state vectors.",
+          "allowed_values": ["ComplexF64", "Float64"],
+          "default": "ComplexF64",
+          "rules": {
+            "Float64":    "Safe only when ALL spin operators in the config are real (X, Z, I only). All boson operators (a, adag, Bn, Ib) are real and impose no constraint.",
+            "ComplexF64": "Always safe. Required if any spin operator is Y, Sp, or Sm."
+          }
+        },
+        "N_spins": {
+          "type": "int",
+          "description": "Number of spin sites (not counting the boson site). Total system length is N_spins + 1. Boson site is always index 1; spin sites are indices 2 to N_spins+1.",
+          "minimum": 1,
+          "constraints_by_algorithm": {
+            "ed_spectrum": {
+              "description": "ED scales as D^2 = ((nmax+1) * d^N_spins)^2.",
+              "guidance": "With nmax=4, S=0.5: N_spins=8 gives D=1280 (trivial). N_spins=10 gives D=5120 (~200 MB). N_spins=12 gives D=20480 (~3 GB)."
+            },
+            "dmrg": {"description": "No hard limit. Total MPS length = N_spins + 1.", "minimum": 1},
+            "tdvp": {"description": "No hard limit. Total MPS length = N_spins + 1.", "minimum": 1}
+          }
+        },
+        "nmax": {
+          "type": "int",
+          "description": "Maximum boson occupation (Fock space cutoff). Boson Hilbert space has dimension nmax+1, spanning Fock states |0>, |1>, ..., |nmax>. Choose nmax large enough that higher Fock states are negligibly populated.",
+          "minimum": 1,
+          "default": 4,
+          "example_values": [2, 4, 8, 16],
+          "guidance": {
+            "nmax=2":  "3 Fock states. Very truncated. Use only for weak coupling g << omega.",
+            "nmax=4":  "5 Fock states. Standard for moderate coupling. Default.",
+            "nmax=8":  "9 Fock states. Good for stronger coupling regimes.",
+            "nmax=16": "17 Fock states. Near-exact for most physical coupling strengths."
+          }
+        },
+        "S": {
+          "type": "float",
+          "description": "Spin quantum number per spin site. Determines local spin Hilbert space dimension d = 2S+1.",
+          "allowed_values": [0.5, 1.0, 1.5, 2.0],
+          "default": 0.5,
+          "local_dimensions": {
+            "0.5": {"d": 2, "label": "spin-1/2"},
+            "1.0": {"d": 3, "label": "spin-1"},
+            "1.5": {"d": 4, "label": "spin-3/2"},
+            "2.0": {"d": 5, "label": "spin-2"}
+          }
+        }
+      },
+      "site_layout": {
+        "site_1": "BosonSite — cavity/boson mode with Fock space dimension nmax+1. Operators: a, adag, Bn, Ib.",
+        "sites_2_to_N_spins_plus_1": "SpinSite — spin-S sites with local dimension d=2S+1. Operators: X, Y, Z, Sp, Sm, I.",
+        "total_sites": "N_spins + 1"
+      },
+      "hilbert_space_table": {
+        "description": "Total D = (nmax+1) * 2^N_spins for spin-1/2.",
+        "examples": {
+          "N_spins=4,  nmax=4":  {"D": 80,    "matrix_size_GB": 0.0001, "feasibility": "trivial"},
+          "N_spins=8,  nmax=4":  {"D": 1280,  "matrix_size_GB": 0.013,  "feasibility": "fast"},
+          "N_spins=10, nmax=4":  {"D": 5120,  "matrix_size_GB": 0.2,    "feasibility": "practical"},
+          "N_spins=12, nmax=4":  {"D": 20480, "matrix_size_GB": 3.2,    "feasibility": "near limit"},
+          "N_spins=8,  nmax=16": {"D": 4352,  "matrix_size_GB": 0.15,   "feasibility": "practical"}
+        }
+      },
+      "example_config": {
+        "system": {"type": "spinboson", "dtype": "ComplexF64", "N_spins": 8, "nmax": 4, "S": 0.5}
+      }
+    }
+  },
+
+  "spin_operators": {
+    "description": "Valid spin operators for use in Hamiltonians and states. Generated by spin_ops(d) in Core_site.jl and spin_matrices(S) in ed_operators.jl. Valid for both spin and spinboson system types (spin sites only).",
+    "operators": {
+      "X":  {"symbol": "X",  "full_name": "Sx", "description": "Sx spin operator. (S+ + S-)/2. Real and symmetric. Hermitian. Safe with Float64.", "hermitian": true,  "real": true},
+      "Y":  {"symbol": "Y",  "full_name": "Sy", "description": "Sy spin operator. (S+ - S-)/(2i). Purely imaginary and antisymmetric. Requires ComplexF64.", "hermitian": true,  "real": false},
+      "Z":  {"symbol": "Z",  "full_name": "Sz", "description": "Sz spin operator. Diagonal with eigenvalues S, S-1, ..., -S. Real. Safe with Float64.", "hermitian": true,  "real": true},
+      "Sp": {"symbol": "Sp", "full_name": "S+", "description": "Spin raising operator. S+|m> = sqrt((S-m)(S+m+1))|m+1>. Non-Hermitian. Requires ComplexF64.", "hermitian": false, "real": false},
+      "Sm": {"symbol": "Sm", "full_name": "S-", "description": "Spin lowering operator. S-|m> = sqrt((S+m)(S-m+1))|m-1>. Non-Hermitian. Requires ComplexF64.", "hermitian": false, "real": false},
+      "I":  {"symbol": "I",  "full_name": "Identity", "description": "Spin identity operator. Real diagonal. Safe with Float64.", "hermitian": true,  "real": true}
+    },
+    "dtype_rule": "If any spin operator marked real=false (Y, Sp, Sm) is used anywhere in the config, system dtype MUST be ComplexF64."
+  },
+
+  "boson_operators": {
+    "description": "Valid boson operators for use in spin-boson Hamiltonians and states. Generated by boson_ops(nmax) in Core_site.jl and boson_matrices(nmax) in ed_operators.jl. Valid ONLY for spinboson system type (boson site only).",
+    "operators": {
+      "a":    {"symbol": "a",    "full_name": "annihilation", "description": "Boson annihilation operator. a|n> = sqrt(n)|n-1>. Sub-diagonal real matrix. Safe with Float64.", "hermitian": false, "real": true},
+      "adag": {"symbol": "adag","full_name": "creation",      "description": "Boson creation operator (a-dagger). adag|n> = sqrt(n+1)|n+1>. Super-diagonal real matrix. Safe with Float64.", "hermitian": false, "real": true},
+      "Bn":   {"symbol": "Bn",  "full_name": "number",        "description": "Boson number operator (b†b). Bn|n> = n|n>. Diagonal real matrix. Use for cavity frequency term: omega * Bn. Safe with Float64.", "hermitian": true, "real": true},
+      "Ib":   {"symbol": "Ib",  "full_name": "boson identity","description": "Boson identity operator. Used internally for spin-boson coupling tensor products. Safe with Float64.", "hermitian": true, "real": true}
+    },
+    "note": "All boson operators are real. dtype requirements for spinboson configs are determined entirely by which spin operators are used."
+  },
+
+  "eigenstate_convention": {
+    "description": "How eigenstate indices map to physical states. Used by all state builders (prebuilt, custom).",
+    "convention": "Eigenstates are indexed 1 to d, ordered by ascending eigenvalue of the quantization axis operator. Eigenstate 1 = lowest eigenvalue (most negative), eigenstate d = highest eigenvalue.",
+    "spin_half_Z": {
+      "eigenstate_1": "Sz eigenvalue = -1/2 = spin-down |down> = |0> in computational basis",
+      "eigenstate_2": "Sz eigenvalue = +1/2 = spin-up   |up>   = |1> in computational basis"
+    },
+    "spin_1_Z": {
+      "eigenstate_1": "Sz eigenvalue = -1",
+      "eigenstate_2": "Sz eigenvalue =  0",
+      "eigenstate_3": "Sz eigenvalue = +1"
+    },
+    "boson": {
+      "boson_level_0": "Fock vacuum |0>",
+      "boson_level_n": "Fock state |n> with n quanta. Must be in [0, nmax]."
+    }
+  }
+}

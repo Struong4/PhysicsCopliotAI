@@ -1,0 +1,410 @@
+{
+  "registry_type": "algorithms",
+  "version": "1.0.0",
+  "description": "Defines all available algorithms, their config structure, parameter specs, defaults, and constraints. The algorithm block is always required in every config file.",
+
+  "algorithms": {
+
+    "dmrg": {
+      "display_name": "DMRG",
+      "status": "ready",
+      "type_value": "dmrg",
+      "category": "tensor_network",
+      "description": "Density Matrix Renormalization Group. Variationally optimizes an MPS toward the ground state of H by repeatedly sweeping left-right and solving a local two-site eigenvalue problem at each bond using the Lanczos algorithm.",
+      "requires_state": true,
+      "requires_system": ["spin", "spinboson"],
+      "backend_function": "dmrg_sweep in Algorithms_dmrg.jl",
+      "solver_type": "LanczosSolver (Algorithms_solvers.jl)",
+      "options_type": "DMRGOptions (Core_types.jl)",
+      "config_structure": {
+        "algorithm": {
+          "type": "dmrg",
+          "solver": {
+            "type": "lanczos",
+            "krylov_dim": "<int>",
+            "max_iter": "<int>"
+          },
+          "options": {
+            "chi_max": "<int>",
+            "cutoff": "<float>",
+            "local_dim": "<int — auto-derived from system S, do not set manually>"
+          },
+          "run": {
+            "n_sweeps": "<int>"
+          }
+        }
+      },
+      "params": {
+        "solver": {
+          "type": {
+            "type": "string",
+            "value": "lanczos",
+            "description": "Solver type identifier. Always 'lanczos' for DMRG."
+          },
+          "krylov_dim": {
+            "type": "int",
+            "description": "Krylov subspace dimension for the Lanczos eigensolver. Larger values improve convergence per iteration at higher cost per step. Default matches LanczosSolver constructor default in Algorithms_solvers.jl.",
+            "default": 20,
+            "minimum": 3,
+            "recommended_range": [10, 40],
+            "note": "GUI default is 20. Solver default is 4. Increase for hard-to-converge problems."
+          },
+          "max_iter": {
+            "type": "int",
+            "description": "Maximum Lanczos restart iterations per local site solve. More iterations = better local convergence at higher cost.",
+            "default": 10,
+            "minimum": 1,
+            "recommended_range": [5, 50],
+            "note": "GUI default is 10. Solver default is 100."
+          }
+        },
+        "options": {
+          "chi_max": {
+            "type": "int",
+            "description": "Maximum MPS bond dimension (chi). Controls the entanglement that can be represented. DMRG truncates SVD to this dimension after each two-site update. Larger chi = more accurate but slower and more memory.",
+            "default": 64,
+            "minimum": 1,
+            "recommended_range": [16, 512],
+            "note": "Start at 64 for quick runs. Converge by doubling: 64 → 128 → 256. chi_max^3 * N scales the cost."
+          },
+          "cutoff": {
+            "type": "float",
+            "description": "SVD truncation cutoff. Singular values below this threshold are discarded during MPS truncation. Acts as a second truncation criterion alongside chi_max — whichever is more restrictive wins.",
+            "default": 1e-10,
+            "recommended_range": [1e-14, 1e-6],
+            "note": "1e-10 is standard. Decrease for higher precision. Increase to aggressively cap chi growth."
+          },
+          "local_dim": {
+            "type": "int",
+            "description": "Local Hilbert space dimension per site. AUTO-DERIVED from system S: d = 2S+1. For spinboson: this is the spin local dim only — the boson site uses nmax+1 internally. Do NOT set manually in the GUI; the config builder computes it.",
+            "auto_derived": true,
+            "formula": "d = floor(2*S + 1)"
+          }
+        },
+        "run": {
+          "n_sweeps": {
+            "type": "int",
+            "description": "Total number of DMRG sweeps. Each sweep is one full left-right pass over all bonds. Convergence is typically reached in 10-50 sweeps depending on system size, chi_max, and gap.",
+            "default": 20,
+            "minimum": 1,
+            "recommended_range": [10, 100],
+            "note": "20 sweeps is a good starting point. Monitor energy convergence — stop when dE/sweep < 1e-8."
+          }
+        }
+      },
+      "output": {
+        "description": "DMRG saves MPS snapshots and energy values at each sweep.",
+        "saved_per_sweep": ["mps_tensors", "energy"],
+        "file_format": "JLD2",
+        "analysis_key": "sweeps"
+      },
+      "example_config": {
+        "algorithm": {
+          "type": "dmrg",
+          "solver": {
+            "type": "lanczos",
+            "krylov_dim": 20,
+            "max_iter": 10
+          },
+          "options": {
+            "chi_max": 64,
+            "cutoff": 1e-10,
+            "local_dim": 2
+          },
+          "run": {
+            "n_sweeps": 20
+          }
+        }
+      },
+      "convergence_guide": {
+        "energy_convergence": "Monitor dE between sweeps. Converged when |E(n) - E(n-1)| < 1e-8.",
+        "chi_convergence": "Converge by doubling chi_max while keeping n_sweeps fixed. Converged when observables don't change.",
+        "typical_workflow": "Start chi_max=64, n_sweeps=20. If energy still changing, double chi_max. Repeat."
+      }
+    },
+
+    "tdvp": {
+      "display_name": "TDVP",
+      "status": "ready",
+      "type_value": "tdvp",
+      "category": "tensor_network",
+      "description": "Time-Dependent Variational Principle. Evolves an MPS in real or imaginary time by projecting the time-dependent Schrödinger equation onto the MPS tangent space. Uses Krylov subspace matrix exponential for local site time steps. Two-site variant with SVD truncation at each step.",
+      "requires_state": true,
+      "requires_system": ["spin", "spinboson"],
+      "backend_function": "tdvp_sweep in Algorithms_tdvp.jl",
+      "solver_type": "KrylovExponential (Algorithms_solvers.jl)",
+      "options_type": "TDVPOptions (Core_types.jl)",
+      "config_structure": {
+        "algorithm": {
+          "type": "tdvp",
+          "solver": {
+            "type": "krylov_exponential",
+            "krylov_dim": "<int>",
+            "tol": "<float>",
+            "evol_type": "<string: real or imaginary>"
+          },
+          "options": {
+            "dt": "<float>",
+            "chi_max": "<int>",
+            "cutoff": "<float>",
+            "local_dim": "<int — auto-derived from system S, do not set manually>"
+          },
+          "run": {
+            "n_sweeps": "<int>"
+          }
+        }
+      },
+      "params": {
+        "solver": {
+          "type": {
+            "type": "string",
+            "value": "krylov_exponential",
+            "description": "Solver type identifier. Always 'krylov_exponential' for TDVP."
+          },
+          "krylov_dim": {
+            "type": "int",
+            "description": "Krylov subspace dimension for the matrix exponential solver. Larger values improve accuracy of the local time step at higher per-step cost. Convergence checked against tol.",
+            "default": 30,
+            "minimum": 3,
+            "recommended_range": [10, 50],
+            "note": "GUI default is 30. Solver default is 30. Increase if tol is not being met."
+          },
+          "tol": {
+            "type": "float",
+            "description": "Convergence tolerance for the Krylov exponential. The solver checks |output(p) - output(p-1)| elementwise and stops when all components are within tol. Tighter tol = more accurate local step but more Krylov vectors needed.",
+            "default": 1e-8,
+            "recommended_range": [1e-12, 1e-6],
+            "note": "GUI default is 1e-8. Solver default is 1e-12."
+          },
+          "evol_type": {
+            "type": "string",
+            "description": "Type of time evolution. 'real' evolves with e^{-iHt} (physical real-time dynamics). 'imaginary' evolves with e^{-Ht} (imaginary time, converges to ground state like a soft DMRG).",
+            "allowed_values": {
+              "real": "Real time evolution: e^{-iHdt}. Unitary, norm-preserving. Use for quantum dynamics, quench problems, time correlation functions.",
+              "imaginary": "Imaginary time evolution: e^{-Hdt}. Non-unitary, converges toward ground state. Alternative to DMRG for ground state search."
+            },
+            "default": "real"
+          }
+        },
+        "options": {
+          "dt": {
+            "type": "float",
+            "description": "Time step per sweep. Each sweep advances the state by dt. Total simulated time = dt * n_sweeps. Smaller dt = more accurate but more sweeps needed to reach same total time.",
+            "default": 0.05,
+            "minimum": 1e-6,
+            "recommended_range": [0.01, 0.1],
+            "note": "dt=0.05 with n_sweeps=100 gives total time T=5.0. Decrease dt if observables show oscillation artifacts."
+          },
+          "chi_max": {
+            "type": "int",
+            "description": "Maximum MPS bond dimension during time evolution. Entanglement grows as O(t) under generic dynamics, so chi_max must be large enough to capture the entanglement at the final time. Truncation introduces controllable errors.",
+            "default": 64,
+            "minimum": 1,
+            "recommended_range": [32, 512],
+            "note": "For short times chi_max=64 is often sufficient. For long times or highly entangled states, increase to 128 or 256."
+          },
+          "cutoff": {
+            "type": "float",
+            "description": "SVD truncation cutoff for MPS compression after each time step. Works alongside chi_max.",
+            "default": 1e-10,
+            "recommended_range": [1e-14, 1e-6]
+          },
+          "local_dim": {
+            "type": "int",
+            "description": "Local Hilbert space dimension per site. AUTO-DERIVED from system S: d = 2S+1. Do NOT set manually.",
+            "auto_derived": true,
+            "formula": "d = floor(2*S + 1)"
+          }
+        },
+        "run": {
+          "n_sweeps": {
+            "type": "int",
+            "description": "Total number of time steps (sweeps). Each sweep advances the state by dt. Total simulated time = dt * n_sweeps.",
+            "default": 100,
+            "minimum": 1,
+            "derived_quantity": "total_time = dt * n_sweeps",
+            "note": "With dt=0.05, n_sweeps=100 gives T=5.0. With dt=0.01, n_sweeps=500 gives T=5.0."
+          }
+        }
+      },
+      "output": {
+        "description": "TDVP saves MPS snapshots and time values at each sweep.",
+        "saved_per_sweep": ["mps_tensors", "time"],
+        "file_format": "JLD2",
+        "analysis_key": "sweeps"
+      },
+      "example_config": {
+        "algorithm": {
+          "type": "tdvp",
+          "solver": {
+            "type": "krylov_exponential",
+            "krylov_dim": 30,
+            "tol": 1e-8,
+            "evol_type": "real"
+          },
+          "options": {
+            "dt": 0.05,
+            "chi_max": 64,
+            "cutoff": 1e-10,
+            "local_dim": 2
+          },
+          "run": {
+            "n_sweeps": 100
+          }
+        }
+      },
+      "total_time_formula": "T = dt * n_sweeps",
+      "accuracy_guide": {
+        "time_step_error": "O(dt^2) per step from Trotter-like splitting. Halve dt and check if observables change.",
+        "truncation_error": "Controlled by chi_max and cutoff. Monitor truncation error per step printed by the runner.",
+        "total_error": "Accumulates as n_sweeps * per_step_error. Longer simulations need smaller dt and larger chi_max."
+      }
+    },
+
+    "ed_spectrum": {
+      "display_name": "ED Spectrum",
+      "status": "ready",
+      "type_value": "ed_spectrum",
+      "category": "exact_diagonalization",
+      "description": "Full or partial exact diagonalization of the Hamiltonian matrix. Computes eigenvalues and eigenvectors directly. No initial state needed. Best for small systems where exact results are required.",
+      "requires_state": false,
+      "requires_system": ["spin", "spinboson"],
+      "backend_function": "_run_ed_spectrum in ed_runner.jl",
+      "config_structure": {
+        "algorithm": {
+          "type": "ed_spectrum",
+          "n_states": "<int, optional>",
+          "use_sparse": "<bool>"
+        }
+      },
+      "params": {
+        "n_states": {
+          "type": "int",
+          "required": false,
+          "description": "Number of lowest eigenstates to compute. If omitted or null, computes the full spectrum (all D eigenstates). If set, computes only the lowest n_states eigenstates.",
+          "minimum": 1,
+          "maximum": "D = Hilbert space dimension",
+          "default": null,
+          "note": "Leave empty for full diagonalization. Set to 1 for ground state only. use_sparse=true requires n_states to be set."
+        },
+        "use_sparse": {
+          "type": "bool",
+          "description": "Whether to use sparse (Lanczos-based) diagonalization instead of dense LAPACK. Sparse is faster for large D when only a few eigenstates are needed. Dense is more reliable and gives all states.",
+          "allowed_values": {
+            "false": "Dense diagonalization via LAPACK eigen(). Computes all D eigenstates. Reliable for any system size within memory limits.",
+            "true": "Sparse Lanczos diagonalization. Only valid when n_states is set. Faster for large D with small n_states. Recommended for N > 12."
+          },
+          "default": false,
+          "constraint": "use_sparse=true requires n_states to be explicitly set."
+        }
+      },
+      "output": {
+        "description": "ED Spectrum saves all computed eigenvalues and eigenvectors to results.jld2.",
+        "saved": ["eigenvalues", "eigenvectors", "metadata"],
+        "file_format": "JLD2",
+        "analysis_key": "states"
+      },
+      "example_configs": {
+        "full_spectrum": {
+          "algorithm": {"type": "ed_spectrum", "use_sparse": false}
+        },
+        "ground_state_only_sparse": {
+          "algorithm": {"type": "ed_spectrum", "n_states": 1, "use_sparse": true}
+        },
+        "lowest_10_states": {
+          "algorithm": {"type": "ed_spectrum", "n_states": 10, "use_sparse": false}
+        }
+      },
+      "system_size_guide": {
+        "spin_half": {
+          "N_le_12":  "Fast, practical. Full spectrum in seconds.",
+          "N_eq_14":  "Near memory limit (~4 GB). Use sparse + n_states for ground state.",
+          "N_ge_16":  "Impractical for ED. Use DMRG instead."
+        },
+        "spinboson": {
+          "guidance": "D = (nmax+1) * d^N_spins. With nmax=4, S=0.5: N_spins <= 10 is practical."
+        }
+      }
+    },
+
+    "ed_time_evolution": {
+      "display_name": "ED Dynamics",
+      "status": "ready",
+      "type_value": "ed_time_evolution",
+      "category": "exact_diagonalization",
+      "description": "Exact time evolution via eigendecomposition. First diagonalizes H to get all eigenstates, then evolves the initial state as |ψ(t)⟩ = Σₙ cₙ e^{-iEₙt} |n⟩. Exact within machine precision. Requires initial state.",
+      "requires_state": true,
+      "requires_system": ["spin", "spinboson"],
+      "backend_function": "_run_ed_time_evolution in ed_runner.jl",
+      "config_structure": {
+        "algorithm": {
+          "type": "ed_time_evolution",
+          "dt": "<float>",
+          "n_steps": "<int>"
+        }
+      },
+      "params": {
+        "dt": {
+          "type": "float",
+          "description": "Time step between saved snapshots. The state is evolved by dt at each step using the exact eigendecomposition. Unlike TDVP, there is no discretization error — dt only controls output resolution, not accuracy.",
+          "default": 0.1,
+          "minimum": 1e-6,
+          "recommended_range": [0.01, 0.5],
+          "note": "Smaller dt = more time resolution in saved data. Does not affect accuracy since evolution is exact."
+        },
+        "n_steps": {
+          "type": "int",
+          "description": "Number of time steps to simulate. Total simulated time = dt * n_steps.",
+          "default": 100,
+          "minimum": 1,
+          "derived_quantity": "total_time = dt * n_steps",
+          "note": "With dt=0.1, n_steps=100 gives T=10.0."
+        }
+      },
+      "output": {
+        "description": "ED time evolution saves the state vector and time at each step.",
+        "saved_per_step": ["state_vector", "time"],
+        "file_format": "JLD2",
+        "analysis_key": "steps"
+      },
+      "example_config": {
+        "algorithm": {
+          "type": "ed_time_evolution",
+          "dt": 0.1,
+          "n_steps": 100
+        }
+      },
+      "total_time_formula": "T = dt * n_steps",
+      "comparison_with_tdvp": {
+        "accuracy": "ED time evolution is numerically exact (machine precision). TDVP has O(dt^2) Trotter error and MPS truncation error.",
+        "system_size": "ED is limited to small systems (N <= 14 for spin-1/2). TDVP scales to N = 1000+.",
+        "use_case": "Use ED for benchmarking TDVP on small systems, or for exact results where system size permits."
+      }
+    }
+  },
+
+  "algorithm_selection_guide": {
+    "description": "How to choose the right algorithm for your problem.",
+    "rules": {
+      "ground_state_large_system":   "Use dmrg. Works up to N=1000. Most accurate for gapped 1D systems.",
+      "ground_state_small_system":   "Use ed_spectrum with use_sparse=false for full spectrum, or n_states=1 for ground state only.",
+      "time_dynamics_large_system":  "Use tdvp with evol_type=real. Accuracy limited by chi_max and dt.",
+      "time_dynamics_small_system":  "Use ed_time_evolution for exact dynamics. Benchmark tdvp against this.",
+      "imaginary_time_ground_state": "Use tdvp with evol_type=imaginary. Alternative to dmrg for hard convergence cases.",
+      "excited_states":              "Use ed_spectrum with n_states=k for the k lowest states.",
+      "benchmark_tdvp":              "Run ed_time_evolution on a small system, then run tdvp with same parameters. Compare observables."
+    }
+  },
+
+  "local_dim_note": {
+    "description": "The local_dim field in DMRG and TDVP options is auto-derived by the GUI from system.S using d = floor(2*S + 1). It must be present in the config for the Julia runner to construct DMRGOptions/TDVPOptions correctly, but it should never be set manually — the config builder computes it automatically.",
+    "formula": "local_dim = floor(2 * S + 1)",
+    "examples": {
+      "S=0.5": 2,
+      "S=1.0": 3,
+      "S=1.5": 4,
+      "S=2.0": 5
+    },
+    "spinboson_note": "For spinboson systems, local_dim reflects the spin site dimension only. The boson site dimension (nmax+1) is handled separately inside the MPO/MPS builder and does not appear in DMRGOptions or TDVPOptions."
+  }
+}
