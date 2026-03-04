@@ -295,7 +295,11 @@
             "true": "Sparse Lanczos diagonalization. Only valid when n_states is set. Faster for large D with small n_states. Recommended for N > 12."
           },
           "default": false,
-          "constraint": "use_sparse=true requires n_states to be explicitly set."
+          "constraint": "use_sparse=true requires n_states to be explicitly set.",
+          "constraint_logic": {
+            "if": {"use_sparse": true},
+            "then_required": ["n_states"]
+          }
         }
       },
       "output": {
@@ -393,6 +397,39 @@
       "imaginary_time_ground_state": "Use tdvp with evol_type=imaginary. Alternative to dmrg for hard convergence cases.",
       "excited_states":              "Use ed_spectrum with n_states=k for the k lowest states.",
       "benchmark_tdvp":              "Run ed_time_evolution on a small system, then run tdvp with same parameters. Compare observables."
+    },
+    "tasks": {
+      "ground_state": {
+        "display_name": "Ground state",
+        "description": "Find the lowest energy eigenstate",
+        "candidates": [
+          {"algorithm": "dmrg",       "when": "N > ed_limit", "category": "tensor_network"},
+          {"algorithm": "ed_spectrum", "when": "N <= ed_limit", "category": "exact_diagonalization"}
+        ]
+      },
+      "time_evolution": {
+        "display_name": "Time evolution",
+        "description": "Propagate an initial state in real time",
+        "candidates": [
+          {"algorithm": "tdvp",              "when": "N > ed_limit", "category": "tensor_network"},
+          {"algorithm": "ed_time_evolution", "when": "N <= ed_limit", "category": "exact_diagonalization"}
+        ]
+      },
+      "spectrum": {
+        "display_name": "Energy spectrum",
+        "description": "Compute eigenvalues and eigenvectors",
+        "candidates": [
+          {"algorithm": "ed_spectrum", "when": "always", "category": "exact_diagonalization"}
+        ]
+      },
+      "imaginary_time": {
+        "display_name": "Imaginary time evolution",
+        "description": "Ground state search via imaginary time propagation",
+        "candidates": [
+          {"algorithm": "tdvp", "when": "always", "category": "tensor_network",
+           "suggested_params": {"evol_type": "imaginary"}}
+        ]
+      }
     }
   },
 

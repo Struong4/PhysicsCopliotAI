@@ -1,16 +1,27 @@
 {
   "prebuilt_models": {
     "ising_dicke": {
-      "required_params": [
-        "J",
-        "h",
-        "omega",
-        "g",
-        "spin_coupling_dir",
-        "spin_field_dir",
-        "boson_coupling_dir"
-      ],
       "dtype_rule": "Float64 safe only when spin_coupling_dir, spin_field_dir, and boson_coupling_dir are all in {X, Z}.",
+      "system_type": "spinboson",
+      "dtype_logic": {
+        "default": "ComplexF64",
+        "float64_safe_when": [
+          {
+            "all_in": {
+              "allowed": [
+                "X",
+                "Z"
+              ],
+              "params": [
+                "spin_coupling_dir",
+                "spin_field_dir",
+                "boson_coupling_dir"
+              ]
+            }
+          }
+        ]
+      },
+      "hamiltonian": "H = J * sum_i sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_{i+1} + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i",
       "example_config": {
         "model": {
           "name": "ising_dicke",
@@ -26,12 +37,20 @@
         }
       },
       "optional_params": [],
-      "display_name": "Ising-Dicke",
-      "system_type": "spinboson",
       "backend_function": {
         "tn": "_get_spinboson_ising_dikie_channels",
         "ed": "_get_ising_dicke_terms"
       },
+      "description": "Nearest-neighbor Ising spin chain coupled to a single bosonic cavity mode (Dicke model). Combines Ising spin-spin interactions and a spin field with a cavity frequency term and collective spin-boson coupling.",
+      "required_params": [
+        "J",
+        "h",
+        "omega",
+        "g",
+        "spin_coupling_dir",
+        "spin_field_dir",
+        "boson_coupling_dir"
+      ],
       "params": {
         "spin_coupling_dir": {
           "dtype_constraint": "If Y, dtype must be ComplexF64.",
@@ -99,12 +118,28 @@
           "description": "Spin field strength applied uniformly to all spin sites."
         }
       },
-      "description": "Nearest-neighbor Ising spin chain coupled to a single bosonic cavity mode (Dicke model). Combines Ising spin-spin interactions and a spin field with a cavity frequency term and collective spin-boson coupling.",
-      "hamiltonian": "H = J * sum_i sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_{i+1} + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i"
+      "display_name": "Ising-Dicke"
     },
     "long_range_ising": {
       "dtype_rule": "Float64 safe only when coupling_dir and field_dir are both in {X, Z}.",
       "system_type": "spin",
+      "dtype_logic": {
+        "default": "ComplexF64",
+        "float64_safe_when": [
+          {
+            "all_in": {
+              "allowed": [
+                "X",
+                "Z"
+              ],
+              "params": [
+                "coupling_dir",
+                "field_dir"
+              ]
+            }
+          }
+        ]
+      },
       "hamiltonian": "H = J * sum_{i<j} sigma^coupling_dir_i * sigma^coupling_dir_j / |i-j|^alpha + h * sum_i sigma^field_dir_i",
       "example_config": {
         "model": {
@@ -186,13 +221,26 @@
       "display_name": "Long-Range Ising"
     },
     "transverse_field_ising": {
-      "required_params": [
-        "J",
-        "h",
-        "coupling_dir",
-        "field_dir"
-      ],
       "dtype_rule": "Float64 is safe only when coupling_dir and field_dir are both in {X, Z}. Use ComplexF64 if either is Y.",
+      "system_type": "spin",
+      "dtype_logic": {
+        "default": "ComplexF64",
+        "float64_safe_when": [
+          {
+            "all_in": {
+              "allowed": [
+                "X",
+                "Z"
+              ],
+              "params": [
+                "coupling_dir",
+                "field_dir"
+              ]
+            }
+          }
+        ]
+      },
+      "hamiltonian": "H = J * sum_i sigma^coupling_dir_i * sigma^coupling_dir_{i+1} + h * sum_i sigma^field_dir_i",
       "example_config": {
         "model": {
           "name": "transverse_field_ising",
@@ -205,12 +253,17 @@
         }
       },
       "optional_params": [],
-      "display_name": "Transverse Field Ising",
-      "system_type": "spin",
       "backend_function": {
         "tn": "_get_tfim_channels",
         "ed": "_get_tfi_terms"
       },
+      "description": "Nearest-neighbor Ising model with a transverse (or longitudinal) field. The simplest model exhibiting a quantum phase transition at |J/h| = 1 in the thermodynamic limit.",
+      "required_params": [
+        "J",
+        "h",
+        "coupling_dir",
+        "field_dir"
+      ],
       "params": {
         "J": {
           "default": -1.0,
@@ -256,12 +309,24 @@
           "description": "External field strength. At the critical point |h/J| = 1 (for Z coupling, X field) the system undergoes a quantum phase transition."
         }
       },
-      "description": "Nearest-neighbor Ising model with a transverse (or longitudinal) field. The simplest model exhibiting a quantum phase transition at |J/h| = 1 in the thermodynamic limit.",
-      "hamiltonian": "H = J * sum_i sigma^coupling_dir_i * sigma^coupling_dir_{i+1} + h * sum_i sigma^field_dir_i"
+      "display_name": "Transverse Field Ising"
     },
     "heisenberg": {
       "dtype_rule": "Float64 is safe only when Jy=0 and hy=0. Any nonzero Jy or hy requires ComplexF64.",
       "system_type": "spin",
+      "dtype_logic": {
+        "default": "ComplexF64",
+        "float64_safe_when": [
+          {
+            "all_zero": {
+              "params": [
+                "Jy",
+                "hy"
+              ]
+            }
+          }
+        ]
+      },
       "hamiltonian": "H = sum_i (Jx*Sx_i*Sx_{i+1} + Jy*Sy_i*Sy_{i+1} + Jz*Sz_i*Sz_{i+1}) + sum_i (hx*Sx_i + hy*Sy_i + hz*Sz_i)",
       "example_config": {
         "model": {
@@ -335,6 +400,24 @@
     "long_range_ising_dicke": {
       "dtype_rule": "Float64 safe only when spin_coupling_dir, spin_field_dir, and boson_coupling_dir are all in {X, Z}.",
       "system_type": "spinboson",
+      "dtype_logic": {
+        "default": "ComplexF64",
+        "float64_safe_when": [
+          {
+            "all_in": {
+              "allowed": [
+                "X",
+                "Z"
+              ],
+              "params": [
+                "spin_coupling_dir",
+                "spin_field_dir",
+                "boson_coupling_dir"
+              ]
+            }
+          }
+        ]
+      },
       "hamiltonian": "H = J * sum_{i<j} sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_j / |i-j|^alpha + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i",
       "example_config": {
         "model": {
@@ -741,8 +824,27 @@
       "term_types": {
         "EDCoupling": {
           "conditional_fields": {
-            "range": "Required only when pattern is finite_range or finite_range_periodic.",
-            "alpha": "Required only when pattern is power_law."
+            "range": {
+              "minimum": 1,
+              "description": "Site separation distance. Required for finite_range patterns.",
+              "required_when": {
+                "pattern": [
+                  "finite_range",
+                  "finite_range_periodic"
+                ]
+              },
+              "type": "int"
+            },
+            "alpha": {
+              "minimum": 0.0,
+              "description": "Power-law decay exponent. Required for power_law pattern.",
+              "required_when": {
+                "pattern": [
+                  "power_law"
+                ]
+              },
+              "type": "float"
+            }
           },
           "fields": {
             "op1": {

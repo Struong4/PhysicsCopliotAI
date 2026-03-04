@@ -1,0 +1,214 @@
+# keywords.yaml — Static physics vocabulary for the MCP pipeline
+# Maps natural language phrases to registry keys and parameter values.
+# Data only — no code. The CS collaborator's indexer.py merges this with
+# registry data at runtime to build the full search index.
+
+task_routing:
+  # Maps user intent phrases to candidate algorithms.
+  # Each phrase resolves to a task key in algorithms.json → algorithm_selection_guide.tasks
+  ground_state:
+    phrases:
+      - "ground state"
+      - "lowest energy"
+      - "ground state energy"
+      - "find the ground state"
+      - "energy minimization"
+      - "variational"
+    task_key: "ground_state"
+
+  time_evolution:
+    phrases:
+      - "time evolution"
+      - "dynamics"
+      - "real time"
+      - "quench"
+      - "propagate"
+      - "time dependent"
+      - "quantum dynamics"
+      - "time evolve"
+      - "unitary evolution"
+    task_key: "time_evolution"
+
+  spectrum:
+    phrases:
+      - "spectrum"
+      - "eigenvalues"
+      - "eigenstates"
+      - "energy levels"
+      - "energy spectrum"
+      - "diagonalize"
+      - "excited states"
+      - "full spectrum"
+    task_key: "spectrum"
+
+  imaginary_time:
+    phrases:
+      - "imaginary time"
+      - "imaginary time evolution"
+      - "cooling"
+      - "thermal ground state"
+    task_key: "imaginary_time"
+
+system_detection:
+  # Maps user language to system type (spin or spinboson).
+  # Key = system_types[key].config_value in systems.json
+  spin:
+    phrases:
+      - "spin chain"
+      - "spin model"
+      - "spin system"
+      - "Ising"
+      - "Heisenberg"
+      - "XXZ"
+      - "XY model"
+      - "magnetic chain"
+      - "spins"
+      - "lattice spins"
+
+  spinboson:
+    phrases:
+      - "spin-boson"
+      - "spinboson"
+      - "cavity"
+      - "photon"
+      - "Dicke"
+      - "Jaynes-Cummings"
+      - "Tavis-Cummings"
+      - "cavity QED"
+      - "light-matter"
+      - "boson mode"
+      - "Fock"
+
+physics_vocabulary:
+  # Maps physics jargon to parameter constraints or values.
+  # format: phrase -> {param: value} or {param: constraint}
+  ferromagnetic:
+    description: "Negative coupling (J < 0), spins prefer to align."
+    implies: {"J": {"sign": "negative"}}
+
+  antiferromagnetic:
+    description: "Positive coupling (J > 0), spins prefer to anti-align."
+    implies: {"J": {"sign": "positive"}}
+
+  isotropic:
+    description: "Equal couplings in all directions: Jx = Jy = Jz."
+    implies: {"Jx": "equal", "Jy": "equal", "Jz": "equal"}
+
+  XXZ:
+    description: "Jx = Jy, Jz independent. Anisotropic Heisenberg."
+    implies: {"Jx": "equal_to_Jy", "Jz": "free"}
+    model: "heisenberg"
+
+  XX_model:
+    description: "Jx = Jy, Jz = 0. Free fermion limit."
+    implies: {"Jx": 1.0, "Jy": 1.0, "Jz": 0.0}
+    model: "heisenberg"
+
+  dipolar:
+    description: "Power-law decay exponent alpha = 3."
+    implies: {"alpha": 3.0}
+
+  coulomb:
+    description: "Power-law decay exponent alpha = 1."
+    implies: {"alpha": 1.0}
+
+  infinite_range:
+    description: "All-to-all equal coupling, alpha = 0."
+    implies: {"alpha": 0.0}
+
+  nearest_neighbor:
+    description: "Only adjacent sites interact."
+    implies: {"pattern": "nearest_neighbor"}
+
+  critical_point:
+    description: "TFI phase transition at |h/J| = 1."
+    implies: {"h": {"ratio_to_J": 1.0}}
+    model: "transverse_field_ising"
+
+  superradiant:
+    description: "Dicke superradiant phase transition. Near g_c = sqrt(omega * |J|) / 2."
+    model: "ising_dicke"
+
+operator_vocabulary:
+  # Maps physics terms to operator symbols in systems.json → spin_operators / boson_operators
+  magnetization:
+    operator: "Z"
+    description: "Sz spin operator, measures spin projection along z-axis."
+
+  transverse_magnetization:
+    operator: "X"
+    description: "Sx spin operator, measures spin projection along x-axis."
+
+  raising:
+    operator: "Sp"
+    description: "S+ spin raising operator."
+
+  lowering:
+    operator: "Sm"
+    description: "S- spin lowering operator."
+
+  photon_number:
+    operator: "Bn"
+    description: "Boson number operator b-dagger b."
+
+  annihilation:
+    operator: "a"
+    description: "Boson annihilation operator."
+
+  creation:
+    operator: "adag"
+    description: "Boson creation operator a-dagger."
+
+state_vocabulary:
+  # Maps user phrases to state configurations.
+  # References states.json → state_types
+  all_up:
+    description: "All spins polarized up (highest Sz eigenvalue)."
+    state_type: "prebuilt"
+    state_name: "polarized"
+    params: {"spin_direction": "Z", "eigenstate": 2}
+
+  all_down:
+    description: "All spins polarized down (lowest Sz eigenvalue)."
+    state_type: "prebuilt"
+    state_name: "polarized"
+    params: {"spin_direction": "Z", "eigenstate": 1}
+
+  neel:
+    description: "Alternating up-down-up-down antiferromagnetic pattern."
+    state_type: "prebuilt"
+    state_name: "neel"
+    params: {"spin_direction": "Z", "even_state": 1, "odd_state": 2}
+
+  domain_wall:
+    description: "Single sharp boundary between two spin regions."
+    state_type: "prebuilt"
+    state_name: "kink"
+
+  vacuum:
+    description: "Boson Fock vacuum |0>. All photons absent."
+    applies_to: "spinboson"
+    params: {"boson_level": 0}
+
+  single_photon:
+    description: "One photon in the cavity, Fock state |1>."
+    applies_to: "spinboson"
+    params: {"boson_level": 1}
+
+  random:
+    description: "Random initial state. Good default for DMRG ground state search."
+    state_type: "random"
+
+dtype_hints:
+  # References systems.json → spin_operators.operators[*].real for complex-required operators.
+  # The builder uses dtype_logic (prebuilt) or operator scanning (custom) at runtime.
+  # This section helps the LLM explain dtype choices to the user.
+  complex_required_operators:
+    - "Y"
+    - "Sp"
+    - "Sm"
+  float64_safe_operators:
+    - "X"
+    - "Z"
+    - "I"
+  rule: "If any spin operator in the Hamiltonian or state is Y, Sp, or Sm, dtype must be ComplexF64. Otherwise Float64 is safe and faster."
