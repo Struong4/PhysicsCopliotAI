@@ -1,0 +1,92 @@
+# keywords.yaml — Static physics vocabulary for the ED chatbot.
+# This dummy version captures the minimum needed for basic task routing and model aliasing.
+
+# ── Task routing ──────────────────────────────────────────────────────────────
+# Maps user intent phrases to algorithm types.
+task_routing:
+  ed_spectrum:
+    - "ground state"
+    - "energy spectrum"
+    - "eigenvalues"
+    - "energy levels"
+    - "spectrum"
+    - "diagonalize"
+    - "lowest energy"
+    - "ground energy"
+  ed_time_evolution:
+    - "dynamics"
+    - "quench"
+    - "time evolution"
+    - "evolve"
+    - "propagate"
+    - "time-evolve"
+    - "real time"
+  dmrg:
+    - "dmrg"
+    - "density matrix renormalization"
+    - "large system ground state"
+    - "tensor network ground state"
+  tdvp:
+    - "tdvp"
+    - "time-dependent variational"
+    - "large system dynamics"
+    - "tensor network dynamics"
+    - "mps time evolution"
+
+# ── Model aliases ─────────────────────────────────────────────────────────────
+# Maps natural language names to registry model keys.
+model_aliases:
+  transverse_field_ising:
+    - "ising"
+    - "tfim"
+    - "transverse ising"
+    - "tfi"
+    - "transverse field ising"
+  heisenberg:
+    - "heisenberg"
+    - "xxx"
+    - "xxz"
+    - "spin chain"
+    - "isotropic heisenberg"
+    - "anisotropic heisenberg"
+  long_range_ising:
+    - "long range"
+    - "long-range"
+    - "power law"
+    - "power-law"
+    - "long range ising"
+    - "lri"
+
+# ── Physics vocabulary ────────────────────────────────────────────────────────
+# Maps physical descriptions to parameter values.
+physics_vocabulary:
+  ferromagnetic: "J < 0"
+  antiferromagnetic: "J > 0"
+  dipolar: "alpha = 3"
+  coulomb: "alpha = 1"
+  nearest_neighbor_limit: "alpha → ∞"
+  all_to_all: "alpha = 0"
+  critical_ising: "|J/h| = 1 for TFIM with Z coupling and X field"
+
+# ── Operator vocabulary ───────────────────────────────────────────────────────
+# Maps physical quantity names to spin operator symbols.
+operator_vocabulary:
+  magnetization: "Z"
+  transverse_magnetization: "X"
+  raising: "Sp"
+  lowering: "Sm"
+
+# ── System detection ──────────────────────────────────────────────────────────
+# Keywords that signal system type.
+system_detection:
+  spin:
+    - "spin chain"
+    - "spin-1/2"
+    - "qubit"
+    - "lattice"
+  spinboson:
+    - "cavity"
+    - "photon"
+    - "boson"
+    - "dicke"
+    - "jaynes-cummings"

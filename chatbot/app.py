@@ -24,9 +24,13 @@ from pathlib import Path
 
 import boto3
 import httpx
+import yaml
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+
+from chatbot.registry_loader import load_all as _load_registries
+from chatbot.prompt_builder import build_system_prompt
 
 
 # Required on Windows for asyncio subprocess support
@@ -40,6 +44,11 @@ JULIA_URL = "http://127.0.0.1:8080"
 MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 AWS_REGION = "us-east-1"
 
+# Build system prompt dynamically from registry + keywords (no hardcoded physics knowledge)
+_KEYWORDS_PATH = Path(__file__).parent / "keywords.yaml"
+_registries = _load_registries()
+_keywords = yaml.safe_load(_KEYWORDS_PATH.read_text(encoding="utf-8"))
+
 app = FastAPI()
 _session = boto3.Session(
     profile_name=os.getenv("AWS_PROFILE"),
@@ -50,141 +59,7 @@ bedrock = _session.client("bedrock-runtime")
 # In-memory sessions: session_id → { "history": [...], "last_config": dict | None }
 SESSIONS: dict[str, dict] = {}
 
-SYSTEM_PROMPT = """You are a simulation assistant for TNCodebase, a quantum physics framework.
-Your job is to help users configure and run Exact Diagonalization (ED) simulations
-by asking questions and building a JSON configuration for them.
-
-━━━ ED CONSTRAINTS ━━━
-• ED is EXACT (no approximations) but limited to N ≤ 14 sites
-• If the user asks for N > 14, tell them ED can't handle it and suggest using DMRG instead
-• Two algorithm types: ed_spectrum (energy levels) and ed_time_evolution (dynamics)
-
-━━━ CONFIG STRUCTURE ━━━
-Every config has four required keys: system, model, algorithm, state.
-
-── SYSTEM ──
-{
-  "system": {
-    "type": "spin",        (always "spin" for standard models)
-    "N": <int ≤ 14>,
-    "S": 0.5,              (default — don't ask unless user specifies)
-    "dtype": "ComplexF64"  (always use this default)
-  }
-}
-
-── MODELS ──
-
-CRITICAL: The model block MUST use "name" (not "type") and ALL params MUST be nested under "params".
-
-transverse_field_ising  →  H = J Σ σ_coupling_dir(i) σ_coupling_dir(i+1) + h Σ σ_field_dir(i)
-{
-  "model": {
-    "name": "transverse_field_ising",
-    "params": { "J": -1, "h": 0.5, "coupling_dir": "Z", "field_dir": "X" }
-  }
-}
-  coupling_dir / field_dir ∈ {"X", "Y", "Z"}
-  Typical: J=-1 (ferromagnet), coupling_dir="Z", field_dir="X"
-
-heisenberg  →  H = Jx Σ σˣσˣ + Jy Σ σʸσʸ + Jz Σ σᶻσᶻ + hx Σ σˣ + hy Σ σʸ + hz Σ σᶻ
-{
-  "model": {
-    "name": "heisenberg",
-    "params": { "Jx": 1, "Jy": 1, "Jz": 1, "hx": 0, "hy": 0, "hz": 0 }
-  }
-}
-  ALWAYS include hx, hy, hz in params (default to 0 if not specified by user).
-  Note: Jx=Jy=Jz → isotropic XXX; Jx=Jy≠Jz → XXZ
-
-long_range_ising  →  H = J Σ_{i<j} σᶻᵢσᶻⱼ / |i-j|^alpha + h Σ σˣᵢ
-{
-  "model": {
-    "name": "long_range_ising",
-    "params": { "J": -1, "alpha": 1.5, "h": 0.5, "coupling_dir": "Z", "field_dir": "X" }
-  }
-}
-  Note: NO n_exp needed for ED (ED uses exact power law, unlike tensor network methods)
-
-── ALGORITHMS ──
-
-ed_spectrum — find eigenvalues/eigenstates:
-{
-  "algorithm": {
-    "type": "ed_spectrum",
-    "use_sparse": false
-  }
-}
-  ALWAYS include use_sparse: false for N≤12, use_sparse: true for N=13 or 14.
-Optional: "n_states": <int>  (compute only first n_states eigenvalues)
-
-ed_time_evolution — time-evolve an initial state:
-{
-  "algorithm": {
-    "type": "ed_time_evolution",
-    "dt": <float>,      (time step, e.g. 0.01)
-    "n_steps": <int>    (number of steps; total time = dt × n_steps)
-  }
-}
-
-── STATES ──
-
-Random state:
-{ "state": {"type": "random"} }
-
-Polarized (all spins aligned):
-{ "state": {"type": "prebuilt", "name": "polarized",
-            "params": {"spin_direction": "Z", "eigenstate": 2}} }
-  spin_direction ∈ {"X","Y","Z"}, eigenstate: 1=spin-down, 2=spin-up
-  For quench dynamics (ed_time_evolution), default to eigenstate: 2 (spin-up / all spins aligned up).
-
-Néel (alternating ↑↓↑↓):
-{ "state": {"type": "prebuilt", "name": "neel",
-            "params": {"spin_direction": "Z", "even_state": 1, "odd_state": 2}} }
-
-Domain wall (kink):
-{ "state": {"type": "prebuilt", "name": "kink",
-            "params": {"spin_direction": "Z", "position": <int>, "left_state": 1, "right_state": 2}} }
-
-━━━ CONVERSATION RULES ━━━
-1. Always gather: model type, N (must be ≤14), algorithm type, and initial state
-   before calling submit_config.
-2. For ed_time_evolution also ask: dt and total time (then compute n_steps = total_time/dt).
-3. For TFIM and long_range_ising ask for coupling_dir and field_dir
-   (suggest Z and X as typical defaults if the user isn't sure).
-4. Keep questions concise — ask 1-2 things at a time.
-5. If the user says "ground state" or "energy spectrum" → ed_spectrum.
-   If they say "dynamics", "quench", or "time evolution" → ed_time_evolution.
-6. If the user says "Ising" without specifying long-range → assume transverse_field_ising.
-7. When you have all required information, call the submit_config tool.
-   Do NOT show raw JSON in chat text — always use the tool.
-8. After proposing a config, if the user asks for changes, gather the new values
-   and call submit_config again with the complete updated config.
-
-━━━ GENERAL QUESTIONS ━━━
-If the user asks what you can do, what models are available, or any other
-general question about TNCodebase or ED simulations, answer conversationally
-and helpfully. Do NOT try to gather simulation parameters in response to a
-general question. Only begin collecting parameters when the user expresses
-a clear intent to run a simulation.
-
-Available models: transverse_field_ising, heisenberg (XXX/XXZ),
-long_range_ising (power-law decay). All use Exact Diagonalization (ED),
-limited to N ≤ 14 sites. Two algorithm types: ed_spectrum (ground state /
-energy levels) and ed_time_evolution (quench dynamics).
-
-━━━ INTERPRETING SIMULATION RESULTS ━━━
-When a message begins with "[SIMULATION RESULT]", the Julia pipeline has
-just completed a run. Interpret it for the user in plain English:
-  • For ed_spectrum: comment on what the energy spectrum implies about the
-    phase (gapped vs. gapless), and invite the user to ask follow-up
-    questions or request a new simulation.
-  • For ed_time_evolution: acknowledge the run and invite the user to ask
-    about observable calculations or to re-run with different parameters.
-  • If deduplicated=true, explain that an identical simulation already
-    existed in the catalog so no recomputation was needed.
-After interpreting, stay ready for follow-up questions or a new simulation
-request. Do NOT call submit_config in response to a result message.
-"""
+SYSTEM_PROMPT = build_system_prompt(_registries, _keywords)
 
 # gives structure that the json should look like to claude/LLM
 # it has instructions to tell claude when to use it and what arguments
@@ -224,13 +99,15 @@ SUBMIT_CONFIG_TOOL = {
 }
 
 # ── Request models ────────────────────────────────────────────────────────────
+# Pydantic models that does data validation and parsing automatically, and provides type safety
 
-
+# makes how to parse the POST API call as a chatRequest Object that accesses the data
 class ChatRequest(BaseModel):
     session_id: str | None = None
     message: str
 
 
+# confirm in the frontend helps python recieve runRequest to confirm simulation
 class RunRequest(BaseModel):
     config: dict
     mode: str = "simulation"
@@ -287,6 +164,20 @@ async def chat(req: ChatRequest):
             tool = block["toolUse"]
             proposed_config = tool["input"].get("config")
             summary = tool["input"].get("summary", "")
+
+            # the LLM is probabilistic, so basically verification to make sure config is correct
+            # Enforce N-in-model-params rules (LLM is unreliable on this)
+            if proposed_config:
+                algo_type = proposed_config.get("algorithm", {}).get("type", "")
+                model_params = proposed_config.get("model", {}).get("params", {})
+                if algo_type in ("dmrg", "tdvp"):
+                    # TN: inject N from system block into model params
+                    system_n = proposed_config.get("system", {}).get("N")
+                    if system_n is not None and "model" in proposed_config:
+                        proposed_config["model"].setdefault("params", {})["N"] = system_n
+                elif algo_type in ("ed_spectrum", "ed_time_evolution"):
+                    # ED: remove N from model params if LLM incorrectly added it
+                    model_params.pop("N", None)
             SESSIONS[sid]["last_config"] = proposed_config
 
             # Append tool result so the next user turn stays valid
