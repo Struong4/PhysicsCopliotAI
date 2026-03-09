@@ -32,6 +32,38 @@ from pydantic import BaseModel
 from chatbot.registry_loader import load_all as _load_registries
 from chatbot.prompt_builder import build_system_prompt
 
+# Path to the simulation run catalog
+CATALOG_PATH = Path(__file__).parent.parent / "data" / "run_catalog.jsonl"
+
+
+def _read_catalog(filters: dict) -> list[dict]:
+    """Read and filter run_catalog.jsonl, returning most-recent entries first."""
+    if not CATALOG_PATH.exists():
+        return []
+
+    algorithm = filters.get("algorithm", "").lower().strip()
+    model_name = filters.get("model", "").lower().strip()
+    limit = min(int(filters.get("limit", 10)), 50)
+
+    entries = []
+    with CATALOG_PATH.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if algorithm and entry.get("core", {}).get("algorithm", "").lower() != algorithm:
+                continue
+            if model_name and entry.get("model", {}).get("name", "").lower() != model_name:
+                continue
+            entries.append(entry)
+
+    entries.reverse()  # most recent first (catalog is append-only)
+    return entries[:limit]
+
 
 # Required on Windows for asyncio subprocess support
 if sys.platform == "win32":
@@ -98,6 +130,35 @@ SUBMIT_CONFIG_TOOL = {
     },
 }
 
+QUERY_CATALOG_TOOL = {
+    "name": "query_catalog",
+    "description": (
+        "Search the simulation run catalog to answer questions about past runs. "
+        "Use this when the user asks about previous simulations, past results, "
+        "run history, or whether a particular simulation has been done before. "
+        "Returns catalog entries with run_id, timestamp, algorithm, model, N, and results_summary."
+    ),
+    "inputSchema": {
+        "json": {
+            "type": "object",
+            "properties": {
+                "algorithm": {
+                    "type": "string",
+                    "description": "Filter by algorithm type: dmrg, tdvp, ed_spectrum, or ed_time_evolution. Omit to return all algorithms.",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Filter by model name (e.g. heisenberg, transverse_field_ising). Omit to return all models.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum number of results to return (default 10, max 50).",
+                },
+            },
+        }
+    },
+}
+
 # ── Request models ────────────────────────────────────────────────────────────
 # Pydantic models that does data validation and parsing automatically, and provides type safety
 
@@ -133,13 +194,16 @@ async def chat(req: ChatRequest):
     history.append({"role": "user", "content": [{"text": req.message}]})
 
     # Call Bedrock in a thread so we don't block the event loop
-    # tells Bedrock what tools are available to LLM 
+    # tells Bedrock what tools are available to LLM
     def _call_bedrock():
         return bedrock.converse(
             modelId=MODEL_ID,
             system=[{"text": SYSTEM_PROMPT}],
             messages=history,
-            toolConfig={"tools": [{"toolSpec": SUBMIT_CONFIG_TOOL}]},
+            toolConfig={"tools": [
+                {"toolSpec": SUBMIT_CONFIG_TOOL},
+                {"toolSpec": QUERY_CATALOG_TOOL},
+            ]},
             inferenceConfig={"maxTokens": 2048, "temperature": 0.5},
         )
 
@@ -148,7 +212,48 @@ async def chat(req: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Bedrock error: {e}")
 
-    # Parse response
+    # Tool execution loop: handle query_catalog calls (real tool execution)
+    # before falling through to the final response parsing.
+    MAX_TOOL_ROUNDS = 5
+    for _ in range(MAX_TOOL_ROUNDS):
+        content = response["output"]["message"]["content"]
+
+        # Find a query_catalog tool use in this response
+        catalog_tool = next(
+            (b["toolUse"] for b in content
+             if "toolUse" in b and b["toolUse"]["name"] == "query_catalog"),
+            None,
+        )
+        if catalog_tool is None:
+            break  # no catalog query — proceed to final response handling
+
+        # Append the assistant turn that contains the tool call
+        history.append({"role": "assistant", "content": content})
+
+        # Execute the catalog query
+        results = _read_catalog(catalog_tool["input"])
+        result_text = (
+            json.dumps(results, indent=2)
+            if results
+            else "No matching runs found in the catalog."
+        )
+
+        # Return the tool result to the model
+        history.append({
+            "role": "user",
+            "content": [{"toolResult": {
+                "toolUseId": catalog_tool["toolUseId"],
+                "content": [{"text": result_text}],
+            }}],
+        })
+
+        # Call Bedrock again with the tool result in history
+        try:
+            response = await asyncio.to_thread(_call_bedrock)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Bedrock error: {e}")
+
+    # Parse final response (may still contain submit_config)
     content = response["output"]["message"]["content"]
     history.append({"role": "assistant", "content": content})
 
@@ -156,7 +261,7 @@ async def chat(req: ChatRequest):
     proposed_config = None
     summary = ""
 
-    # extracts user response if it it text of config file
+    # extracts user response if it is text or a config file
     for block in content:
         if "text" in block:
             reply_text += block["text"]
@@ -181,9 +286,8 @@ async def chat(req: ChatRequest):
             SESSIONS[sid]["last_config"] = proposed_config
 
             # Append tool result so the next user turn stays valid
-            # Bedrock requiers every toolUse to get a toolResult appended to history
+            # Bedrock requires every toolUse to get a toolResult appended to history
             # or next API call will result in validation errors, so this takes care of it
-
             history.append({
                 "role": "user",
                 "content": [{"toolResult": {

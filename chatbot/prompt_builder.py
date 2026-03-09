@@ -31,6 +31,7 @@ def build_system_prompt(registries: dict, keywords: dict) -> str:
         _conversation_rules_section(keywords),
         _general_questions_section(models_reg),
         _result_interpretation_section(),
+        _catalog_section(),
     ]
     return "\n\n".join(sections)
 
@@ -324,6 +325,23 @@ def _conversation_rules_section(keywords: dict) -> str:
             lines.append(f"  {sample} -> {model}")
 
     return "\n".join(lines)
+
+
+def _catalog_section() -> str:
+    return (
+        "=== CATALOG ACCESS ===\n"
+        "You have access to the simulation run catalog via the query_catalog tool.\n"
+        "Call query_catalog whenever the user asks about past or previous simulations,\n"
+        "run history, past results, or whether a particular setup has been run before.\n"
+        "Examples: 'what simulations have I run?', 'show me past DMRG runs',\n"
+        "'what was the ground energy for heisenberg N=10?', 'have I run TFIM before?'\n"
+        "The tool accepts optional filters: algorithm, model, limit (default 10).\n"
+        "Each entry returned contains: run_id, timestamp, core (algorithm, N, S),\n"
+        "model (name, params), results_summary, and status.\n"
+        "After receiving catalog results, summarize them clearly for the user —\n"
+        "highlight run_id, timestamp, N, model, and key result values.\n"
+        "Do NOT call submit_config in response to a catalog query."
+    )
 
 
 def _general_questions_section(models: dict) -> str:
