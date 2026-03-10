@@ -141,30 +141,66 @@ def fill_defaults(registry: dict, partial_config: dict) -> dict:
 
 def build_analysis_config(
     registry: dict,
-    simulation_config: dict,
-    selection: dict,
+    run_id: str,
     observable: dict,
+    selection: dict | None = None,
 ) -> dict:
-    """Build an analysis/observable config from a simulation config.
+    """Build an observable calculation config for a completed simulation run.
+
+    The output matches what POST /api/observables/calculate expects:
+        {run_id, observable: {type, params}, selection: {selection, ...}}
+
+    The backend uses run_id to locate the raw data folder, reads the saved
+    simulation config from there, and reconstructs whatever it needs
+    (Hamiltonian, basis, operators) internally.
 
     Args:
-        registry: All 5 registry files.
-        simulation_config: The original simulation config dict.
-        selection: Which snapshots to analyze, e.g. {"sweeps": [1, 5, 10]}.
-        observable: What to measure, e.g. {"type": "expectation", "operator": "Z"}.
+        registry: Registry files. If "observables" key is present,
+            validates the observable type against the registry.
+        run_id: Simulation run_id from a catalog query.
+        observable: What to measure, e.g.
+            {"type": "entanglement_entropy", "params": {"bond": 10}}.
+        selection: Which snapshots to analyze. Defaults to {"selection": "all"}.
+            Examples:
+                {"selection": "all"}
+                {"selection": "range", "start_idx": 1, "end_idx": 10}
+                {"selection": "specific", "indices": [1, 5, 10]}
+                {"selection": "time_range", "t_start": 0.0, "t_end": 1.0}
 
     Returns:
-        Analysis config dict.
+        Config dict ready for POST /api/observables/calculate.
     """
-    schema = registry["config_schema"]
-    algo_type = simulation_config.get("algorithm", {}).get("type", "")
-    selection_key_map = schema.get("analysis_assembly", {}).get("selection_key", {})
-    sel_key = selection_key_map.get(algo_type, "sweeps")
+    # Validate observable type against registry if observables.json is loaded
+    obs_registry = registry.get("observables", {}).get("observables", {})
+    obs_type = observable.get("type", "")
+    if obs_registry and obs_type:
+        aliases = registry.get("observables", {}).get("aliases", {}).get("mapping", {})
+        canonical = aliases.get(obs_type, obs_type)
+        if canonical not in obs_registry:
+            raise ValueError(
+                f"Unknown observable type '{obs_type}'. "
+                f"Known types: {list(obs_registry.keys())}"
+            )
+        # Normalize to canonical name if alias was used
+        if canonical != obs_type:
+            observable = dict(observable)
+            observable["type"] = canonical
+
+    # Default selection: compute on all available data
+    if selection is None:
+        selection = {"selection": "all"}
+    elif "selection" not in selection:
+        # Accept {"type": "all"} as shorthand
+        selection = dict(selection)
+        if "type" in selection:
+            selection["selection"] = selection.pop("type")
+        else:
+            selection["selection"] = "all"
 
     return {
-        "simulation": simulation_config,
-        "selection": {sel_key: selection.get(sel_key, selection.get("indices", []))},
+        "run_id": run_id,
         "observable": observable,
+        "selection": selection,
     }
 
 

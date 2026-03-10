@@ -212,3 +212,315 @@ dtype_hints:
     - "Z"
     - "I"
   rule: "If any spin operator in the Hamiltonian or state is Y, Sp, or Sm, dtype must be ComplexF64. Otherwise Float64 is safe and faster."
+
+observable_vocabulary:
+  # Maps physics jargon to observable types in observables.json → observables
+  # Each entry: phrases the user might say → canonical observable type key
+
+  # --- Local observables ---
+  single_site_expectation:
+    phrases:
+      - "local expectation"
+      - "single site"
+      - "expectation value at site"
+      - "measure at site"
+      - "local magnetization"
+      - "spin at site"
+      - "on-site expectation"
+      - "site expectation"
+    observable_type: "single_site_expectation"
+    category: "local"
+
+  expectation_all_sites:
+    phrases:
+      - "expectation all sites"
+      - "magnetization profile"
+      - "local profile"
+      - "spin profile"
+      - "expectation at every site"
+      - "measure all sites"
+      - "full chain expectation"
+      - "site-resolved"
+    observable_type: "expectation_all_sites"
+    category: "local"
+
+  subsystem_expectation_sum:
+    phrases:
+      - "subsystem expectation"
+      - "total magnetization"
+      - "subsystem magnetization"
+      - "sum over sites"
+      - "partial magnetization"
+      - "magnetization sum"
+      - "block expectation"
+      - "subsystem sum"
+    observable_type: "subsystem_expectation_sum"
+    category: "local"
+
+  # --- Two-point observables ---
+  two_site_expectation:
+    phrases:
+      - "two site expectation"
+      - "two-point expectation"
+      - "product of operators"
+      - "operator product"
+      - "two-site measurement"
+      - "mixed correlator"
+      - "cross operator"
+    observable_type: "two_site_expectation"
+    category: "two_point"
+
+  correlation_function:
+    phrases:
+      - "correlation function"
+      - "two-point correlation"
+      - "spin correlation"
+      - "spin-spin correlation"
+      - "correlator"
+      - "spatial correlation"
+      - "pair correlation"
+      - "G(i,j)"
+      - "C(i,j)"
+    observable_type: "correlation_function"
+    category: "two_point"
+
+  connected_correlation:
+    phrases:
+      - "connected correlation"
+      - "connected correlator"
+      - "cumulant"
+      - "genuine correlation"
+      - "fluctuation correlation"
+      - "covariance"
+      - "correlation beyond mean field"
+      - "subtracted correlation"
+    observable_type: "connected_correlation"
+    category: "two_point"
+
+  correlation_matrix:
+    phrases:
+      - "correlation matrix"
+      - "full correlation"
+      - "all-pairs correlation"
+      - "correlation map"
+      - "C_ij matrix"
+      - "site-site correlation"
+      - "complete correlation"
+    observable_type: "correlation_matrix"
+    category: "two_point"
+
+  # --- Entanglement observables ---
+  entanglement_entropy:
+    phrases:
+      - "entanglement entropy"
+      - "von Neumann entropy"
+      - "bipartite entanglement"
+      - "entanglement"
+      - "entropy"
+      - "Renyi entropy"
+      - "S_vN"
+      - "half-chain entropy"
+      - "bond entropy"
+      - "block entropy"
+      - "information entropy"
+    observable_type: "entanglement_entropy"
+    category: "entanglement"
+
+  entanglement_spectrum:
+    phrases:
+      - "entanglement spectrum"
+      - "Schmidt values"
+      - "Schmidt spectrum"
+      - "singular values"
+      - "reduced density matrix eigenvalues"
+      - "entanglement levels"
+      - "Schmidt decomposition"
+      - "ES"
+    observable_type: "entanglement_spectrum"
+    category: "entanglement"
+
+  # --- Energy observables ---
+  energy_expectation:
+    phrases:
+      - "energy"
+      - "energy expectation"
+      - "Hamiltonian expectation"
+      - "total energy"
+      - "ground state energy"
+      - "measure energy"
+      - "H expectation"
+      - "E_0"
+      - "average energy"
+    observable_type: "energy_expectation"
+    category: "energy"
+
+  energy_variance:
+    phrases:
+      - "energy variance"
+      - "variance"
+      - "energy fluctuation"
+      - "delta E"
+      - "energy spread"
+      - "H squared"
+      - "convergence check"
+      - "eigenstate quality"
+    observable_type: "energy_variance"
+    category: "energy"
+
+  # --- State property observables ---
+  inner_product:
+    phrases:
+      - "inner product"
+      - "norm squared"
+      - "state overlap"
+      - "normalization"
+      - "normalization check"
+      - "bracket"
+      - "psi squared"
+    observable_type: "inner_product"
+    category: "state_property"
+
+  fidelity:
+    phrases:
+      - "fidelity"
+      - "state fidelity"
+      - "overlap"
+      - "state overlap squared"
+      - "how close"
+      - "state similarity"
+      - "state comparison"
+    observable_type: "fidelity"
+    category: "state_property"
+
+  survival_probability:
+    phrases:
+      - "survival probability"
+      - "return probability"
+      - "stay probability"
+      - "initial state overlap"
+      - "persistence"
+      - "non-decay probability"
+    observable_type: "survival_probability"
+    category: "state_property"
+
+  loschmidt_echo:
+    phrases:
+      - "Loschmidt echo"
+      - "Loschmidt"
+      - "rate function"
+      - "dynamical phase transition"
+      - "DQPT"
+      - "return rate"
+      - "dynamical free energy"
+    observable_type: "loschmidt_echo"
+    category: "state_property"
+
+  state_norm:
+    phrases:
+      - "state norm"
+      - "norm"
+      - "normalization"
+      - "vector norm"
+      - "psi norm"
+      - "check norm"
+    observable_type: "state_norm"
+    category: "state_property"
+
+  # --- Boson observables ---
+  boson_number:
+    phrases:
+      - "boson number"
+      - "photon number"
+      - "photon occupation"
+      - "cavity occupation"
+      - "mean photon"
+      - "average photon number"
+      - "n_photon"
+      - "phonon number"
+      - "boson occupation"
+    observable_type: "boson_number"
+    category: "boson"
+
+  boson_distribution:
+    phrases:
+      - "boson distribution"
+      - "photon distribution"
+      - "Fock distribution"
+      - "photon statistics"
+      - "number distribution"
+      - "P(n)"
+      - "Fock state probability"
+      - "photon number distribution"
+      - "occupation distribution"
+    observable_type: "boson_distribution"
+    category: "boson"
+
+  boson_field:
+    phrases:
+      - "boson field"
+      - "cavity field"
+      - "field expectation"
+      - "quadrature"
+      - "a plus a dagger"
+      - "field amplitude"
+      - "real quadrature"
+      - "photon field"
+      - "displacement"
+    observable_type: "boson_field"
+    category: "boson"
+
+  boson_spin_entanglement:
+    phrases:
+      - "boson-spin entanglement"
+      - "cavity-chain entanglement"
+      - "light-matter entanglement"
+      - "boson spin entropy"
+      - "cavity entanglement"
+      - "photon-spin entanglement"
+      - "mode-chain entanglement"
+    observable_type: "boson_spin_entanglement"
+    category: "boson"
+
+selection_vocabulary:
+  # Maps user phrases to selection modes in observables.json → selection_modes
+  all:
+    phrases:
+      - "all sweeps"
+      - "all steps"
+      - "every step"
+      - "all states"
+      - "everything"
+      - "full trajectory"
+      - "entire run"
+    mode: "all"
+
+  range:
+    phrases:
+      - "range"
+      - "from step"
+      - "between steps"
+      - "sweeps from"
+      - "steps from to"
+      - "window"
+      - "slice"
+    mode: "range"
+
+  specific:
+    phrases:
+      - "specific steps"
+      - "only steps"
+      - "just step"
+      - "particular sweeps"
+      - "selected indices"
+      - "these steps"
+    mode: "specific"
+
+  time_range:
+    phrases:
+      - "time range"
+      - "time window"
+      - "from time"
+      - "between times"
+      - "t from"
+      - "time interval"
+    mode: "time_range"

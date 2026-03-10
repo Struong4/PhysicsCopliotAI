@@ -728,8 +728,10 @@ function populateObservableSelector(targetSelectId = 'qc-observable-type') {
             const option = document.createElement('option');
             option.value = obs.key;
             option.textContent = obs.display_name || obs.key;
+            if (obs.description) option.title = obs.description;
+            option.dataset.description = obs.description || '';
             option.dataset.params = JSON.stringify(obs.params || {});
-            option.dataset.backends = JSON.stringify(obs.backends || []);
+            option.dataset.backends = JSON.stringify(obs.backends || {});
             optgroup.appendChild(option);
         }
 
@@ -755,7 +757,36 @@ function renderObservableParams(selectId = 'qc-observable-type', containerId = '
 
     const obsKey = select.value;
     const obs = registry.observables?.[obsKey];
-    if (!obs || !obs.params) return;
+    if (!obs) return;
+
+    // Show observable description
+    if (obs.description) {
+        const descBox = document.createElement('div');
+        descBox.style.cssText = 'padding:8px 10px; background:#eef6ff; border-left:3px solid #2196F3; border-radius:3px; margin-bottom:10px; font-size:12px; color:#333; line-height:1.5;';
+        descBox.textContent = obs.description;
+
+        // Show backend compatibility
+        if (obs.backends) {
+            const supported = Object.entries(obs.backends)
+                .filter(([, v]) => v)
+                .map(([k]) => k.replace('_', ' ').toUpperCase());
+            if (supported.length > 0) {
+                const tagRow = document.createElement('div');
+                tagRow.style.cssText = 'margin-top:6px; display:flex; gap:4px; flex-wrap:wrap;';
+                for (const tag of supported) {
+                    const span = document.createElement('span');
+                    span.style.cssText = 'font-size:10px; padding:2px 6px; background:#d4edda; color:#155724; border-radius:8px; font-weight:600;';
+                    span.textContent = tag;
+                    tagRow.appendChild(span);
+                }
+                descBox.appendChild(tagRow);
+            }
+        }
+
+        container.appendChild(descBox);
+    }
+
+    if (!obs.params) return;
 
     for (const [paramName, paramDef] of Object.entries(obs.params)) {
         const group = document.createElement('div');
@@ -765,12 +796,21 @@ function renderObservableParams(selectId = 'qc-observable-type', containerId = '
         const label = document.createElement('label');
         label.textContent = paramDef.display_name || paramName;
         label.style.fontSize = '13px';
+        if (paramDef.description) label.title = paramDef.description;
         group.appendChild(label);
 
-        if (paramDef.type === 'select' || paramDef.options) {
+        // Show parameter description as hint text
+        if (paramDef.description) {
+            const hint = document.createElement('div');
+            hint.style.cssText = 'font-size:11px; color:#888; margin:-2px 0 4px 0;';
+            hint.textContent = paramDef.description;
+            group.appendChild(hint);
+        }
+
+        if (paramDef.type === 'select' || paramDef.options || paramDef.allowed_values) {
             const sel = document.createElement('select');
             sel.id = `qc-obs-param-${paramName}`;
-            const options = paramDef.options || [];
+            const options = paramDef.options || paramDef.allowed_values || [];
             for (const opt of options) {
                 const o = document.createElement('option');
                 o.value = opt;
@@ -787,6 +827,7 @@ function renderObservableParams(selectId = 'qc-observable-type', containerId = '
             if (paramDef.type === 'float') input.step = 'any';
             if (paramDef.default !== undefined) input.value = paramDef.default;
             if (paramDef.min !== undefined) input.min = paramDef.min;
+            if (paramDef.minimum !== undefined) input.min = paramDef.minimum;
             group.appendChild(input);
         }
 

@@ -508,17 +508,16 @@
                             <option value="transverse_field_ising">Transverse Field Ising</option>
                             <option value="heisenberg">Heisenberg</option>
                             <option value="long_range_ising">Long-Range Ising</option>
-                            <option value="custom_spin">Custom Spin Model</option>
                         </optgroup>
                         <optgroup label="Spin-Boson Models" id="optgroup-spinboson">
                             <option value="ising_dicke">Ising-Dicke</option>
                             <option value="long_range_ising_dicke">Long-Range Ising-Dicke</option>
-                            <option value="custom_spinboson">Custom Spin-Boson Model</option>
                         </optgroup>
                         <optgroup label="Saved Models" id="optgroup-user">
                             <!-- Populated dynamically from registry by pipeline_automation.js -->
                         </optgroup>
                     </select>
+                    <small style="color:#6c5ce7; margin-top:4px; display:block;">Need a custom Hamiltonian? Build and save it in the <strong>Registry</strong> tab, then select it from "Saved Models" above.</small>
                 </div>
 
                 <!-- TFI Parameters -->
@@ -744,62 +743,6 @@
                     </div>
                 </div>
 
-                <!-- Custom Spin Model -->
-                <div id="params-custom_spin" class="subsection hidden">
-                    <h3>Custom Spin Channels</h3>
-                    <div class="info-box">
-                        Build custom Hamiltonian from coupling and field terms.<br>
-                        <strong>Note:</strong> "range" means sites <em>exactly</em> that distance apart (range=1 → nearest-neighbor, range=2 → next-nearest-neighbor).<br>
-                        <span id="custom-spin-format-hint"></span>
-                    </div>
-                    <div id="custom-spin-channels"></div>
-                    <button class="btn-add" onclick="addSpinChannel()">+ Add Channel</button>
-                </div>
-                </div>
-
-                <!-- Custom Spin-Boson Model -->
-                <div id="params-custom_spinboson" class="subsection hidden">
-                    <h3>Custom Spin-Boson Channels</h3>
-                    <span id="custom-spinboson-hint"></span>
-                    <div class="info-box">
-                        Build custom spin-boson Hamiltonian with spin, boson, and coupling terms.
-                    </div>
-                    
-                    <!-- Spin Channels Category -->
-                    <div class="channel-category">
-                        <div class="collapsible-header" onclick="toggleCollapse(this)">
-                            <h4>Spin Channels <small>(auto-wrapped with Ib)</small></h4>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div id="spinboson-spin-channels"></div>
-                            <button class="btn-add" onclick="addSpinBosonSpinChannel()">+ Add Spin Channel</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Boson Channels Category -->
-                    <div class="channel-category">
-                        <div class="collapsible-header" onclick="toggleCollapse(this)">
-                            <h4>Boson Channels</h4>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div id="spinboson-boson-channels"></div>
-                            <button class="btn-add" onclick="addBosonChannel()">+ Add Boson Channel</button>
-                        </div>
-                    </div>
-                    
-                    <!-- SpinBoson Coupling Channels Category -->
-                    <div class="channel-category">
-                        <div class="collapsible-header" onclick="toggleCollapse(this)">
-                            <h4>Spin-Boson Coupling Channels</h4>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div id="spinboson-coupling-channels"></div>
-                            <button class="btn-add" onclick="addSpinBosonCouplingChannel()">+ Add Coupling Channel</button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -812,10 +755,10 @@
                     <label>State Type</label>
                     <select id="state-type" onchange="onStateTypeChange()">
                         <option value="prebuilt">Prebuilt Pattern</option>
-                        <option value="custom">Custom (site-by-site)</option>
                         <option value="saved">Saved State</option>
                         <option value="random">Random</option>
                     </select>
+                    <small style="color:#6c5ce7; margin-top:4px; display:block;">Need a custom site-by-site state? Build and save it in the <strong>Registry</strong> tab, then select it from "Saved State" above.</small>
                 </div>
 
                 <!-- Prebuilt state options -->
@@ -926,28 +869,6 @@
                     <div class="form-group">
                         <label>Seed (optional)</label>
                         <input type="number" id="state-seed" placeholder="Random" onchange="updatePreview()">
-                    </div>
-                </div>
-
-                <!-- Custom state builder (site-by-site) -->
-                <div id="state-custom-options" class="hidden">
-                    <div id="custom-state-hint" style="display:none;"></div>
-                    <div class="info-box" style="margin-bottom:12px;">
-                        Configure each site independently. For spin-1/2 Z: eigenstate 1 = |↓⟩, 2 = |↑⟩.
-                    </div>
-                    <!-- Boson level row — spinboson only -->
-                    <div id="custom-state-boson-row" class="hidden" style="margin-bottom:12px;">
-                        <div class="form-group">
-                            <label>Boson level (Fock state |n⟩)</label>
-                            <input type="number" id="custom-state-boson_level" value="0" min="0" onchange="validateBosonLevel(); updatePreview()">
-                            <small>Must be ≤ nmax</small>
-                        </div>
-                    </div>
-                    <!-- Per-site table — rendered by renderCustomStateBuilder() -->
-                    <div id="custom-state-table" style="max-height:300px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:6px; padding:10px; background:#fafafa;">
-                        <div style="color:#999; font-style:italic; text-align:center; padding:20px;">
-                            Select system size first, then switch to Custom state type.
-                        </div>
                     </div>
                 </div>
 
@@ -1279,24 +1200,8 @@
                         <div class="form-group">
                             <label style="font-size:12px;">Observable type</label>
                             <select id="qc-observable-type" onchange="renderObservableParams()">
-                                <!-- Populated dynamically from observables registry -->
-                                <optgroup label="Local">
-                                    <option value="single_site_expectation">Single site expectation</option>
-                                    <option value="subsystem_expectation_sum">Subsystem sum</option>
-                                </optgroup>
-                                <optgroup label="Two-point">
-                                    <option value="two_site_expectation">Two-site expectation</option>
-                                    <option value="correlation_function">Correlation function</option>
-                                    <option value="connected_correlation">Connected correlation</option>
-                                </optgroup>
-                                <optgroup label="Entanglement">
-                                    <option value="entanglement_entropy">Entanglement entropy</option>
-                                    <option value="entanglement_spectrum">Entanglement spectrum</option>
-                                </optgroup>
-                                <optgroup label="Energy">
-                                    <option value="energy_expectation">Energy expectation</option>
-                                    <option value="energy_variance">Energy variance</option>
-                                </optgroup>
+                                <!-- Populated dynamically from observables registry on server connect -->
+                                <option value="" disabled selected>Connect to server to load observables</option>
                             </select>
                         </div>
                         <div id="qc-obs-params" style="margin-top:8px;"></div>
@@ -1760,14 +1665,7 @@
         }
         
         function updateCustomModelHint() {
-            const hint = document.getElementById('custom-spin-format-hint');
-            if (hint) {
-                if (isTN()) {
-                    hint.textContent = 'TN: channels format. ExpChannelCoupling available. n_exp needed for power-law.';
-                } else {
-                    hint.textContent = 'ED: terms format. Periodic BC + AllToAllCoupling available. No n_exp needed.';
-                }
-            }
+            // No-op: inline custom model builder removed; custom models are built via Registry tab.
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -1835,10 +1733,6 @@
             }
             
             validateBosonLevel();
-            // Re-render custom state table if it's currently visible
-            if (document.getElementById('state-type')?.value === 'custom') {
-                renderCustomStateBuilder();
-            }
             updatePreview();
         }
         
@@ -1866,8 +1760,8 @@
         function onModelChange() {
             const model = document.getElementById('model-name').value;
             
-            const builtinModels = ['transverse_field_ising', 'heisenberg', 'long_range_ising', 
-                              'ising_dicke', 'long_range_ising_dicke', 'custom_spin', 'custom_spinboson'];
+            const builtinModels = ['transverse_field_ising', 'heisenberg', 'long_range_ising',
+                              'ising_dicke', 'long_range_ising_dicke'];
 
             // Hide all builtin param panels
             builtinModels.forEach(m => {
@@ -1888,65 +1782,11 @@
         }
 
         /**
-         * Load a saved model's channel structure into the appropriate custom builder,
-         * then show that builder's params panel so the user can tweak values before running.
+         * User-registered models are resolved by name at the backend.
+         * No inline builder needed — just update the preview.
          */
         function loadUserModelIntoBuilder(modelName) {
-            const userModel = window.TNRegistry?.models?.user_models?.models?.[modelName];
-            if (!userModel) return;
-
-            const sysType = userModel.system_type;
-            const backend = userModel.backend;
-
-            if (sysType === 'spin') {
-                // Point the model select visually at custom_spin but keep actual value
-                // Show the custom_spin params panel
-                document.getElementById('params-custom_spin')?.classList.remove('hidden');
-
-                // Rebuild customSpinChannels from saved channel list
-                const savedChannels = backend === 'tn' ? (userModel.channels || []) : [];
-                // For ED, convert terms back to channel-like objects for the builder
-                const rawChannels = backend === 'tn'
-                    ? userModel.channels || []
-                    : edTermsToChannels(userModel.terms || []);
-
-                customSpinChannels = rawChannels.map(ch => ({ id: Date.now() + Math.random(), ...ch }));
-                renderCustomSpinChannels();
-
-                // Show a note that this loaded from registry
-                showLoadedModelBanner('custom-spin-format-hint', userModel.display_name || modelName, backend);
-
-            } else {
-                // spinboson
-                document.getElementById('params-custom_spinboson')?.classList.remove('hidden');
-
-                if (backend === 'tn') {
-                    const saved = userModel.channels || {};
-                    spinbosonSpinChannels     = (saved.spin_channels || []).map(ch => ({ id: Date.now() + Math.random(), ...ch }));
-                    spinbosonBosonChannels    = (saved.boson_channels || []).map(ch => ({ id: Date.now() + Math.random(), ...ch }));
-                    spinbosonCouplingChannels = (saved.spinboson_channels || []).map(ch => ({
-                        id: Date.now() + Math.random(),
-                        innerChannels: (ch.spin_channels || []).map(ic => ({ id: Date.now() + Math.random(), ...ic })),
-                        boson_op: ch.boson_op,
-                        strength: ch.strength
-                    }));
-                } else {
-                    // ED spinboson: reconstruct from terms
-                    const saved = userModel.terms || {};
-                    spinbosonSpinChannels     = edTermsToChannels(saved.spin_terms || []).map(ch => ({ id: Date.now() + Math.random(), ...ch }));
-                    spinbosonBosonChannels    = (saved.boson_terms || []).map(t => ({ id: Date.now() + Math.random(), op: t.op, strength: t.strength }));
-                    spinbosonCouplingChannels = (saved.spinboson_terms || []).map(t => ({
-                        id: Date.now() + Math.random(),
-                        innerChannels: [{ id: Date.now() + Math.random(), type: 'Field', op: t.spin_op, strength: 1.0 }],
-                        boson_op: t.boson_op,
-                        strength: t.strength
-                    }));
-                }
-                renderSpinBosonSpinChannels();
-                renderBosonChannels();
-                renderCouplingChannels();
-                showLoadedModelBanner('custom-spinboson-hint', userModel.display_name || modelName, backend);
-            }
+            updatePreview();
         }
 
         /**
@@ -1987,12 +1827,7 @@
             const stateType = document.getElementById('state-type').value;
             document.getElementById('state-prebuilt-options').classList.toggle('hidden', stateType !== 'prebuilt');
             document.getElementById('state-random-options').classList.toggle('hidden',   stateType !== 'random');
-            document.getElementById('state-custom-options').classList.toggle('hidden',   stateType !== 'custom');
             document.getElementById('state-saved-options').classList.toggle('hidden',    stateType !== 'saved');
-
-            if (stateType === 'custom') {
-                renderCustomStateBuilder();
-            }
             updatePreview();
         }
 
@@ -2006,32 +1841,19 @@
             const savedEntry = window.TNRegistry?.states?.user_states?.states?.[savedName];
             if (!savedEntry) return;
 
-            // Switch state type selector to custom
-            document.getElementById('state-type').value = 'custom';
-            onStateTypeChange();
-
-            // Wait for table to render then populate it
-            const N = savedEntry.site_configs?.length || 0;
-            if (N === 0) return;
-
-            // Trigger a render with the right N
-            renderCustomStateBuilder();
-
-            // Populate each site row
-            savedEntry.site_configs.forEach(([dir, es], i) => {
-                const site = i + 1;
-                const dirEl = document.getElementById(`custom-state-dir-${site}`);
-                const esEl  = document.getElementById(`custom-state-es-${site}`);
-                if (dirEl) dirEl.value = dir;
-                if (esEl)  esEl.value  = es;
-            });
-
-            // Show banner
-            const hint = document.getElementById('custom-state-hint');
-            if (hint) {
-                hint.style.cssText = 'padding:6px 10px; background:#d0ebff; color:#1864ab; border-radius:4px; font-size:12px; margin-bottom:8px;';
-                hint.textContent = `📂 Loaded from registry: "${savedEntry.display_name || savedName}" — adjust sites then run`;
-                hint.style.display = 'block';
+            // Show a preview of the saved state's site configs
+            const preview = document.getElementById('saved-state-preview');
+            if (preview && savedEntry.site_configs) {
+                const sites = savedEntry.site_configs;
+                const summary = sites.length <= 12
+                    ? sites.map(([dir, es], i) => `${i+1}:(${dir},${es})`).join('  ')
+                    : sites.slice(0, 6).map(([dir, es], i) => `${i+1}:(${dir},${es})`).join('  ')
+                      + ` ... ` + sites.slice(-3).map(([dir, es], i) => `${sites.length-2+i}:(${dir},${es})`).join('  ');
+                preview.innerHTML = `<strong>${savedEntry.display_name || savedName}</strong> — ${sites.length} sites<br>${summary}`;
+                if (savedEntry.boson_level !== undefined) {
+                    preview.innerHTML += `<br>Boson level: ${savedEntry.boson_level}`;
+                }
+                preview.style.display = 'block';
             }
 
             updatePreview();
@@ -3305,104 +3127,6 @@
                 if (isTN()) {
                     model.params.n_exp = parseInt(document.getElementById('lrid-n_exp').value);
                 }
-            } else if (modelName === 'custom_spin') {
-                // Build channels from DOM
-                const channels = [];
-                customSpinChannels.forEach(ch => {
-                    const channel = readSpinChannelFromDOM(`spin-ch-${ch.id}`);
-                    if (channel) channels.push(channel);
-                });
-                
-                if (isTN()) {
-                    // TN format: channels array
-                    model.params.channels = channels;
-                } else {
-                    // ED format: terms array
-                    model.params.terms = channels.map(convertChannelToEDTerm).filter(t => t !== null);
-                }
-            } else if (modelName === 'custom_spinboson') {
-                if (isTN()) {
-                    // TN format: nested channels object
-                    const channels = {
-                        spin_channels: [],
-                        boson_channels: [],
-                        spinboson_channels: []
-                    };
-                    
-                    spinbosonSpinChannels.forEach(ch => {
-                        const channel = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
-                        if (channel) channels.spin_channels.push(channel);
-                    });
-                    
-                    spinbosonBosonChannels.forEach(ch => {
-                        channels.boson_channels.push(readBosonChannelFromDOM(`boson-ch-${ch.id}`));
-                    });
-                    
-                    spinbosonCouplingChannels.forEach(ch => {
-                        const prefix = `coupling-ch-${ch.id}`;
-                        const coupling = {
-                            spin_channels: [],
-                            boson_op: document.getElementById(`${prefix}-boson_op`)?.value || 'a',
-                            strength: parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2
-                        };
-                        
-                        ch.innerChannels.forEach(inner => {
-                            const innerChannel = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
-                            if (innerChannel) coupling.spin_channels.push(innerChannel);
-                        });
-                        
-                        channels.spinboson_channels.push(coupling);
-                    });
-                    
-                    model.params.channels = channels;
-                } else {
-                    // ED format: terms object with spin_terms, boson_terms, spinboson_terms
-                    const terms = {
-                        spin_terms: [],
-                        boson_terms: [],
-                        spinboson_terms: []
-                    };
-                    
-                    spinbosonSpinChannels.forEach(ch => {
-                        const channel = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
-                        if (channel) {
-                            const term = convertChannelToEDTerm(channel);
-                            if (term) terms.spin_terms.push(term);
-                        }
-                    });
-                    
-                    spinbosonBosonChannels.forEach(ch => {
-                        const bosonCh = readBosonChannelFromDOM(`boson-ch-${ch.id}`);
-                        terms.boson_terms.push({
-                            op: bosonCh.op,
-                            strength: bosonCh.strength
-                        });
-                    });
-                    
-                    spinbosonCouplingChannels.forEach(ch => {
-                        const prefix = `coupling-ch-${ch.id}`;
-                        const bosonOp = document.getElementById(`${prefix}-boson_op`)?.value || 'a';
-                        const strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2;
-                        
-                        ch.innerChannels.forEach(inner => {
-                            const innerChannel = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
-                            if (innerChannel) {
-                                if (innerChannel.type === 'Field') {
-                                    terms.spinboson_terms.push({
-                                        boson_op: bosonOp,
-                                        spin_op: innerChannel.op,
-                                        strength: strength * innerChannel.strength
-                                    });
-                                } else {
-                                    // ED only supports Field (single-site) spin ops in spinboson coupling
-                                    console.warn(`ED spinboson coupling: skipping ${innerChannel.type} (only Field supported)`);
-                                }
-                            }
-                        });
-                    });
-                    
-                    model.params.terms = terms;
-                }
             } else {
                 // User-registered model from registry — keep its registry name.
                 // The model definition (channels/terms) is stored in the registry
@@ -3431,21 +3155,6 @@
                 }
                 const seed = document.getElementById('state-seed').value;
                 if (seed) state.params.seed = parseInt(seed);
-
-            } else if (stateType === 'custom') {
-                const N = getN();
-                const siteConfigs = [];
-                for (let i = 1; i <= N; i++) {
-                    const dir = document.getElementById(`custom-state-dir-${i}`)?.value || 'Z';
-                    const es  = parseInt(document.getElementById(`custom-state-es-${i}`)?.value) || 2;
-                    siteConfigs.push([dir, es]);
-                }
-                if (systemType === 'spinboson') {
-                    state.boson_level = parseInt(document.getElementById('custom-state-boson_level').value) || 0;
-                    state.spin_label  = siteConfigs;
-                } else {
-                    state.spin_label = siteConfigs;
-                }
 
             } else if (stateType === 'saved') {
                 // Resolve to a concrete custom state inline from registry
