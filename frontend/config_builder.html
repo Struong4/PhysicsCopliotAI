@@ -52,10 +52,6 @@
             color: #4a90d9;
             font-size: 1.2em;
         }
-        .section.analysis-section h2 {
-            border-bottom-color: #28a745;
-            color: #28a745;
-        }
         .section.ed-section h2 {
             border-bottom-color: #9c27b0;
             color: #9c27b0;
@@ -417,9 +413,9 @@
                             New Simulation
                             <small>Run a new simulation</small>
                         </button>
-                        <button class="selector-btn" id="mode-analysis" onclick="setMode('analysis')">
-                            Analysis
-                            <small>Compute observables on existing data</small>
+                        <button class="selector-btn" id="mode-query_calculate" onclick="setMode('query_calculate')">
+                            Query &amp; Calculate
+                            <small>Find runs &amp; compute observables</small>
                         </button>
                         <button class="selector-btn" id="mode-registry" onclick="setMode('registry')">
                             Registry
@@ -1108,248 +1104,6 @@
             </div>
 
             <!-- ══════════════════════════════════════════════════════════════════════
-                 ANALYSIS SECTION (Analysis mode only)
-                 ══════════════════════════════════════════════════════════════════════ -->
-            <div class="section hidden analysis-section" id="analysis-section">
-                <h2>Analysis Configuration</h2>
-                
-                <!-- Selection subsection -->
-                <div class="subsection">
-                    <h3 id="selection-title">Sweep Selection</h3>
-                    <div class="form-group">
-                        <label>Selection type</label>
-                        <select id="selection-type" onchange="onSelectionTypeChange()">
-                            <option value="all">All</option>
-                            <option value="range">Range</option>
-                            <option value="specific">Specific list</option>
-                            <option value="time_range" id="option-time_range">Time range</option>
-                            <option value="ground" id="option-ground" class="hidden">Ground state only</option>
-                        </select>
-                    </div>
-                    
-                    <div id="selection-range-params" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label id="range-start-label">Start</label>
-                                <input type="number" id="selection-range-start" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label id="range-end-label">End</label>
-                                <input type="number" id="selection-range-end" value="20" min="1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="selection-specific-params" class="hidden">
-                        <div class="form-group">
-                            <label id="list-label">List (comma-separated)</label>
-                            <input type="text" id="selection-list" value="1, 5, 10, 20" onchange="updatePreview()">
-                        </div>
-                    </div>
-                    
-                    <div id="selection-time_range-params" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>t_start</label>
-                                <input type="number" id="selection-time-start" value="0.0" step="0.1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>t_end</label>
-                                <input type="number" id="selection-time-end" value="5.0" step="0.1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Observable subsection -->
-                <div class="subsection">
-                    <h3>Observable</h3>
-                    <div class="form-group">
-                        <label>Observable type</label>
-                        <select id="observable-type" onchange="onObservableTypeChange()">
-                            <optgroup label="Local">
-                                <option value="single_site_expectation">Single site ⟨Oᵢ⟩</option>
-                                <option value="subsystem_expectation_sum">Subsystem sum Σᵢ⟨Oᵢ⟩</option>
-                            </optgroup>
-                            <optgroup label="Two-point">
-                                <option value="two_site_expectation">Two-site ⟨OᵢPⱼ⟩</option>
-                                <option value="correlation_function">Correlation ⟨OᵢOⱼ⟩</option>
-                                <option value="connected_correlation">Connected ⟨OᵢOⱼ⟩-⟨Oᵢ⟩⟨Oⱼ⟩</option>
-                            </optgroup>
-                            <optgroup label="Entanglement">
-                                <option value="entanglement_entropy">Entropy S(ρ_A)</option>
-                                <option value="entanglement_spectrum">Spectrum λᵢ</option>
-                            </optgroup>
-                            <optgroup label="Energy">
-                                <option value="energy_expectation">Energy ⟨H⟩</option>
-                                <option value="energy_variance">Variance ⟨H²⟩-⟨H⟩²</option>
-                            </optgroup>
-                        </select>
-                    </div>
-
-                    <!-- single_site_expectation params -->
-                    <div id="obs-params-single_site_expectation">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site</label>
-                                <input type="number" id="obs-site" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                    <option value="Sp">S+</option>
-                                    <option value="Sm">S-</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- subsystem_expectation_sum params -->
-                    <div id="obs-params-subsystem_expectation_sum" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator-subsystem" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>l (start)</label>
-                                <input type="number" id="obs-l" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>m (end)</label>
-                                <input type="number" id="obs-m" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- two_site_expectation params -->
-                    <div id="obs-params-two_site_expectation" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site i</label>
-                                <input type="number" id="obs-site_i-two" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Site j</label>
-                                <input type="number" id="obs-site_j-two" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Operator i</label>
-                                <select id="obs-operator_i" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                    <option value="Sp">S+</option>
-                                    <option value="Sm">S-</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Operator j</label>
-                                <select id="obs-operator_j" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                    <option value="Sp">S+</option>
-                                    <option value="Sm">S-</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- correlation_function params -->
-                    <div id="obs-params-correlation_function" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site i</label>
-                                <input type="number" id="obs-site_i-corr" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Site j</label>
-                                <input type="number" id="obs-site_j-corr" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator-corr" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- connected_correlation params -->
-                    <div id="obs-params-connected_correlation" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site i</label>
-                                <input type="number" id="obs-site_i-conn" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Site j</label>
-                                <input type="number" id="obs-site_j-conn" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator-conn" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- entanglement_entropy params -->
-                    <div id="obs-params-entanglement_entropy" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Bond (cut position)</label>
-                                <input type="number" id="obs-bond-entropy" value="10" min="1" onchange="updatePreview()">
-                                <small>Bipartition: [1..bond] | [bond+1..N]</small>
-                            </div>
-                            <div class="form-group">
-                                <label>α (Renyi index)</label>
-                                <input type="number" id="obs-alpha" value="1" step="0.5" min="0" onchange="updatePreview()">
-                                <small>α=1 for von Neumann</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- entanglement_spectrum params -->
-                    <div id="obs-params-entanglement_spectrum" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Bond</label>
-                                <input type="number" id="obs-bond-spectrum" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>n_values (optional)</label>
-                                <input type="number" id="obs-n_values" placeholder="All" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- energy params -->
-                    <div id="obs-params-energy_expectation" class="hidden">
-                        <div class="info-box success">No parameters needed. H is rebuilt from config.</div>
-                    </div>
-                    <div id="obs-params-energy_variance" class="hidden">
-                        <div class="info-box success">No parameters needed. H is rebuilt from config.</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════════════════
                  DESCRIPTION
                  ══════════════════════════════════════════════════════════════════════ -->
             <div class="section" id="description-section">
@@ -1358,6 +1112,267 @@
                     <textarea id="config-description" rows="2" placeholder="Notes about this configuration..." onchange="updatePreview()"></textarea>
                 </div>
             </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 QUERY & CALCULATE SECTION (hidden unless mode = query_calculate)
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div id="query-calculate-section" class="hidden">
+
+                <!-- Step 1: Search Simulations -->
+                <div class="section" style="border-left: 4px solid #17a2b8;">
+                    <h2 style="color:#17a2b8; border-color:#17a2b8;">Step 1: Find Simulation Data</h2>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Search the catalog for existing simulation runs, then select one.
+                    </p>
+
+                    <!-- Core filters row 1: System Type, Model, State, Algorithm, Status -->
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+                        <div class="form-group" style="flex:1; min-width:120px;">
+                            <label style="font-size:12px;">System Type</label>
+                            <select id="qc-filter-system_type">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:120px;">
+                            <label style="font-size:12px;">Model</label>
+                            <select id="qc-filter-model_name" onchange="onQCModelChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">State Kind</label>
+                            <select id="qc-filter-state_kind" onchange="onQCStateKindChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">State Name</label>
+                            <select id="qc-filter-state_name">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:120px;">
+                            <label style="font-size:12px;">Algorithm</label>
+                            <select id="qc-filter-algorithm" onchange="onQCAlgorithmChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">Status</label>
+                            <select id="qc-filter-status">
+                                <option value="">Any</option>
+                                <option value="completed" selected>Completed</option>
+                                <option value="running">Running</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Core filters row 2: N (with operator), S, dtype -->
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; align-items:flex-end;">
+                        <div class="form-group" style="min-width:60px; flex:0 0 auto;">
+                            <label style="font-size:12px;">N</label>
+                            <select id="qc-filter-N-op" style="width:60px;">
+                                <option value="=">=</option>
+                                <option value="_gte">≥</option>
+                                <option value="_gt">&gt;</option>
+                                <option value="_lte">≤</option>
+                                <option value="_lt">&lt;</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width:80px; flex:0 0 80px;">
+                            <input type="number" id="qc-filter-N" placeholder="Any" min="1">
+                        </div>
+                        <div class="form-group" style="min-width:60px; flex:0 0 auto;">
+                            <label style="font-size:12px;">S</label>
+                            <select id="qc-filter-S">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width:80px; flex:0 0 auto;">
+                            <label style="font-size:12px;">dtype</label>
+                            <select id="qc-filter-dtype">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Model-specific parameter filters (cascading) -->
+                    <div id="qc-model-params" style="display:none; margin-bottom:8px; padding:8px; background:#f0fff0; border-radius:4px; border-left:3px solid #28a745;">
+                        <div style="font-size:11px; color:#28a745; font-weight:600; margin-bottom:6px;">Model Parameters</div>
+                        <div id="qc-model-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <!-- State-specific parameter filters (cascading) -->
+                    <div id="qc-state-params" style="display:none; margin-bottom:8px; padding:8px; background:#fff8f0; border-radius:4px; border-left:3px solid #fd7e14;">
+                        <div style="font-size:11px; color:#fd7e14; font-weight:600; margin-bottom:6px;">State Parameters</div>
+                        <div id="qc-state-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <!-- Algorithm-specific parameter filters (cascading) -->
+                    <div id="qc-algo-params" style="display:none; margin-bottom:8px; padding:8px; background:#f0f8ff; border-radius:4px; border-left:3px solid #17a2b8;">
+                        <div style="font-size:11px; color:#17a2b8; font-weight:600; margin-bottom:6px;">Algorithm Parameters</div>
+                        <div id="qc-algo-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button class="btn btn-success" style="background:#17a2b8; width:auto; padding:8px 24px;" onclick="searchSimulations()">
+                            Search Catalog
+                        </button>
+                        <button class="btn" style="background:#6c757d; color:white; width:auto; padding:8px 16px; font-size:12px;" onclick="refreshCatalogInfo()" title="Refresh catalog metadata for filter dropdowns">
+                            Refresh Filters
+                        </button>
+                    </div>
+
+                    <div id="qc-search-status" style="display:none; margin-top:10px; font-size:13px;"></div>
+                    <div id="qc-selected-run" style="display:none; margin-top:6px; padding:6px 10px; background:#d4edda; border-radius:4px; font-size:13px;"></div>
+                    <div id="qc-search-results" style="margin-top:10px; max-height:250px; overflow-y:auto;"></div>
+                </div>
+
+                <!-- Step 2: Configure Observable -->
+                <div class="section" style="border-left: 4px solid #28a745;">
+                    <h2 style="color:#28a745;">Step 2: Configure Observable</h2>
+
+                    <div class="subsection">
+                        <h3 style="font-size:14px;">Selection</h3>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <div class="form-group" style="flex:1; min-width:120px;">
+                                <label style="font-size:12px;">Selection type</label>
+                                <select id="qc-selection-type" onchange="onQCSelectionChange()">
+                                    <option value="all">All</option>
+                                    <option value="range">Range</option>
+                                    <option value="specific">Specific list</option>
+                                    <option value="time_range">Time range</option>
+                                </select>
+                            </div>
+                            <div id="qc-sel-range-group" class="hidden" style="display:none; flex:2; gap:10px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">Start</label>
+                                    <input type="number" id="qc-sel-range-start" value="1" min="1">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">End</label>
+                                    <input type="number" id="qc-sel-range-end" value="20" min="1">
+                                </div>
+                            </div>
+                            <div id="qc-sel-specific-group" class="hidden" style="display:none; flex:2;">
+                                <div class="form-group" style="width:100%;">
+                                    <label style="font-size:12px;">List (comma-separated)</label>
+                                    <input type="text" id="qc-sel-list" value="1, 5, 10, 20">
+                                </div>
+                            </div>
+                            <div id="qc-sel-time-group" class="hidden" style="display:none; flex:2; gap:10px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">t_start</label>
+                                    <input type="number" id="qc-sel-time-start" value="0" step="0.1">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">t_end</label>
+                                    <input type="number" id="qc-sel-time-end" value="5" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3 style="font-size:14px;">Observable</h3>
+                        <div class="form-group">
+                            <label style="font-size:12px;">Observable type</label>
+                            <select id="qc-observable-type" onchange="renderObservableParams()">
+                                <!-- Populated dynamically from observables registry -->
+                                <optgroup label="Local">
+                                    <option value="single_site_expectation">Single site expectation</option>
+                                    <option value="subsystem_expectation_sum">Subsystem sum</option>
+                                </optgroup>
+                                <optgroup label="Two-point">
+                                    <option value="two_site_expectation">Two-site expectation</option>
+                                    <option value="correlation_function">Correlation function</option>
+                                    <option value="connected_correlation">Connected correlation</option>
+                                </optgroup>
+                                <optgroup label="Entanglement">
+                                    <option value="entanglement_entropy">Entanglement entropy</option>
+                                    <option value="entanglement_spectrum">Entanglement spectrum</option>
+                                </optgroup>
+                                <optgroup label="Energy">
+                                    <option value="energy_expectation">Energy expectation</option>
+                                    <option value="energy_variance">Energy variance</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div id="qc-obs-params" style="margin-top:8px;"></div>
+                    </div>
+
+                    <button class="btn btn-success" style="margin-top:10px; padding:10px 24px;" onclick="runObservableCalculation()">
+                        Calculate Observable
+                    </button>
+                    <div id="qc-calc-status" style="display:none; margin-top:10px; padding:10px; background:#f8f9fa; border-radius:4px; font-size:13px;"></div>
+                </div>
+
+                <!-- Step 3: Results -->
+                <div id="qc-results-display" class="section" style="display:none; border-left: 4px solid #ffc107;">
+                </div>
+
+                <!-- ────────────────────────────────────────────────────── -->
+                <!-- Browse Observable Catalog -->
+                <!-- ────────────────────────────────────────────────────── -->
+                <div class="section" style="border-left: 4px solid #6f42c1; margin-top:16px;">
+                    <h2 style="color:#6f42c1;">Browse Observable Catalog</h2>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Search existing observable calculations across all simulations.
+                    </p>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+                        <div class="form-group" style="flex:1; min-width:130px;">
+                            <label style="font-size:12px;">Observable Type</label>
+                            <select id="obs-browse-type" onchange="onObsBrowseTypeChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:110px;">
+                            <label style="font-size:12px;">Sim Algorithm</label>
+                            <select id="obs-browse-sim-algo">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:110px;">
+                            <label style="font-size:12px;">Sim Model</label>
+                            <select id="obs-browse-sim-model">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">Selection</label>
+                            <select id="obs-browse-selection">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:90px;">
+                            <label style="font-size:12px;">Status</label>
+                            <select id="obs-browse-status">
+                                <option value="">Any</option>
+                                <option value="completed" selected>Completed</option>
+                                <option value="running">Running</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Observable-type-specific param filters (cascading) -->
+                    <div id="obs-browse-params" style="display:none; margin-bottom:8px; padding:8px; background:#f8f0ff; border-radius:4px; border-left:3px solid #6f42c1;">
+                        <div style="font-size:11px; color:#6f42c1; font-weight:600; margin-bottom:6px;">Observable Parameters</div>
+                        <div id="obs-browse-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <button class="btn" style="background:#6f42c1; color:white; width:auto; padding:8px 24px;" onclick="browseObservables()">
+                        Browse Observables
+                    </button>
+
+                    <div id="obs-browse-status-msg" style="display:none; margin-top:10px; font-size:13px;"></div>
+                    <div id="obs-browse-results" style="margin-top:10px; max-height:300px; overflow-y:auto;"></div>
+                </div>
+
+            </div>
+            <!-- end query-calculate-section -->
 
             <!-- ══════════════════════════════════════════════════════════════════════
                  REGISTRY SECTION (hidden unless mode = registry)
@@ -1457,29 +1472,25 @@
                         <!-- Save row -->
                         <div style="margin-top:16px; padding-top:14px; border-top:1px solid #ddd;">
                             <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-                                <div style="flex:1; min-width:120px;">
-                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Key name (no spaces)</label>
-                                    <input type="text" id="reg-model-name" placeholder="e.g. j1j2_tn" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
-                                </div>
                                 <div style="flex:1.5; min-width:150px;">
-                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Display name</label>
-                                    <input type="text" id="reg-model-display" placeholder="e.g. J1-J2 Chain" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Model Name</label>
+                                    <input type="text" id="reg-model-display" placeholder="e.g. J1-J2 Frustrated Chain" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
                                 </div>
                                 <div style="flex:2; min-width:160px;">
                                     <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Description (optional)</label>
-                                    <input type="text" id="reg-model-description" placeholder="e.g. Frustrated chain" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                    <input type="text" id="reg-model-description" placeholder="e.g. Frustrated chain with next-nearest-neighbor" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
                                 </div>
-                                <button onclick="saveRegistryModel()" style="padding:8px 20px; background:#6c5ce7; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap;">💾 Save Model</button>
+                                <button onclick="saveRegistryModel()" style="padding:8px 20px; background:#6c5ce7; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap;">Save Model</button>
                             </div>
                             <div id="reg-model-feedback" style="display:none; margin-top:8px;"></div>
                         </div>
                     </div>
 
-                    <!-- Saved models list -->
+                    <!-- Models list (prebuilt + user) -->
                     <div class="section">
                         <h2>Saved Models</h2>
                         <div id="registry-models-list">
-                            <div style="color:#999; font-style:italic; padding:12px 0;">No saved models yet. Build one above.</div>
+                            <div style="color:#999; font-style:italic; padding:12px 0;">Loading models...</div>
                         </div>
                     </div>
                 </div>
@@ -1524,25 +1535,21 @@
                         <!-- Save row -->
                         <div style="margin-top:16px; padding-top:14px; border-top:1px solid #ddd;">
                             <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-                                <div style="flex:1; min-width:120px;">
-                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Key name</label>
-                                    <input type="text" id="reg-state-name" placeholder="e.g. neel_z_n10" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
-                                </div>
                                 <div style="flex:1.5; min-width:150px;">
-                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Display name</label>
-                                    <input type="text" id="reg-state-display" placeholder="e.g. Néel Z N=10" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">State Name</label>
+                                    <input type="text" id="reg-state-display" placeholder="e.g. Neel Z N=10" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
                                 </div>
-                                <button onclick="saveRegistryState()" style="padding:8px 20px; background:#6c5ce7; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap;">💾 Save State</button>
+                                <button onclick="saveRegistryState()" style="padding:8px 20px; background:#6c5ce7; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap;">Save State</button>
                             </div>
                             <div id="reg-state-feedback" style="display:none; margin-top:8px;"></div>
                         </div>
                     </div>
 
-                    <!-- Saved states list -->
+                    <!-- States list (prebuilt + user) -->
                     <div class="section">
                         <h2>Saved States</h2>
                         <div id="registry-states-list">
-                            <div style="color:#999; font-style:italic; padding:12px 0;">No saved states yet. Build one above.</div>
+                            <div style="color:#999; font-style:italic; padding:12px 0;">Loading states...</div>
                         </div>
                     </div>
                 </div>
@@ -1668,32 +1675,34 @@
             currentMode = mode;
 
             document.getElementById('mode-simulation').classList.toggle('active', mode === 'simulation');
-            document.getElementById('mode-analysis').classList.toggle('active', mode === 'analysis');
+            document.getElementById('mode-query_calculate').classList.toggle('active', mode === 'query_calculate');
             document.getElementById('mode-registry').classList.toggle('active', mode === 'registry');
 
             const isRegistry = mode === 'registry';
+            const isQC = mode === 'query_calculate';
+            const hideConfigSections = isRegistry || isQC;
 
-            // Simulation content sections — hidden only in registry mode
+            // Simulation content sections — hidden in registry and query_calculate modes
             ['system-section', 'model-section', 'state-section',
              'algo-dmrg-section', 'algo-tdvp-section',
              'algo-ed_spectrum-section', 'algo-ed_time_evolution-section',
              'description-section'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.classList.toggle('hidden', isRegistry);
+                if (el) el.classList.toggle('hidden', hideConfigSections);
             });
 
-            // Algorithm button row — hide in registry mode
+            // Algorithm button row — hide in registry and query_calculate modes
             const algoRow = document.getElementById('algorithm-selector-row');
-            if (algoRow) algoRow.classList.toggle('hidden', isRegistry);
+            if (algoRow) algoRow.classList.toggle('hidden', hideConfigSections);
 
-            // Analysis section — only visible in analysis mode
-            document.getElementById('analysis-section').classList.toggle('hidden', mode !== 'analysis');
+            // Query & Calculate section
+            document.getElementById('query-calculate-section').classList.toggle('hidden', !isQC);
 
             // Registry section
             document.getElementById('registry-section').classList.toggle('hidden', !isRegistry);
 
             // Re-apply algorithm visibility (algo sections toggled above need correct state)
-            if (!isRegistry) {
+            if (!isRegistry && !isQC) {
                 document.getElementById('algo-dmrg-section').classList.toggle('hidden', currentAlgorithm !== 'dmrg');
                 document.getElementById('algo-tdvp-section').classList.toggle('hidden', currentAlgorithm !== 'tdvp');
                 document.getElementById('algo-ed_spectrum-section').classList.toggle('hidden', currentAlgorithm !== 'ed_spectrum');
@@ -1706,8 +1715,7 @@
                 renderSavedStatesList();
             }
 
-            updateSelectionUI();
-            if (!isRegistry) updatePreview();
+            if (!isRegistry && !isQC) updatePreview();
         }
         
         function setAlgorithm(algo) {
@@ -1736,9 +1744,6 @@
             
             // Hilbert space warning for ED
             onSystemSizeChange();
-            
-            // Update selection UI for analysis mode
-            updateSelectionUI();
             
             // Update custom model hint
             updateCustomModelHint();
@@ -2499,14 +2504,16 @@
         // ════════════════════════════════════════════════════════════════════════
 
         async function saveRegistryModel() {
-            const name        = document.getElementById('reg-model-name').value.trim();
             const displayName = document.getElementById('reg-model-display').value.trim();
             const description = document.getElementById('reg-model-description').value.trim();
 
-            if (!name || !displayName) {
-                showRegFeedback('model', 'error', 'Key name and display name are required.');
+            if (!displayName) {
+                showRegFeedback('model', 'error', 'Model name is required.');
                 return;
             }
+
+            // Derive key from display name: "J1-J2 Frustrated Chain" → "j1_j2_frustrated_chain"
+            const name = displayName.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
 
             let payload;
 
@@ -2588,7 +2595,6 @@
 
             const ok = await registerModel(payload);
             if (ok) {
-                document.getElementById('reg-model-name').value = '';
                 document.getElementById('reg-model-display').value = '';
                 document.getElementById('reg-model-description').value = '';
                 // Clear channel arrays and params
@@ -2601,12 +2607,14 @@
         }
 
         async function saveRegistryState() {
-            const name        = document.getElementById('reg-state-name').value.trim();
             const displayName = document.getElementById('reg-state-display').value.trim();
-            if (!name || !displayName) {
-                showRegFeedback('state', 'error', 'Key name and display name are required.');
+            if (!displayName) {
+                showRegFeedback('state', 'error', 'State name is required.');
                 return;
             }
+
+            // Derive key from display name: "Neel Z N=10" → "neel_z_n10"
+            const name = displayName.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
 
             const sysType = registryStateSystemType;
             const N = sysType === 'spinboson'
@@ -2635,7 +2643,6 @@
 
             const ok = await registerState(name, displayName, '', sysType, siteConfigs, bosonLevel);
             if (ok) {
-                document.getElementById('reg-state-name').value = '';
                 document.getElementById('reg-state-display').value = '';
             }
         }
@@ -2647,57 +2654,74 @@
         function renderSavedModelsList() {
             const container = document.getElementById('registry-models-list');
             if (!container) return;
-            const models  = window.TNRegistry?.models?.user_models?.models || {};
-            const entries = Object.entries(models);
-            if (entries.length === 0) {
-                container.innerHTML = '<div style="color:#999;font-style:italic;padding:12px 0;">No saved models yet. Build one above.</div>';
-                return;
+
+            let html = '';
+
+            // User-registered models
+            const userModels = window.TNRegistry?.models?.user_models?.models || {};
+            const userEntries = Object.entries(userModels);
+            if (userEntries.length > 0) {
+                html += userEntries.map(([key, m]) => {
+                    const backendBadge = m.backend === 'tn'
+                        ? '<span style="background:#d0ebff;color:#1864ab;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">TN</span>'
+                        : '<span style="background:#d3f9d8;color:#1a6b2a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">ED</span>';
+                    const sysBadge = m.system_type === 'spinboson'
+                        ? '<span style="background:#ffe8cc;color:#b34a00;padding:2px 8px;border-radius:10px;font-size:11px;">spinboson</span>'
+                        : '<span style="background:#f3d9fa;color:#6b1d7c;padding:2px 8px;border-radius:10px;font-size:11px;">spin</span>';
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:6px;">
+                        <div>
+                            <span style="font-weight:500;font-size:14px;">${m.display_name || key}</span>
+                            <span style="color:#888;font-size:12px;margin-left:8px;">(${key})</span>
+                            <div style="margin-top:4px;display:flex;gap:6px;">${backendBadge}${sysBadge}</div>
+                            ${m.description ? `<div style="color:#666;font-size:12px;margin-top:2px;">${m.description}</div>` : ''}
+                        </div>
+                        <button onclick="deleteModel('${key}')" style="padding:6px 14px;background:#fff0f0;color:#c0392b;border:1px solid #ffcccc;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;margin-left:12px;">Delete</button>
+                    </div>`;
+                }).join('');
             }
-            container.innerHTML = entries.map(([key, m]) => {
-                const backendBadge = m.backend === 'tn'
-                    ? '<span style="background:#d0ebff;color:#1864ab;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">TN</span>'
-                    : '<span style="background:#d3f9d8;color:#1a6b2a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">ED</span>';
-                const sysBadge = m.system_type === 'spinboson'
-                    ? '<span style="background:#ffe8cc;color:#b34a00;padding:2px 8px;border-radius:10px;font-size:11px;">spinboson</span>'
-                    : '<span style="background:#f3d9fa;color:#6b1d7c;padding:2px 8px;border-radius:10px;font-size:11px;">spin</span>';
-                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:6px;">
-                    <div>
-                        <span style="font-weight:500;font-size:14px;">${m.display_name || key}</span>
-                        <span style="color:#888;font-size:12px;margin-left:8px;">(${key})</span>
-                        <div style="margin-top:4px;display:flex;gap:6px;">${backendBadge}${sysBadge}</div>
-                        ${m.description ? `<div style="color:#666;font-size:12px;margin-top:2px;">${m.description}</div>` : ''}
-                    </div>
-                    <button onclick="deleteModel('${key}')" style="padding:6px 14px;background:#fff0f0;color:#c0392b;border:1px solid #ffcccc;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;margin-left:12px;">🗑 Delete</button>
-                </div>`;
-            }).join('');
+
+            if (!html) {
+                html = '<div style="color:#999;font-style:italic;padding:12px 0;">No saved models yet. Build one above.</div>';
+            }
+
+            container.innerHTML = html;
         }
 
         function renderSavedStatesList() {
             const container = document.getElementById('registry-states-list');
             if (!container) return;
-            const states  = window.TNRegistry?.states?.user_states?.states || {};
-            const entries = Object.entries(states);
-            if (entries.length === 0) {
-                container.innerHTML = '<div style="color:#999;font-style:italic;padding:12px 0;">No saved states yet. Build one above.</div>';
-                return;
-            }
-            container.innerHTML = entries.map(([key, s]) => {
-                const N = s.site_configs?.length ?? '?';
-                const sysBadge = s.system_type === 'spinboson'
-                    ? '<span style="background:#ffe8cc;color:#b34a00;padding:2px 8px;border-radius:10px;font-size:11px;">spinboson</span>'
-                    : '<span style="background:#f3d9fa;color:#6b1d7c;padding:2px 8px;border-radius:10px;font-size:11px;">spin</span>';
-                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:6px;">
-                    <div>
-                        <span style="font-weight:500;font-size:14px;">${s.display_name || key}</span>
-                        <span style="color:#888;font-size:12px;margin-left:8px;">(${key})</span>
-                        <div style="margin-top:4px;display:flex;gap:6px;">${sysBadge}
-                            <span style="background:#e9ecef;color:#495057;padding:2px 8px;border-radius:10px;font-size:11px;">${N} sites</span>
-                            ${s.boson_level !== undefined ? `<span style="background:#e9ecef;color:#495057;padding:2px 8px;border-radius:10px;font-size:11px;">boson |${s.boson_level}⟩</span>` : ''}
+
+            let html = '';
+
+            // User-registered states
+            const userStates = window.TNRegistry?.states?.user_states?.states || {};
+            const userEntries = Object.entries(userStates);
+            if (userEntries.length > 0) {
+                html += '<div style="font-size:12px;color:#6c5ce7;font-weight:600;margin:12px 0 6px;">User States</div>';
+                html += userEntries.map(([key, s]) => {
+                    const N = s.site_configs?.length ?? '?';
+                    const sysBadge = s.system_type === 'spinboson'
+                        ? '<span style="background:#ffe8cc;color:#b34a00;padding:2px 8px;border-radius:10px;font-size:11px;">spinboson</span>'
+                        : '<span style="background:#f3d9fa;color:#6b1d7c;padding:2px 8px;border-radius:10px;font-size:11px;">spin</span>';
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:6px;">
+                        <div>
+                            <span style="font-weight:500;font-size:14px;">${s.display_name || key}</span>
+                            <span style="color:#888;font-size:12px;margin-left:8px;">(${key})</span>
+                            <div style="margin-top:4px;display:flex;gap:6px;">${sysBadge}
+                                <span style="background:#e9ecef;color:#495057;padding:2px 8px;border-radius:10px;font-size:11px;">${N} sites</span>
+                                ${s.boson_level !== undefined ? `<span style="background:#e9ecef;color:#495057;padding:2px 8px;border-radius:10px;font-size:11px;">boson |${s.boson_level}⟩</span>` : ''}
+                            </div>
                         </div>
-                    </div>
-                    <button onclick="deleteState('${key}')" style="padding:6px 14px;background:#fff0f0;color:#c0392b;border:1px solid #ffcccc;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;margin-left:12px;">🗑 Delete</button>
-                </div>`;
-            }).join('');
+                        <button onclick="deleteState('${key}')" style="padding:6px 14px;background:#fff0f0;color:#c0392b;border:1px solid #ffcccc;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;margin-left:12px;">Delete</button>
+                    </div>`;
+                }).join('');
+            }
+
+            if (!html) {
+                html = '<div style="color:#999;font-style:italic;padding:12px 0;">No saved states yet. Build one above.</div>';
+            }
+
+            container.innerHTML = html;
         }
 
         // ════════════════════════════════════════════════════════════════════════
@@ -3175,94 +3199,16 @@
             return null;
         }
         
-        // ════════════════════════════════════════════════════════════════════════
-        // ANALYSIS SELECTION
-        // ════════════════════════════════════════════════════════════════════════
-        
-        function updateSelectionUI() {
-            const selectionTitle = document.getElementById('selection-title');
-            const timeRangeOption = document.getElementById('option-time_range');
-            const groundOption = document.getElementById('option-ground');
-            const selectionType = document.getElementById('selection-type');
-            
-            // Reset to 'all' if current selection is invalid for new algorithm
-            const currentSelection = selectionType.value;
-            
-            if (currentAlgorithm === 'ed_spectrum') {
-                selectionTitle.textContent = 'State Selection';
-                timeRangeOption.classList.add('hidden');
-                groundOption.classList.remove('hidden');
-                document.getElementById('range-start-label').textContent = 'Start state';
-                document.getElementById('range-end-label').textContent = 'End state';
-                document.getElementById('list-label').textContent = 'State indices (comma-separated)';
-                
-                // Reset if time_range was selected
-                if (currentSelection === 'time_range') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            } else if (currentAlgorithm === 'ed_time_evolution') {
-                selectionTitle.textContent = 'Step Selection';
-                timeRangeOption.classList.remove('hidden');
-                groundOption.classList.add('hidden');
-                document.getElementById('range-start-label').textContent = 'Start step';
-                document.getElementById('range-end-label').textContent = 'End step';
-                document.getElementById('list-label').textContent = 'Step indices (comma-separated)';
-                
-                // Reset if ground was selected
-                if (currentSelection === 'ground') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            } else if (currentAlgorithm === 'tdvp') {
-                selectionTitle.textContent = 'Sweep Selection';
-                timeRangeOption.classList.remove('hidden');
-                groundOption.classList.add('hidden');
-                document.getElementById('range-start-label').textContent = 'Start sweep';
-                document.getElementById('range-end-label').textContent = 'End sweep';
-                document.getElementById('list-label').textContent = 'Sweep indices (comma-separated)';
-                
-                // Reset if ground was selected
-                if (currentSelection === 'ground') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            } else {
-                // DMRG
-                selectionTitle.textContent = 'Sweep Selection';
-                timeRangeOption.classList.add('hidden');
-                groundOption.classList.add('hidden');
-                document.getElementById('range-start-label').textContent = 'Start sweep';
-                document.getElementById('range-end-label').textContent = 'End sweep';
-                document.getElementById('list-label').textContent = 'Sweep indices (comma-separated)';
-                
-                // Reset if ground or time_range was selected
-                if (currentSelection === 'ground' || currentSelection === 'time_range') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            }
-        }
-        
-        function onSelectionTypeChange() {
-            const type = document.getElementById('selection-type').value;
-            document.getElementById('selection-range-params').classList.toggle('hidden', type !== 'range');
-            document.getElementById('selection-specific-params').classList.toggle('hidden', type !== 'specific');
-            document.getElementById('selection-time_range-params').classList.toggle('hidden', type !== 'time_range');
-            updatePreview();
-        }
-        
-        function onObservableTypeChange() {
-            const obsType = document.getElementById('observable-type').value;
-            const allObs = ['single_site_expectation', 'subsystem_expectation_sum', 
-                           'two_site_expectation', 'correlation_function', 'connected_correlation',
-                           'entanglement_entropy', 'entanglement_spectrum',
-                           'energy_expectation', 'energy_variance'];
-            allObs.forEach(o => {
-                const el = document.getElementById('obs-params-' + o);
-                if (el) el.classList.toggle('hidden', o !== obsType);
-            });
-            updatePreview();
+        // Query & Calculate selection toggle
+        function onQCSelectionChange() {
+            const selType = document.getElementById('qc-selection-type').value;
+            const rangeG = document.getElementById('qc-sel-range-group');
+            const specG = document.getElementById('qc-sel-specific-group');
+            const timeG = document.getElementById('qc-sel-time-group');
+
+            if (rangeG) rangeG.style.display = selType === 'range' ? 'flex' : 'none';
+            if (specG) specG.style.display = selType === 'specific' ? 'flex' : 'none';
+            if (timeG) timeG.style.display = selType === 'time_range' ? 'flex' : 'none';
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -3458,80 +3404,12 @@
                     model.params.terms = terms;
                 }
             } else {
-                // User-registered model loaded into the custom builder —
-                // treat exactly as custom_spin / custom_spinboson.
-                // The channel arrays were populated by loadUserModelIntoBuilder().
-                const userModel = window.TNRegistry?.models?.user_models?.models?.[modelName];
-                const sysType   = userModel?.system_type || 'spin';
-                model.name = sysType === 'spinboson' ? 'custom_spinboson' : 'custom_spin';
-                // Fall through: the custom_spin / custom_spinboson branch above
-                // would have built model.params already IF the select value was
-                // custom_spin. Since it isn't, we duplicate that logic here.
-                if (sysType === 'spin') {
-                    if (userModel?.backend === 'tn') {
-                        const channels = [];
-                        customSpinChannels.forEach(ch => {
-                            const c = readSpinChannelFromDOM(`spin-ch-${ch.id}`);
-                            if (c) channels.push(c);
-                        });
-                        model.params.channels = channels;
-                    } else {
-                        const channels = [];
-                        customSpinChannels.forEach(ch => {
-                            const c = readSpinChannelFromDOM(`spin-ch-${ch.id}`);
-                            if (c) channels.push(c);
-                        });
-                        model.params.terms = channels.map(convertChannelToEDTerm).filter(Boolean);
-                    }
-                } else {
-                    // spinboson — mirror the custom_spinboson logic above
-                    if (userModel?.backend === 'tn') {
-                        const channels = { spin_channels: [], boson_channels: [], spinboson_channels: [] };
-                        spinbosonSpinChannels.forEach(ch => {
-                            const c = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
-                            if (c) channels.spin_channels.push(c);
-                        });
-                        spinbosonBosonChannels.forEach(ch => {
-                            channels.boson_channels.push(readBosonChannelFromDOM(`boson-ch-${ch.id}`));
-                        });
-                        spinbosonCouplingChannels.forEach(ch => {
-                            const prefix = `coupling-ch-${ch.id}`;
-                            const coupling = {
-                                spin_channels: [],
-                                boson_op: document.getElementById(`${prefix}-boson_op`)?.value || 'a',
-                                strength: parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2
-                            };
-                            ch.innerChannels.forEach(inner => {
-                                const ic = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
-                                if (ic) coupling.spin_channels.push(ic);
-                            });
-                            channels.spinboson_channels.push(coupling);
-                        });
-                        model.params.channels = channels;
-                    } else {
-                        const terms = { spin_terms: [], boson_terms: [], spinboson_terms: [] };
-                        spinbosonSpinChannels.forEach(ch => {
-                            const c = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
-                            if (c) { const t = convertChannelToEDTerm(c); if (t) terms.spin_terms.push(t); }
-                        });
-                        spinbosonBosonChannels.forEach(ch => {
-                            const bc = readBosonChannelFromDOM(`boson-ch-${ch.id}`);
-                            terms.boson_terms.push({ op: bc.op, strength: bc.strength });
-                        });
-                        spinbosonCouplingChannels.forEach(ch => {
-                            const prefix = `coupling-ch-${ch.id}`;
-                            const bosonOp  = document.getElementById(`${prefix}-boson_op`)?.value || 'a';
-                            const strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2;
-                            ch.innerChannels.forEach(inner => {
-                                const ic = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
-                                if (ic?.type === 'Field') {
-                                    terms.spinboson_terms.push({ boson_op: bosonOp, spin_op: ic.op, strength: strength * ic.strength });
-                                }
-                            });
-                        });
-                        model.params.terms = terms;
-                    }
-                }
+                // User-registered model from registry — keep its registry name.
+                // The model definition (channels/terms) is stored in the registry
+                // and resolved by the backend at build time.
+                // model.name is already set to the registry key (e.g. "test1")
+                // No need to embed channels/terms in the config — the backend
+                // looks them up from the registry by name.
             }
             
             return model;
@@ -3669,101 +3547,20 @@
             return algorithm;
         }
         
-        function buildAnalysisConfig() {
-            const analysis = {};
-            
-            const selType = document.getElementById('selection-type').value;
-            const selection = { selection: selType };
-            
-            if (selType === 'range') {
-                selection.range = [
-                    parseInt(document.getElementById('selection-range-start').value),
-                    parseInt(document.getElementById('selection-range-end').value)
-                ];
-            } else if (selType === 'specific') {
-                const listStr = document.getElementById('selection-list').value;
-                selection.list = listStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-            } else if (selType === 'time_range') {
-                selection.time_range = [
-                    parseFloat(document.getElementById('selection-time-start').value),
-                    parseFloat(document.getElementById('selection-time-end').value)
-                ];
-            }
-            
-            if (currentAlgorithm === 'ed_spectrum') {
-                analysis.states = selection;
-            } else if (currentAlgorithm === 'ed_time_evolution') {
-                analysis.steps = selection;
-            } else {
-                analysis.sweeps = selection;
-            }
-            
-            const obsType = document.getElementById('observable-type').value;
-            const observable = { type: obsType, params: {} };
-            
-            if (obsType === 'single_site_expectation') {
-                observable.params.site = parseInt(document.getElementById('obs-site').value);
-                observable.params.operator = document.getElementById('obs-operator').value;
-            } else if (obsType === 'subsystem_expectation_sum') {
-                observable.params.operator = document.getElementById('obs-operator-subsystem').value;
-                observable.params.l = parseInt(document.getElementById('obs-l').value);
-                observable.params.m = parseInt(document.getElementById('obs-m').value);
-            } else if (obsType === 'two_site_expectation') {
-                observable.params.site_i = parseInt(document.getElementById('obs-site_i-two').value);
-                observable.params.site_j = parseInt(document.getElementById('obs-site_j-two').value);
-                observable.params.operator_i = document.getElementById('obs-operator_i').value;
-                observable.params.operator_j = document.getElementById('obs-operator_j').value;
-            } else if (obsType === 'correlation_function') {
-                observable.params.site_i = parseInt(document.getElementById('obs-site_i-corr').value);
-                observable.params.site_j = parseInt(document.getElementById('obs-site_j-corr').value);
-                observable.params.operator = document.getElementById('obs-operator-corr').value;
-            } else if (obsType === 'connected_correlation') {
-                observable.params.site_i = parseInt(document.getElementById('obs-site_i-conn').value);
-                observable.params.site_j = parseInt(document.getElementById('obs-site_j-conn').value);
-                observable.params.operator = document.getElementById('obs-operator-conn').value;
-            } else if (obsType === 'entanglement_entropy') {
-                observable.params.bond = parseInt(document.getElementById('obs-bond-entropy').value);
-                const alpha = parseFloat(document.getElementById('obs-alpha').value);
-                if (alpha !== 1) observable.params.alpha = alpha;
-            } else if (obsType === 'entanglement_spectrum') {
-                observable.params.bond = parseInt(document.getElementById('obs-bond-spectrum').value);
-                const nValues = document.getElementById('obs-n_values').value;
-                if (nValues) observable.params.n_values = parseInt(nValues);
-            }
-            
-            analysis.observable = observable;
-            return analysis;
-        }
-        
         function buildConfig() {
             const system = buildSystemConfig();
             const model = buildModelConfig();
             const algorithm = buildAlgorithmConfig();
             const description = document.getElementById('config-description').value.trim();
-            
-            if (currentMode === 'simulation') {
-                const config = { system, model, algorithm };
-                
-                if (currentAlgorithm !== 'ed_spectrum') {
-                    config.state = buildStateConfig();
-                }
-                
-                if (description) config.description = description;
-                return config;
-            } else {
-                const simulation = { system, model, algorithm };
-                if (currentAlgorithm !== 'ed_spectrum') {
-                    simulation.state = buildStateConfig();
-                }
-                
-                const config = {
-                    simulation: simulation,
-                    analysis: buildAnalysisConfig()
-                };
-                
-                if (description) config.description = description;
-                return config;
+
+            const config = { system, model, algorithm };
+
+            if (currentAlgorithm !== 'ed_spectrum') {
+                config.state = buildStateConfig();
             }
+
+            if (description) config.description = description;
+            return config;
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -3781,9 +3578,7 @@
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
-            const filename = currentMode === 'simulation' 
-                ? `${currentAlgorithm}_simulation.json`
-                : `${currentAlgorithm}_analysis.json`;
+            const filename = `${currentAlgorithm}_simulation.json`;
             
             const a = document.createElement('a');
             a.href = url;
@@ -3902,6 +3697,9 @@
 
             // Load user models/states from registry (runs async, updates GUI when done)
             loadRegistriesIntoGUI();
+
+            // Initialize observable params rendering for Query & Calculate
+            renderObservableParams('qc-observable-type', 'qc-obs-params');
         });
     </script>
     <script src="pipeline_automation.js"></script>

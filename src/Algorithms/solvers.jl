@@ -134,6 +134,8 @@ function _solve(solver::LanczosSolver, H::EffectiveHamiltonian, v_init::Vector{T
     for iter in 1:solver.max_iter
         # Restart with current best eigenvector
         V[:, 1] = eigenvec / norm(eigenvec)
+        H_mat .= zero(T)
+        krylov_size = solver.krylov_dim
         # Build Krylov subspace
         for p = 2:solver.krylov_dim+1
             # _apply Hamiltonian
@@ -147,13 +149,20 @@ function _solve(solver::LanczosSolver, H::EffectiveHamiltonian, v_init::Vector{T
             end
             for g = 1:1:p-1
                 V[:,p] = V[:,p] - dot(V[:,g],V[:,p])*V[:,g];
-                V[:,p] = V[:,p]/max(norm(V[:,p]),1e-16);
             end
+            vnorm = norm(V[:,p])
+            if vnorm < 1e-12
+                # Krylov space exhausted — use subspace built so far
+                krylov_size = p - 1
+                break
+            end
+            V[:,p] = V[:,p] / vnorm
         end
-        
-        G = eigen(0.5*(H_mat+H_mat'));
+
+        H_sub = Hermitian(0.5*(H_mat[1:krylov_size, 1:krylov_size] + H_mat[1:krylov_size, 1:krylov_size]'))
+        G = eigen(H_sub);
         eigenval, xloc = findmin(G.values);
-        eigenvec = V[:,1:solver.krylov_dim]*G.vectors[:,xloc[1]];
+        eigenvec = V[:,1:krylov_size]*G.vectors[:,xloc[1]];
     end
     return eigenvec / norm(eigenvec), eigenval
 end

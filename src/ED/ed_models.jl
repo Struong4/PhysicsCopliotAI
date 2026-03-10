@@ -286,10 +286,10 @@ function _get_spin_model_terms(model_name::String, params::Dict)
         
     elseif model_name == "custom_spin"
         return _parse_custom_spin_terms(params["terms"])
-        
+
     else
-        error("Unknown spin model: $model_name\n" *
-              "Available: transverse_field_ising, heisenberg, long_range_ising, custom_spin")
+        # User-registered model: look up from registry
+        return _resolve_user_model_ed_terms(model_name, "spin")
     end
 end
 
@@ -322,10 +322,55 @@ function _get_spinboson_model_terms(model_name::String, params::Dict)
         
     elseif model_name == "custom_spinboson"
         return _parse_custom_spinboson_terms(params["terms"])
-        
+
     else
-        error("Unknown spin-boson model: $model_name\n" *
-              "Available: ising_dicke, long_range_ising_dicke, custom_spinboson")
+        # User-registered model: look up from registry
+        return _resolve_user_model_ed_terms(model_name, "spinboson")
+    end
+end
+
+"""
+    _resolve_user_model_ed_terms(name, expected_system_type)
+
+Look up a user-registered model from the registry and return its ED terms.
+"""
+function _resolve_user_model_ed_terms(name::String, expected_system_type::String)
+    project_root = dirname(dirname(@__DIR__))
+    registry_path = joinpath(project_root, "registry", "models.json")
+
+    if !isfile(registry_path)
+        error("Registry file not found: $registry_path")
+    end
+
+    registry = JSON.parsefile(registry_path)
+    user_models = get(get(registry, "user_models", Dict()), "models", Dict())
+
+    if !haskey(user_models, name)
+        error("Unknown model: \"$name\"\n" *
+              "Not found in prebuilt models or user registry.\n" *
+              "Available user models: $(join(keys(user_models), ", "))")
+    end
+
+    model_def = user_models[name]
+    sys_type = get(model_def, "system_type", "spin")
+
+    if sys_type != expected_system_type
+        error("Model '$name' is a $sys_type model but was used in a $expected_system_type system config")
+    end
+
+    if haskey(model_def, "terms")
+        if sys_type == "spin"
+            return _parse_custom_spin_terms(model_def["terms"])
+        else
+            return _parse_custom_spinboson_terms(model_def["terms"])
+        end
+    elseif haskey(model_def, "channels")
+        # Model was saved as TN but used in ED — need to convert channels to terms
+        # For now, error with a clear message
+        error("Model '$name' was registered with TN channels but is being used with an ED algorithm.\n" *
+              "Re-register it with ED backend, or use a TN algorithm (DMRG/TDVP).")
+    else
+        error("Model '$name' has no 'terms' or 'channels' definition in registry")
     end
 end
 

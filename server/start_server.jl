@@ -27,8 +27,8 @@ const PROJECT_ROOT = dirname(@__DIR__)
 println("Project root: $PROJECT_ROOT")
 println()
 
-# Verify we're in the right place
-required_dirs = ["src", "frontend", "data"]
+# Verify we're in the right place (only check source dirs, data dirs are created below)
+required_dirs = ["src", "frontend"]
 for dir in required_dirs
     path = joinpath(PROJECT_ROOT, dir)
     if !isdir(path)

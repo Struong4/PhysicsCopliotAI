@@ -312,12 +312,20 @@ Returns structured dict with kind, name, and params/channels/facets.
 function _extract_model(config::Dict)
     model = config["model"]
     model_name = model["name"]
-    
-    # Determine kind
-    if model_name in ["custom_spin", "custom_spinboson"]
-        return _extract_custom_model(model)
-    else
+
+    # Known prebuilt models
+    prebuilt_names = Set(["transverse_field_ising", "heisenberg", "long_range_ising",
+                          "ising_dicke", "long_range_ising_dicke"])
+
+    if model_name in prebuilt_names
         return _extract_prebuilt_model(model)
+    else
+        # User-registered model from registry — store name, no inline terms needed.
+        # The backend resolves the model definition from the registry at build time.
+        return Dict{String, Any}(
+            "kind" => "user",
+            "name" => model_name
+        )
     end
 end
 

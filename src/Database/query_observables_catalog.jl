@@ -617,10 +617,15 @@ function _extract_observable_catalog_info(entries::Vector{Dict{String, Any}})
     )
     
     for entry in entries
+        # Skip entries with missing observable structure
+        if !haskey(entry, "observable") || !haskey(entry["observable"], "type")
+            continue
+        end
+
         # Observable type
         obs_type = entry["observable"]["type"]
         push!(info["observable_types"], obs_type)
-        
+
         # Track observable params by type
         if !haskey(info["observable_params"], obs_type)
             info["observable_params"][obs_type] = Dict{String, Set}()
@@ -633,15 +638,22 @@ function _extract_observable_catalog_info(entries::Vector{Dict{String, Any}})
                 push!(info["observable_params"][obs_type][k], v)
             end
         end
-        
-        # Simulation info
-        push!(info["sim_algorithms"], entry["simulation"]["core"]["algorithm"])
-        push!(info["sim_models"], entry["simulation"]["model"]["name"])
-        
+
+        # Simulation info (guard against missing nested keys)
+        if haskey(entry, "simulation")
+            sim = entry["simulation"]
+            if haskey(sim, "core") && haskey(sim["core"], "algorithm")
+                push!(info["sim_algorithms"], sim["core"]["algorithm"])
+            end
+            if haskey(sim, "model") && haskey(sim["model"], "name")
+                push!(info["sim_models"], sim["model"]["name"])
+            end
+        end
+
         # Selection type
         if haskey(entry, "analysis_params")
             for (key, val) in entry["analysis_params"]
-                if key in ["sweep_selection", "step_selection", "state_selection"]
+                if key in ["sweep_selection", "step_selection", "state_selection"] && isa(val, Dict) && haskey(val, "type")
                     push!(info["selection_types"], val["type"])
                 end
             end

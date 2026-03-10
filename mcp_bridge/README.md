@@ -662,9 +662,18 @@ The Julia server (`pipeline_server.jl`) exposes these REST endpoints that execut
 | POST | `/api/run` | JSON config | `{"run_id": str, "status": "running"}` |
 | GET | `/api/status/:run_id` | — | `{"status": str, "message": str}` |
 | GET | `/api/catalog` | — | Simulation catalog (JSONL) |
-| POST | `/api/register_model` | Model spec | Registration result |
-| POST | `/api/register_state` | State spec | Registration result |
-| GET | `/api/registry/:file` | — | Raw registry JSON |
+| GET | `/api/catalog-info` | — | Catalog metadata for dynamic filters |
+| GET | `/api/observable-catalog-info` | — | Observable catalog metadata |
+| GET | `/api/query/simulations?...` | — | Query simulation catalog with filters |
+| GET | `/api/query/observables?...` | — | Query observable catalog with filters |
+| GET | `/api/results/simulations/:run_id` | — | Simulation results & metadata |
+| GET | `/api/results/observables/:run_id` | — | Observable results as JSON |
+| POST | `/api/observables/calculate` | Analysis config | Calculate observable on existing data |
+| GET | `/api/registry/:name` | — | Raw registry JSON (models/systems/states/algorithms/observables) |
+| POST | `/api/registry/models` | Model spec | Register a user model |
+| POST | `/api/registry/states` | State spec | Register a user state |
+| DELETE | `/api/registry/models/:name` | — | Delete a user model |
+| DELETE | `/api/registry/states/:name` | — | Delete a user state |
 
 ---
 

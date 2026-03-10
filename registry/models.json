@@ -1,6 +1,6 @@
 {
   "prebuilt_models": {
-    "ising_dicke": {
+    "long_range_ising_dicke": {
       "dtype_rule": "Float64 safe only when spin_coupling_dir, spin_field_dir, and boson_coupling_dir are all in {X, Z}.",
       "system_type": "spinboson",
       "dtype_logic": {
@@ -21,36 +21,43 @@
           }
         ]
       },
-      "hamiltonian": "H = J * sum_i sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_{i+1} + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i",
+      "hamiltonian": "H = J * sum_{i<j} sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_j / |i-j|^alpha + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i",
       "example_config": {
         "model": {
-          "name": "ising_dicke",
+          "name": "long_range_ising_dicke",
           "params": {
             "spin_coupling_dir": "Z",
             "J": 1.0,
             "g": 0.2,
             "omega": 1.0,
             "boson_coupling_dir": "X",
+            "alpha": 1.5,
             "spin_field_dir": "Z",
             "h": 0.0
           }
         }
       },
+      "tn_only_params": [
+        "n_exp",
+        "N_spins"
+      ],
       "optional_params": [],
       "backend_function": {
-        "tn": "_get_spinboson_ising_dikie_channels",
-        "ed": "_get_ising_dicke_terms"
+        "tn": "_get_spinboson_longrange_ising_dikie_channels",
+        "ed": "_get_lri_dicke_terms"
       },
-      "description": "Nearest-neighbor Ising spin chain coupled to a single bosonic cavity mode (Dicke model). Combines Ising spin-spin interactions and a spin field with a cavity frequency term and collective spin-boson coupling.",
+      "description": "Power-law decaying Ising spin chain coupled to a single bosonic cavity mode. Extends Ising-Dicke by replacing nearest-neighbor spin coupling with exact long-range power-law interactions. ED computes the power-law sum exactly with no approximation.",
       "required_params": [
         "J",
         "h",
+        "alpha",
         "omega",
         "g",
         "spin_coupling_dir",
         "spin_field_dir",
         "boson_coupling_dir"
       ],
+      "note": "n_exp and N_spins (model-level) are required for TN only. Must be OMITTED from ED configs.",
       "params": {
         "spin_coupling_dir": {
           "dtype_constraint": "If Y, dtype must be ComplexF64.",
@@ -61,34 +68,22 @@
             "Z"
           ],
           "type": "string",
-          "description": "Spin operator direction for nearest-neighbor spin-spin coupling."
+          "description": "Spin operator direction for long-range spin-spin coupling."
         },
         "J": {
           "default": 1.0,
           "type": "float",
-          "description": "Nearest-neighbor spin-spin coupling. J<0 ferromagnetic, J>0 antiferromagnetic."
+          "description": "Overall power-law spin-spin coupling strength."
         },
         "g": {
           "default": 0.2,
-          "example_values": [
-            0.0,
-            0.1,
-            0.2,
-            0.5,
-            1.0
-          ],
           "type": "float",
-          "description": "Spin-boson coupling strength. Superradiant phase transition near g_c = sqrt(omega*|J|)/2 in the thermodynamic limit."
+          "description": "Spin-boson coupling strength for g*(a+adag)*sum_i sigma_i."
         },
         "omega": {
           "default": 1.0,
-          "example_values": [
-            0.5,
-            1.0,
-            2.0
-          ],
           "type": "float",
-          "description": "Boson cavity mode frequency. Coefficient of the Bn number operator."
+          "description": "Boson cavity mode frequency. Coefficient of Bn."
         },
         "boson_coupling_dir": {
           "dtype_constraint": "If Y, dtype must be ComplexF64.",
@@ -99,7 +94,20 @@
             "Z"
           ],
           "type": "string",
-          "description": "Collective spin operator direction in the spin-boson coupling g*(a+adag)*sum_i sigma^dir_i. Typically X for transverse Dicke coupling."
+          "description": "Collective spin operator direction in the spin-boson coupling."
+        },
+        "alpha": {
+          "minimum": 0.0,
+          "default": 1.5,
+          "example_values": [
+            0.5,
+            1.0,
+            1.5,
+            2.0,
+            3.0
+          ],
+          "type": "float",
+          "description": "Power-law decay exponent. alpha=0 is all-to-all equal coupling. alpha->inf recovers nearest-neighbor."
         },
         "spin_field_dir": {
           "dtype_constraint": "If Y, dtype must be ComplexF64.",
@@ -110,7 +118,7 @@
             "Z"
           ],
           "type": "string",
-          "description": "Spin operator direction for the spin field term."
+          "description": "Spin operator direction for the field term."
         },
         "h": {
           "default": 0.0,
@@ -118,7 +126,7 @@
           "description": "Spin field strength applied uniformly to all spin sites."
         }
       },
-      "display_name": "Ising-Dicke"
+      "display_name": "Long-Range Ising-Dicke"
     },
     "long_range_ising": {
       "dtype_rule": "Float64 safe only when coupling_dir and field_dir are both in {X, Z}.",
@@ -311,6 +319,126 @@
       },
       "display_name": "Transverse Field Ising"
     },
+    "ising_dicke": {
+      "dtype_rule": "Float64 safe only when spin_coupling_dir, spin_field_dir, and boson_coupling_dir are all in {X, Z}.",
+      "system_type": "spinboson",
+      "dtype_logic": {
+        "default": "ComplexF64",
+        "float64_safe_when": [
+          {
+            "all_in": {
+              "allowed": [
+                "X",
+                "Z"
+              ],
+              "params": [
+                "spin_coupling_dir",
+                "spin_field_dir",
+                "boson_coupling_dir"
+              ]
+            }
+          }
+        ]
+      },
+      "hamiltonian": "H = J * sum_i sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_{i+1} + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i",
+      "example_config": {
+        "model": {
+          "name": "ising_dicke",
+          "params": {
+            "spin_coupling_dir": "Z",
+            "J": 1.0,
+            "g": 0.2,
+            "omega": 1.0,
+            "boson_coupling_dir": "X",
+            "spin_field_dir": "Z",
+            "h": 0.0
+          }
+        }
+      },
+      "optional_params": [],
+      "backend_function": {
+        "tn": "_get_spinboson_ising_dikie_channels",
+        "ed": "_get_ising_dicke_terms"
+      },
+      "description": "Nearest-neighbor Ising spin chain coupled to a single bosonic cavity mode (Dicke model). Combines Ising spin-spin interactions and a spin field with a cavity frequency term and collective spin-boson coupling.",
+      "required_params": [
+        "J",
+        "h",
+        "omega",
+        "g",
+        "spin_coupling_dir",
+        "spin_field_dir",
+        "boson_coupling_dir"
+      ],
+      "params": {
+        "spin_coupling_dir": {
+          "dtype_constraint": "If Y, dtype must be ComplexF64.",
+          "default": "Z",
+          "allowed_values": [
+            "X",
+            "Y",
+            "Z"
+          ],
+          "type": "string",
+          "description": "Spin operator direction for nearest-neighbor spin-spin coupling."
+        },
+        "J": {
+          "default": 1.0,
+          "type": "float",
+          "description": "Nearest-neighbor spin-spin coupling. J<0 ferromagnetic, J>0 antiferromagnetic."
+        },
+        "g": {
+          "default": 0.2,
+          "example_values": [
+            0.0,
+            0.1,
+            0.2,
+            0.5,
+            1.0
+          ],
+          "type": "float",
+          "description": "Spin-boson coupling strength. Superradiant phase transition near g_c = sqrt(omega*|J|)/2 in the thermodynamic limit."
+        },
+        "omega": {
+          "default": 1.0,
+          "example_values": [
+            0.5,
+            1.0,
+            2.0
+          ],
+          "type": "float",
+          "description": "Boson cavity mode frequency. Coefficient of the Bn number operator."
+        },
+        "boson_coupling_dir": {
+          "dtype_constraint": "If Y, dtype must be ComplexF64.",
+          "default": "X",
+          "allowed_values": [
+            "X",
+            "Y",
+            "Z"
+          ],
+          "type": "string",
+          "description": "Collective spin operator direction in the spin-boson coupling g*(a+adag)*sum_i sigma^dir_i. Typically X for transverse Dicke coupling."
+        },
+        "spin_field_dir": {
+          "dtype_constraint": "If Y, dtype must be ComplexF64.",
+          "default": "Z",
+          "allowed_values": [
+            "X",
+            "Y",
+            "Z"
+          ],
+          "type": "string",
+          "description": "Spin operator direction for the spin field term."
+        },
+        "h": {
+          "default": 0.0,
+          "type": "float",
+          "description": "Spin field strength applied uniformly to all spin sites."
+        }
+      },
+      "display_name": "Ising-Dicke"
+    },
     "heisenberg": {
       "dtype_rule": "Float64 is safe only when Jy=0 and hy=0. Any nonzero Jy or hy requires ComplexF64.",
       "system_type": "spin",
@@ -396,138 +524,32 @@
         "XXZ": "Jx=Jy=1, Jz=delta, hx=hy=hz=0"
       },
       "display_name": "Heisenberg"
-    },
-    "long_range_ising_dicke": {
-      "dtype_rule": "Float64 safe only when spin_coupling_dir, spin_field_dir, and boson_coupling_dir are all in {X, Z}.",
-      "system_type": "spinboson",
-      "dtype_logic": {
-        "default": "ComplexF64",
-        "float64_safe_when": [
-          {
-            "all_in": {
-              "allowed": [
-                "X",
-                "Z"
-              ],
-              "params": [
-                "spin_coupling_dir",
-                "spin_field_dir",
-                "boson_coupling_dir"
-              ]
-            }
-          }
-        ]
-      },
-      "hamiltonian": "H = J * sum_{i<j} sigma^spin_coupling_dir_i * sigma^spin_coupling_dir_j / |i-j|^alpha + h * sum_i sigma^spin_field_dir_i + omega * Bn + g * (a + adag) * sum_i sigma^boson_coupling_dir_i",
-      "example_config": {
-        "model": {
-          "name": "long_range_ising_dicke",
-          "params": {
-            "spin_coupling_dir": "Z",
-            "J": 1.0,
-            "g": 0.2,
-            "omega": 1.0,
-            "boson_coupling_dir": "X",
-            "alpha": 1.5,
-            "spin_field_dir": "Z",
-            "h": 0.0
-          }
-        }
-      },
-      "tn_only_params": [
-        "n_exp",
-        "N_spins"
-      ],
-      "optional_params": [],
-      "backend_function": {
-        "tn": "_get_spinboson_longrange_ising_dikie_channels",
-        "ed": "_get_lri_dicke_terms"
-      },
-      "description": "Power-law decaying Ising spin chain coupled to a single bosonic cavity mode. Extends Ising-Dicke by replacing nearest-neighbor spin coupling with exact long-range power-law interactions. ED computes the power-law sum exactly with no approximation.",
-      "required_params": [
-        "J",
-        "h",
-        "alpha",
-        "omega",
-        "g",
-        "spin_coupling_dir",
-        "spin_field_dir",
-        "boson_coupling_dir"
-      ],
-      "note": "n_exp and N_spins (model-level) are required for TN only. Must be OMITTED from ED configs.",
-      "params": {
-        "spin_coupling_dir": {
-          "dtype_constraint": "If Y, dtype must be ComplexF64.",
-          "default": "Z",
-          "allowed_values": [
-            "X",
-            "Y",
-            "Z"
-          ],
-          "type": "string",
-          "description": "Spin operator direction for long-range spin-spin coupling."
-        },
-        "J": {
-          "default": 1.0,
-          "type": "float",
-          "description": "Overall power-law spin-spin coupling strength."
-        },
-        "g": {
-          "default": 0.2,
-          "type": "float",
-          "description": "Spin-boson coupling strength for g*(a+adag)*sum_i sigma_i."
-        },
-        "omega": {
-          "default": 1.0,
-          "type": "float",
-          "description": "Boson cavity mode frequency. Coefficient of Bn."
-        },
-        "boson_coupling_dir": {
-          "dtype_constraint": "If Y, dtype must be ComplexF64.",
-          "default": "X",
-          "allowed_values": [
-            "X",
-            "Y",
-            "Z"
-          ],
-          "type": "string",
-          "description": "Collective spin operator direction in the spin-boson coupling."
-        },
-        "alpha": {
-          "minimum": 0.0,
-          "default": 1.5,
-          "example_values": [
-            0.5,
-            1.0,
-            1.5,
-            2.0,
-            3.0
-          ],
-          "type": "float",
-          "description": "Power-law decay exponent. alpha=0 is all-to-all equal coupling. alpha->inf recovers nearest-neighbor."
-        },
-        "spin_field_dir": {
-          "dtype_constraint": "If Y, dtype must be ComplexF64.",
-          "default": "Z",
-          "allowed_values": [
-            "X",
-            "Y",
-            "Z"
-          ],
-          "type": "string",
-          "description": "Spin operator direction for the field term."
-        },
-        "h": {
-          "default": 0.0,
-          "type": "float",
-          "description": "Spin field strength applied uniformly to all spin sites."
-        }
-      },
-      "display_name": "Long-Range Ising-Dicke"
     }
   },
   "user_models": {
-    "models": {},
+    "models": {
+      "test_1": {
+        "backend": "tn",
+        "registered_at": "2026-03-09T16:21:34.775",
+        "display_name": "Test_1",
+        "system_type": "spin",
+        "channels": [
+          {
+            "op1": "Z",
+            "op2": "Z",
+            "range": 1,
+            "strength": 1,
+            "type": "FiniteRangeCoupling"
+          },
+          {
+            "strength": 1,
+            "op": "Y",
+            "type": "Field"
+          }
+        ],
+        "description": ""
+      }
+    },
     "description": "User-registered named custom models. Each entry is a named model built via the custom model term builder in the GUI and saved for reuse. The engine looks up models here when the name is not found in prebuilt_models or custom_models. Entries are added automatically via POST /api/registry/models."
   },
   "registry_type": "models",
