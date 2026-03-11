@@ -677,6 +677,7 @@ async function fetchObservablesRegistry() {
             const data = await response.json();
             window.TNRegistry.observables = data;
             console.log('[Registry] Loaded observables');
+            populateObservableSelector('qc-observable-type');
             return data;
         }
     } catch (e) {
@@ -843,6 +844,7 @@ function buildQCObservableConfig() {
     if (!select) return null;
 
     const obsKey = select.value;
+    if (!obsKey) return null;  // placeholder selected, no observable chosen
     const registry = window.TNRegistry?.observables;
     const obsDef = registry?.observables?.[obsKey];
 

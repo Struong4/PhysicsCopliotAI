@@ -3315,12 +3315,13 @@
          */
         async function loadRegistriesIntoGUI() {
             const base = 'http://localhost:8080';
-            const names = ['models', 'systems', 'states', 'algorithms'];
+            const names = ['models', 'systems', 'states', 'algorithms', 'observables'];
 
             // Initialise global registry if pipeline_automation.js hasn't done so yet
             if (!window.TNRegistry) {
-                window.TNRegistry = { models: null, systems: null, states: null, algorithms: null };
+                window.TNRegistry = { models: null, systems: null, states: null, algorithms: null, observables: null };
             }
+                            
 
             for (const name of names) {
                 try {
@@ -3370,6 +3371,11 @@
                 renderSavedModelsList();
                 // Apply backend / system-type filter
                 filterUserModelsInDropdown();
+            }
+
+            // ── Populate observable selector ──
+            if (window.TNRegistry.observables && typeof populateObservableSelector === 'function') {
+                populateObservableSelector('qc-observable-type');
             }
 
             // ── Populate user states ──
