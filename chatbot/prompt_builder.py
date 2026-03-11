@@ -29,9 +29,11 @@ def build_system_prompt(registries: dict, keywords: dict) -> str:
         _algorithm_selection_section(systems_reg, algo_reg),
         _config_structure_section(systems_reg, models_reg, algo_reg, states_reg),
         _conversation_rules_section(keywords),
+        _physics_vocabulary_section(keywords),
         _general_questions_section(models_reg),
         _result_interpretation_section(),
         _catalog_section(),
+        _observable_tools_section(),
     ]
     return "\n\n".join(sections)
 
@@ -50,6 +52,15 @@ def _role_section() -> str:
 def _result_interpretation_section() -> str:
     return (
         "=== INTERPRETING SIMULATION RESULTS ===\n"
+        'When a message begins with "[OBSERVABLE RESULT]", an observable calculation has\n'
+        "just completed. Interpret the result for the user in plain English:\n"
+        "  * Mention the observable type and what it measures physically.\n"
+        "  * Comment on the mean, final value, and trend (increasing/decreasing/oscillating).\n"
+        "  * Relate the result to the physics: e.g. for entanglement_entropy comment on\n"
+        "    area law vs. volume law; for energy_expectation comment on convergence;\n"
+        "    for correlation_function comment on decay behavior.\n"
+        "  * Suggest follow-up observables or parameter changes if relevant.\n"
+        "After interpreting, stay ready for follow-up. Do NOT call any tools in response.\n\n"
         'When a message begins with "[SIMULATION RESULT]", the Julia pipeline has\n'
         "just completed a run. Interpret it for the user in plain English:\n"
         "  * For ed_spectrum: comment on what the energy spectrum implies about the\n"
@@ -271,7 +282,11 @@ def _states_block(states: dict) -> str:
     if algo_req:
         lines.append("State block requirement by algorithm:")
         for algo, rule in algo_req.items():
-            lines.append(f"  {algo}: {rule}")
+            if isinstance(rule, dict):
+                desc = rule.get("description", "")
+                lines.append(f"  {algo}: {desc}")
+            else:
+                lines.append(f"  {algo}: {rule}")
 
     return "\n".join(lines)
 
@@ -313,16 +328,98 @@ def _conversation_rules_section(keywords: dict) -> str:
     task_routing = keywords.get("task_routing", {})
     if task_routing:
         lines += ["", "Task routing (infer algorithm from user phrasing):"]
-        for algo, triggers in task_routing.items():
-            sample = ", ".join(f'"{t}"' for t in triggers[:4])
-            lines.append(f"  {sample} -> {algo}")
+        for task_key, entry in task_routing.items():
+            phrases = entry.get("phrases", []) if isinstance(entry, dict) else entry
+            sample = ", ".join(f'"{t}"' for t in phrases[:4])
+            target = entry.get("task_key", task_key) if isinstance(entry, dict) else task_key
+            lines.append(f"  {sample} -> {target}")
 
-    model_aliases = keywords.get("model_aliases", {})
-    if model_aliases:
-        lines += ["", "Model name recognition:"]
-        for model, aliases in model_aliases.items():
-            sample = ", ".join(f'"{a}"' for a in aliases[:3])
-            lines.append(f"  {sample} -> {model}")
+    algo_vocab = keywords.get("algorithm_vocabulary", {})
+    if algo_vocab:
+        lines += ["", "Algorithm name recognition (user explicitly names an algorithm):"]
+        for _, entry in algo_vocab.items():
+            phrases = entry.get("phrases", [])
+            sample = ", ".join(f'"{t}"' for t in phrases[:4])
+            algorithm = entry.get("algorithm", "")
+            lines.append(f"  {sample} -> {algorithm}")
+
+    return "\n".join(lines)
+
+
+def _physics_vocabulary_section(keywords: dict) -> str:
+    lines = ["=== PHYSICS VOCABULARY ==="]
+
+    # System detection
+    sys_det = keywords.get("system_detection", {})
+    if sys_det:
+        lines += ["", "System type recognition (map user language to system type):"]
+        for sys_key, entry in sys_det.items():
+            phrases = entry.get("phrases", [])
+            sample = ", ".join(f'"{p}"' for p in phrases[:5])
+            lines.append(f"  {sample} -> system.type = \"{sys_key}\"")
+
+    # Physics vocabulary (ferromagnetic, XXZ, critical point, etc.)
+    phys_vocab = keywords.get("physics_vocabulary", {})
+    if phys_vocab:
+        lines += ["", "Physics term → parameter implications (apply silently when user uses these terms):"]
+        for term, entry in phys_vocab.items():
+            desc = entry.get("description", "")
+            implies = entry.get("implies", {})
+            model = entry.get("model", "")
+            implies_str = ", ".join(f"{k}={v}" for k, v in implies.items()) if implies else ""
+            model_str = f" [model: {model}]" if model else ""
+            lines.append(f"  \"{term}\": {desc}{model_str}")
+            if implies_str:
+                lines.append(f"    → implies: {implies_str}")
+
+    # Operator vocabulary (magnetization → Z, etc.)
+    op_vocab = keywords.get("operator_vocabulary", {})
+    if op_vocab:
+        lines += ["", "Operator name recognition (map physics terms to operator codes):"]
+        for term, entry in op_vocab.items():
+            op = entry.get("operator", "")
+            desc = entry.get("description", "")
+            lines.append(f"  \"{term}\" → operator: \"{op}\"  ({desc})")
+
+    # Observable vocabulary
+    obs_vocab = keywords.get("observable_vocabulary", {})
+    if obs_vocab:
+        lines += ["", "Observable recognition (map user phrases to observable_type):"]
+        for obs_key, entry in obs_vocab.items():
+            phrases = entry.get("phrases", [])
+            obs_type = entry.get("observable_type", obs_key)
+            sample = ", ".join(f'"{p}"' for p in phrases[:4])
+            lines.append(f"  {sample} -> observable_type: \"{obs_type}\"")
+
+    # State vocabulary
+    state_vocab = keywords.get("state_vocabulary", {})
+    if state_vocab:
+        lines += ["", "State recognition (map user descriptions to state configs):"]
+        for term, entry in state_vocab.items():
+            desc = entry.get("description", "")
+            state_type = entry.get("state_type", "")
+            state_name = entry.get("state_name", "")
+            params = entry.get("params", {})
+            applies = entry.get("applies_to", "")
+            config_str = f"type={state_type}"
+            if state_name:
+                config_str += f", name={state_name}"
+            if params:
+                config_str += f", params={params}"
+            if applies:
+                config_str += f" [{applies} only]"
+            lines.append(f"  \"{term}\": {desc}")
+            lines.append(f"    → {config_str}")
+
+    # Selection vocabulary
+    sel_vocab = keywords.get("selection_vocabulary", {})
+    if sel_vocab:
+        lines += ["", "Selection mode recognition (map sweep/step selection phrases):"]
+        for mode_key, entry in sel_vocab.items():
+            phrases = entry.get("phrases", [])
+            mode = entry.get("mode", mode_key)
+            sample = ", ".join(f'"{p}"' for p in phrases[:4])
+            lines.append(f"  {sample} -> selection: \"{mode}\"")
 
     return "\n".join(lines)
 
@@ -341,6 +438,42 @@ def _catalog_section() -> str:
         "After receiving catalog results, summarize them clearly for the user —\n"
         "highlight run_id, timestamp, N, model, and key result values.\n"
         "Do NOT call submit_config in response to a catalog query."
+    )
+
+
+def _observable_tools_section() -> str:
+    return (
+        "=== OBSERVABLE CALCULATIONS ===\n"
+        "You can compute observables on past simulation runs using the calculate_observable tool.\n"
+        "Use this when the user asks to measure, compute, plot, or analyze an observable on a run.\n\n"
+        "Workflow:\n"
+        "1. Use query_catalog to find the run_id if the user hasn't provided one.\n"
+        "2. Call calculate_observable with run_id, observable_type, params, and a summary.\n"
+        "3. The config will be shown to the user to confirm before calculating.\n\n"
+        "Common observable types and their required params:\n"
+        "  single_site_expectation   → {site: <int>, operator: <Z/X/Y/Sp/Sm>}\n"
+        "  expectation_all_sites     → {operator: <Z/X/Y>}\n"
+        "  correlation_function      → {site_i: <int>, site_j: <int>, operator: <Z/X/Y>}  SAME operator both sites. MUST have 1 ≤ site_i < site_j ≤ N\n"
+        "  connected_correlation     → {site_i: <int>, site_j: <int>, operator: <Z/X/Y>}  SAME operator, subtracts mean. MUST have 1 ≤ site_i < site_j ≤ N\n"
+        "  two_site_expectation      → {site_i: <int>, site_j: <int>, operator_i: <Z/X/Y>, operator_j: <Z/X/Y>}  DIFFERENT operators at each site (e.g. XZ). MUST have 1 ≤ site_i < site_j ≤ N\n"
+        "  correlation_matrix        → {operator: <Z/X/Y>}\n"
+        "  entanglement_entropy      → {bond: <int>}\n"
+        "  energy_expectation        → {}\n"
+        "  energy_variance           → {}\n"
+        "  boson_number              → {} (spinboson systems only)\n"
+        "CRITICAL: Use correlation_function (not two_site_expectation) when the user asks for ZZ, XX, YY "
+        "or any same-operator correlator. two_site_expectation is ONLY for mixed operators like XZ.\n\n"
+        "Selection defaults to 'all' (every saved sweep/step). "
+        "Use 'time_range' for TDVP/ed_time_evolution when user specifies a time window.\n"
+        "Do NOT call calculate_observable for general questions — only when the user explicitly "
+        "wants to compute a NEW observable.\n\n"
+        "To PLOT EXISTING observable results (already in data_obs/):\n"
+        "1. Call query_obs_catalog with filters (observable_type, sim_algorithm, sim_model_name).\n"
+        "2. Pick the best matching entry from the results.\n"
+        "3. Call show_observable_results with that obs_run_id — this displays the plot immediately.\n"
+        "Use this path when the user says 'show', 'plot', 'display', or 'view' an observable, "
+        "or asks about a previous calculation. "
+        "Only use calculate_observable if no existing result matches what the user wants."
     )
 
 

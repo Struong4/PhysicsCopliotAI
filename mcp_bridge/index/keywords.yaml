@@ -49,6 +49,53 @@ task_routing:
       - "thermal ground state"
     task_key: "imaginary_time"
 
+algorithm_vocabulary:
+  # Maps direct algorithm name mentions to canonical algorithm types.
+  # Use when user explicitly names an algorithm rather than describing a task.
+  dmrg:
+    phrases:
+      - "DMRG"
+      - "dmrg"
+      - "density matrix renormalization group"
+      - "density matrix renormalization"
+      - "tensor network ground state"
+      - "variational MPS"
+    algorithm: "dmrg"
+
+  tdvp:
+    phrases:
+      - "TDVP"
+      - "tdvp"
+      - "time-dependent variational principle"
+      - "time dependent variational principle"
+      - "tensor network dynamics"
+      - "MPS time evolution"
+      - "tensor network time evolution"
+    algorithm: "tdvp"
+
+  ed_spectrum:
+    phrases:
+      - "ED spectrum"
+      - "ed spectrum"
+      - "exact diagonalization spectrum"
+      - "exact diagonalization"
+      - "ED"
+      - "ed"
+      - "full diagonalization"
+      - "exact eigenstates"
+      - "exact eigenvalues"
+    algorithm: "ed_spectrum"
+
+  ed_time_evolution:
+    phrases:
+      - "ED time evolution"
+      - "ed time evolution"
+      - "exact time evolution"
+      - "exact dynamics"
+      - "ED dynamics"
+      - "exact diagonalization dynamics"
+    algorithm: "ed_time_evolution"
+
 system_detection:
   # Maps user language to system type (spin or spinboson).
   # Key = system_types[key].config_value in systems.json

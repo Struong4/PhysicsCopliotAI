@@ -271,7 +271,60 @@
       vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Observable cards ── */
+    #obs-card { display: none; }
+    #obs-results-card { display: none; }
+
+    .obs-config-display {
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      color: #2a2d4a;
+      line-height: 1.7;
+    }
+    .obs-config-display .obs-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    .obs-config-display .obs-label {
+      font-weight: 700;
+      color: #6b6f8a;
+      min-width: 120px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .analysis-box {
+      margin: 0.5rem 1rem 0.75rem;
+      background: #f7f8ff;
+      border: 1px solid #dde1ea;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      color: #2a2d4a;
+      line-height: 1.7;
+    }
+    .analysis-box .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.2rem;
+    }
+    .analysis-box .stat {
+      display: flex;
+      gap: 0.3rem;
+    }
+    .analysis-box .stat-label { color: #6b6f8a; font-weight: 600; }
+    .analysis-box .insight {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #dde1ea;
+      color: #444;
+      font-style: italic;
+    }
   </style>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
 <body>
 
@@ -323,6 +376,27 @@
       </div>
     </div>
 
+    <!-- Observable config card -->
+    <div class="card" id="obs-card">
+      <div class="card-header">Observable Calculation</div>
+      <div class="summary-text" id="obs-summary-text"></div>
+      <div class="obs-config-display" id="obs-config-display"></div>
+      <div class="action-row">
+        <button class="btn btn-confirm" id="btn-obs-confirm" onclick="confirmObsRun()">▶ Confirm &amp; Calculate</button>
+        <button class="btn btn-cancel" onclick="cancelObs()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Observable results card -->
+    <div class="card" id="obs-results-card">
+      <div class="card-header" id="obs-results-header">Observable Results</div>
+      <div id="obs-plot-container" style="padding: 0.75rem 0.5rem; min-height: 340px;"></div>
+      <div class="analysis-box" id="obs-analysis-box" style="display:none;"></div>
+      <div class="action-row">
+        <button class="btn btn-cancel" onclick="dismissObsResults()">✕ Dismiss</button>
+      </div>
+    </div>
+
     <!-- Status card -->
     <div class="card" id="status-card">
       <div class="card-header">Pipeline Status</div>
@@ -349,6 +423,8 @@
   let currentConfig = null;
   let lastSubmittedConfig = null;
   let pollTimer = null;
+  let currentObsConfig = null;
+  let obsPolTimer = null;
 
   // ── Chat helpers ──────────────────────────────────────────────────────────
   // creates bubble for the message
@@ -410,6 +486,16 @@
         currentConfig = data.config;
         lastSubmittedConfig = data.config;
         showConfigCard(data.config, data.summary);
+      }
+
+      if (data.obs_config) {
+        currentObsConfig = data.obs_config;
+        showObsCard(data.obs_config, data.obs_summary);
+      }
+
+      if (data.show_obs_run_id) {
+        addBubble("Loading observable results…", "info");
+        await fetchAndRenderObsResults(data.show_obs_run_id);
       }
     } catch (e) {
       addBubble("Could not reach the server. Is it running on port 8000?", "info");
@@ -605,6 +691,318 @@
       } catch (_) { /* keep trying */ }
       finally { polling = false; }
     }, 2000);
+  }
+
+  // ── Observable card ────────────────────────────────────────────────────────
+
+  function showObsCard(obsConfig, obsSummary) {
+    document.getElementById("placeholder").style.display = "none";
+    document.getElementById("config-card").style.display = "none";
+    document.getElementById("obs-results-card").style.display = "none";
+    document.getElementById("obs-card").style.display = "block";
+    document.getElementById("obs-summary-text").textContent = obsSummary || "Review the observable config below.";
+
+    const display = document.getElementById("obs-config-display");
+    const rows = [
+      ["Run ID",     obsConfig.run_id],
+      ["Observable", obsConfig.observable_type],
+      ["Params",     JSON.stringify(obsConfig.params)],
+      ["Selection",  obsConfig.selection || "all"],
+    ];
+    display.innerHTML = rows.map(([label, val]) =>
+      `<div class="obs-row"><span class="obs-label">${label}</span><span>${val}</span></div>`
+    ).join("");
+
+    document.getElementById("btn-obs-confirm").disabled = false;
+  }
+
+  function cancelObs() {
+    currentObsConfig = null;
+    document.getElementById("obs-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+    addBubble("Observable cancelled. Let me know what you'd like to change.", "info");
+  }
+
+  function dismissObsResults() {
+    document.getElementById("obs-results-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+  }
+
+  async function confirmObsRun() {
+    if (!currentObsConfig) return;
+    document.getElementById("btn-obs-confirm").disabled = true;
+
+    try {
+      const res = await fetch("/api/observables/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentObsConfig),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Failed to start observable calculation: " + (err.detail || res.statusText), "info");
+        document.getElementById("btn-obs-confirm").disabled = false;
+        return;
+      }
+
+      const data = await res.json();
+      if (data.tracking_id) {
+        document.getElementById("obs-card").style.display = "none";
+        showStatusCard("queued", "Observable calculation queued…");
+        startObsPolling(data.tracking_id);
+      } else {
+        addBubble("Unexpected response: " + JSON.stringify(data), "info");
+        document.getElementById("btn-obs-confirm").disabled = false;
+      }
+    } catch (e) {
+      addBubble("Network error: " + e.message, "info");
+      document.getElementById("btn-obs-confirm").disabled = false;
+    }
+  }
+
+  function startObsPolling(trackingId) {
+    if (obsPolTimer) clearInterval(obsPolTimer);
+    let done = false;
+    let polling = false;
+
+    obsPolTimer = setInterval(async () => {
+      if (done || polling) return;
+      polling = true;
+      try {
+        const res = await fetch(`/api/status/${trackingId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const status = data.status || "unknown";
+        showStatusCard(status, data.last_message || "");
+
+        if (status === "completed") {
+          done = true;
+          clearInterval(obsPolTimer);
+          document.getElementById("status-action-row").style.display = "";
+          const obsRunId = data.result?.obs_run_id;
+          if (obsRunId) {
+            await fetchAndRenderObsResults(obsRunId);
+          } else {
+            addBubble("Calculation completed but no results ID returned.", "info");
+          }
+        } else if (status === "failed") {
+          done = true;
+          clearInterval(obsPolTimer);
+          document.getElementById("status-action-row").style.display = "";
+          addBubble("Observable calculation failed. Check the Julia server output.", "info");
+        }
+      } catch (_) { /* keep trying */ }
+      finally { polling = false; }
+    }, 2000);
+  }
+
+  async function fetchAndRenderObsResults(obsRunId) {
+    try {
+      const res = await fetch(`/api/obs_results/${obsRunId}`);
+      if (!res.ok) {
+        addBubble("Could not load observable results.", "info");
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById("status-card").style.display = "none";
+      document.getElementById("obs-results-card").style.display = "block";
+      document.getElementById("placeholder").style.display = "none";
+
+      const obsType = data.metadata?.observable_type || currentObsConfig?.observable_type || "Observable";
+      document.getElementById("obs-results-header").textContent = `Results: ${obsType}`;
+
+      renderObsPlot(data, obsType);
+      renderObsAnalysis(data, obsType);
+      await injectObsResultAndChat(data, obsRunId, obsType);
+
+    } catch (e) {
+      addBubble("Error loading results: " + e.message, "info");
+    }
+  }
+
+  function renderObsPlot(data, obsType) {
+    const container = document.getElementById("obs-plot-container");
+    const indices = data.data?.indices || [];
+    const values  = data.data?.values  || [];
+    const times   = data.data?.times   || null;
+    const energies = data.data?.energies || null;
+
+    if (indices.length === 0) {
+      container.innerHTML = '<p style="padding:1rem; color:#888;">No data points.</p>';
+      return;
+    }
+
+    const xVals = (times && times.length === indices.length) ? times : indices;
+    const xLabel = (times && times.length === indices.length) ? "Time" : "Sweep / Index";
+    const firstVal = values[0];
+
+    // Detect data shape
+    if (typeof firstVal === "number" || firstVal === null) {
+      // Scalar time series
+      _plotScalar(container, xVals, values, xLabel, obsType);
+
+    } else if (typeof firstVal === "object" && firstVal !== null && "real" in firstVal) {
+      // Complex scalar — plot real and imaginary separately
+      _plotComplex(container, xVals, values, xLabel, obsType);
+
+    } else if (Array.isArray(firstVal) && Array.isArray(firstVal[0])) {
+      // Matrix (e.g. correlation_matrix) — heatmap of the last sweep
+      _plotMatrix(container, values[values.length - 1], obsType);
+
+    } else if (Array.isArray(firstVal)) {
+      // Vector per sweep — heatmap (sweeps × sites) or bar if single sweep
+      if (values.length === 1) {
+        _plotVector(container, firstVal, obsType);
+      } else {
+        _plotVectorHeatmap(container, values, xVals, xLabel, obsType);
+      }
+    } else {
+      container.innerHTML = '<p style="padding:1rem; color:#888;">Unsupported data shape for plotting.</p>';
+    }
+  }
+
+  const _plotLayout = (xTitle, yTitle, extra = {}) => Object.assign({
+    height: 320,
+    margin: { t: 20, r: 30, b: 60, l: 75 },
+    xaxis: { title: { text: xTitle, standoff: 10 }, automargin: true },
+    yaxis: { title: { text: yTitle, standoff: 10 }, automargin: true },
+    plot_bgcolor: "#fafbff", paper_bgcolor: "#fafbff",
+    font: { family: "system-ui", size: 12 },
+  }, extra);
+
+  function _plotScalar(container, x, y, xLabel, obsType) {
+    Plotly.newPlot(container, [{
+      x, y, mode: "lines+markers", type: "scatter",
+      line: { color: "#4f6ef7", width: 2 },
+      marker: { size: 5, color: "#4f6ef7" },
+    }], _plotLayout(xLabel, obsType), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotComplex(container, x, values, xLabel, obsType) {
+    const realVals = values.map(v => v.real);
+    const imagVals = values.map(v => v.imag);
+    Plotly.newPlot(container, [
+      { x, y: realVals, mode: "lines+markers", name: "Real", line: { color: "#4f6ef7", width: 2 }, marker: { size: 5 } },
+      { x, y: imagVals, mode: "lines+markers", name: "Imag", line: { color: "#e05252", width: 2, dash: "dash" }, marker: { size: 5 } },
+    ], _plotLayout(xLabel, obsType, {
+      legend: { orientation: "h", x: 0, y: -0.22, xanchor: "left" },
+      margin: { t: 20, r: 30, b: 80, l: 75 },
+    }), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotVector(container, vec, obsType) {
+    const x = vec.map((_, i) => i + 1);
+    Plotly.newPlot(container, [{
+      x, y: vec, type: "bar",
+      marker: { color: "#4f6ef7", opacity: 0.8 },
+    }], _plotLayout("Site", obsType), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotVectorHeatmap(container, values, x, xLabel, obsType) {
+    Plotly.newPlot(container, [{
+      z: values, x,
+      y: values[0].map((_, i) => i + 1),
+      type: "heatmap", colorscale: "RdBu", reversescale: true,
+    }], _plotLayout(xLabel, "Site"), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotMatrix(container, matrix, obsType) {
+    const n = matrix.length;
+    const sites = Array.from({ length: n }, (_, i) => i + 1);
+    Plotly.newPlot(container, [{
+      z: matrix, x: sites, y: sites,
+      type: "heatmap", colorscale: "RdBu", reversescale: true,
+    }], _plotLayout("Site j", "Site i"), { responsive: true, displayModeBar: false });
+  }
+
+  function renderObsAnalysis(data, obsType) {
+    const box = document.getElementById("obs-analysis-box");
+    const values = data.data?.values || [];
+    if (values.length === 0) return;
+
+    const firstVal = values[0];
+    let nums = null;
+
+    if (typeof firstVal === "number") {
+      nums = values;
+    } else if (typeof firstVal === "object" && "real" in firstVal) {
+      nums = values.map(v => v.real);
+    }
+
+    if (!nums) { box.style.display = "none"; return; }
+
+    const min  = Math.min(...nums).toFixed(6);
+    const max  = Math.max(...nums).toFixed(6);
+    const mean = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(6);
+    const std  = Math.sqrt(nums.map(v => (v - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length).toFixed(6);
+    const last = nums[nums.length - 1].toFixed(6);
+
+    const trend = nums.length > 1
+      ? (nums[nums.length - 1] > nums[0] ? "increasing" : nums[nums.length - 1] < nums[0] ? "decreasing" : "flat")
+      : "—";
+
+    box.style.display = "block";
+    box.innerHTML = `
+      <div class="stat-row">
+        <div class="stat"><span class="stat-label">Min</span><span>${min}</span></div>
+        <div class="stat"><span class="stat-label">Max</span><span>${max}</span></div>
+        <div class="stat"><span class="stat-label">Mean</span><span>${mean}</span></div>
+        <div class="stat"><span class="stat-label">Std</span><span>${std}</span></div>
+        <div class="stat"><span class="stat-label">Final</span><span>${last}</span></div>
+        <div class="stat"><span class="stat-label">Trend</span><span>${trend}</span></div>
+        <div class="stat"><span class="stat-label">Points</span><span>${nums.length}</span></div>
+      </div>`;
+  }
+
+  // ── Observable result injection to chat ───────────────────────────────────
+
+  async function injectObsResultAndChat(data, obsRunId, obsType) {
+    const values = data.data?.values || [];
+    // Extract scalar numbers — handle both plain floats and complex {real, imag} objects
+    const nums = values.reduce((acc, v) => {
+      if (typeof v === "number") acc.push(v);
+      else if (v && typeof v === "object" && "real" in v) acc.push(v.real);
+      return acc;
+    }, []);
+    const summary = {
+      obs_run_id: obsRunId,
+      observable_type: obsType,
+      params: data.metadata?.params || currentObsConfig?.params || {},
+      n_points: values.length,
+      final_value: nums.length > 0 ? nums[nums.length - 1] : null,
+      mean_value: nums.length > 0 ? (nums.reduce((a, b) => a + b, 0) / nums.length) : null,
+    };
+
+    const injectedText = "[OBSERVABLE RESULT]\n" + JSON.stringify(summary, null, 2);
+    addBubble("Calculation complete. Asking Claude to interpret the results…", "info");
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: injectedText }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Could not get interpretation: " + (err.detail || res.statusText), "info");
+        return;
+      }
+
+      const chatData = await res.json();
+      sessionId = chatData.session_id;
+      localStorage.setItem("tn_ed_session", sessionId);
+      if (chatData.text) addBubble(chatData.text, "assistant");
+    } catch (e) {
+      addBubble("Network error getting interpretation: " + e.message, "info");
+    } finally {
+      setThinking(false);
+      document.getElementById("msg-input").focus();
+    }
   }
 
   // Creating a feedback loop with the LLM (Claude currently) to have a flowing conversation
