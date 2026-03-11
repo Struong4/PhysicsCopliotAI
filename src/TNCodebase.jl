@@ -182,6 +182,6 @@ include(joinpath(@__DIR__, "Runners", "run_simulation.jl"))
 export build_solver_from_config, build_options_from_config, run_simulation_from_config
 
 include(joinpath(@__DIR__, "Runners", "run_Observable.jl"))
-export run_observable_calculation_from_config, load_observable_timeseries
+export run_observable_calculation_from_config, run_observable_from_run_id, load_observable_timeseries
 
 end

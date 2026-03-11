@@ -5,7 +5,8 @@
 ```
 /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
 ├── src/                    ← Your engines (Database, Runners, etc.)
-├── tools/                  ← config_builder_v4.html is here
+├── server/                 ← Server scripts (start_server.jl, pipeline_server.jl)
+├── frontend/               ← config_builder.html is here
 ├── data/                   ← Simulation data saves here
 ├── data_obs/               ← Observable data saves here
 ├── examples/
@@ -23,20 +24,21 @@ Copy these 3 files to `/home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/`:
 cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
 
 # Copy the new files
-cp /path/to/downloaded/start_server.jl .
-cp /path/to/downloaded/pipeline_server.jl .
-cp /path/to/downloaded/pipeline_automation.js tools/
+cp /path/to/downloaded/start_server.jl server/
+cp /path/to/downloaded/pipeline_server.jl server/
+cp /path/to/downloaded/pipeline_automation.js frontend/
 ```
 
 Your directory should now look like:
 
 ```
 TNSoftware/
-├── start_server.jl          ← NEW
-├── pipeline_server.jl       ← NEW
-├── tools/
-│   ├── config_builder_v4.html
-│   └── pipeline_automation.js  ← NEW
+├── server/
+│   ├── start_server.jl          ← NEW
+│   └── pipeline_server.jl       ← NEW
+├── frontend/
+│   ├── config_builder.html
+│   └── pipeline_automation.js   ← NEW
 ├── src/
 │   ├── Database/
 │   │   ├── database_utils.jl
@@ -56,9 +58,9 @@ TNSoftware/
 julia -e 'using Pkg; Pkg.add("HTTP")'
 ```
 
-### Step 3: Modify config_builder_v4.html
+### Step 3: Modify config_builder.html
 
-Open `tools/config_builder_v4.html` and add **ONE LINE** before the closing `</body>` tag:
+Open `frontend/config_builder.html` and add **one line** before the closing `</body>` tag:
 
 Find the end of the file (around line 2563):
 
@@ -91,7 +93,7 @@ Change to:
 
 ```bash
 cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-julia start_server.jl
+julia server/start_server.jl
 ```
 
 You should see:
@@ -105,7 +107,7 @@ Project root: /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
 
 Configuration:
   Source code:   /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/src
-  Tools (GUI):   /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/tools
+  Frontend:      /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/frontend
   Data:          /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/data
   Observables:   /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/data_obs
 
@@ -144,7 +146,7 @@ The server uses absolute paths, so you can start it from anywhere:
 
 ```bash
 cd /tmp/
-julia /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/start_server.jl
+julia /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/server/start_server.jl
 ```
 
 It will still:
@@ -221,7 +223,7 @@ The `start_server.jl` file attempts to **auto-detect and load** your modules.
 
 ### If Auto-Detection Doesn't Work
 
-Edit `start_server.jl` around line 60-120 to manually specify your files:
+Edit `server/start_server.jl` to manually specify your files:
 
 ```julia
 # Example: If your files are directly in src/
@@ -288,14 +290,14 @@ ls data/dmrg/20241104_153045_xxxxxxxx/
 find src -name "database_utils.jl"
 ```
 
-Then edit `start_server.jl` to match the actual path.
+Then edit `server/start_server.jl` to match the actual path.
 
 ### Button doesn't appear in GUI
 
 **Problem:** JavaScript not loaded
 
 **Solution:**
-1. Check `tools/pipeline_automation.js` exists
+1. Check `frontend/pipeline_automation.js` exists
 2. Check you added `<script src="pipeline_automation.js"></script>` to HTML
 3. Hard refresh browser: Ctrl+Shift+R
 
@@ -303,7 +305,7 @@ Then edit `start_server.jl` to match the actual path.
 
 **Problem:** Server not running
 
-**Solution:** Start it with `julia start_server.jl`
+**Solution:** Start the server with `julia server/start_server.jl`
 
 ### Server starts but runs fail
 
@@ -330,7 +332,7 @@ screen -S tn_server
 
 # Start server
 cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-julia start_server.jl
+julia server/start_server.jl
 
 # Detach: Press Ctrl+A, then D
 # Server keeps running in background
@@ -346,7 +348,7 @@ screen -X -S tn_server quit
 
 ```bash
 cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-nohup julia start_server.jl > server.log 2>&1 &
+nohup julia server/start_server.jl > server.log 2>&1 &
 
 # Server runs in background
 # Logs go to server.log
@@ -359,19 +361,19 @@ pkill -f start_server.jl
 
 ## What the Files Do
 
-**start_server.jl:**
-- Detects project root (`@__DIR__`)
-- Sets up paths to `src/`, `tools/`, `data/`, `data_obs/`
-- Loads all your modules from `src/`
+**server/start_server.jl:**
+- Detects project root (`dirname(@__DIR__)`)
+- Sets up paths to `src/`, `frontend/`, `data/`, `data_obs/`
+- Loads TNCodebase module
 - Starts the HTTP server
 
-**pipeline_server.jl:**
+**server/pipeline_server.jl:**
 - Creates HTTP server on port 8080
 - Handles API requests (`/api/run`, `/api/status`, etc.)
 - Calls your existing functions:
   - `run_simulation_from_config()`
   - `run_observable_calculation_from_config()`
-- Serves HTML from `tools/config_builder_v4.html`
+- Serves HTML from `frontend/config_builder.html`
 
 **pipeline_automation.js:**
 - Adds "Run Pipeline" button to GUI
@@ -405,10 +407,10 @@ Future enhancements:
 
 Before starting server:
 
-- [x] `start_server.jl` in project root
-- [x] `pipeline_server.jl` in project root
-- [x] `pipeline_automation.js` in `tools/`
-- [x] Modified `tools/config_builder_v4.html` (added script tag)
+- [x] `start_server.jl` in `server/`
+- [x] `pipeline_server.jl` in `server/`
+- [x] `pipeline_automation.js` in `frontend/`
+- [x] Modified `frontend/config_builder.html` (added script tag)
 - [x] HTTP.jl installed
 - [x] All your existing code in `src/`
 
@@ -437,7 +439,7 @@ If you encounter issues:
 
 ```bash
 cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-julia start_server.jl
+julia server/start_server.jl
 ```
 
 Then open: **http://localhost:8080**

@@ -79,14 +79,17 @@ struct SpinSite{T} <: AbstractSite{T}
 end
   
 function SpinSite(S::Real; T=ComplexF64)
-    d   = Int(2T(S) + 1)
-    ops = Dict{Symbol,Matrix{T}}()
-    spectra = Dict{Symbol,Tuple{Vector{T},Matrix{T}}}()
+    d   = Int(2S + 1)
+    # Always store operators as ComplexF64 (σʸ is inherently complex)
+    ops = Dict{Symbol,Matrix{ComplexF64}}()
+    spectra = Dict{Symbol,Tuple{Vector{Float64},Matrix{ComplexF64}}}()
+    raw = spin_ops(d)
     for ax in (:X,:Y,:Z)
-        E = eigen(spin_ops(d)[ax])
+        mat = ComplexF64.(raw[ax])
+        E = eigen(Hermitian(mat))
         idx = sortperm(E.values)
-        ops[ax] = spin_ops(d)[ax]
-        spectra[ax] = (E.values[idx], E.vectors[:,idx])
+        ops[ax] = mat
+        spectra[ax] = (real.(E.values[idx]), ComplexF64.(E.vectors[:,idx]))
     end
     return SpinSite{T}(d,ops,spectra)
 end

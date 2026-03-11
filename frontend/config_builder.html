@@ -27,19 +27,16 @@
             font-size: 14px;
         }
         .container {
-            display: flex;
-            gap: 30px;
+            display: block;
+            max-width: 860px;
+            margin: 0 auto;
         }
         .form-container {
-            flex: 1;
-            min-width: 550px;
+            width: 100%;
         }
         .preview-container {
-            flex: 1;
-            min-width: 400px;
-            position: sticky;
-            top: 20px;
-            height: fit-content;
+            width: 100%;
+            margin-top: 0;
         }
         .section {
             background: white;
@@ -54,10 +51,6 @@
             border-bottom: 2px solid #4a90d9;
             color: #4a90d9;
             font-size: 1.2em;
-        }
-        .section.analysis-section h2 {
-            border-bottom-color: #28a745;
-            color: #28a745;
         }
         .section.ed-section h2 {
             border-bottom-color: #9c27b0;
@@ -225,6 +218,28 @@
             opacity: 0.7;
         }
         
+        /* Buttons inside white card sections (registry panel) */
+        .reg-btn {
+            padding: 7px 18px;
+            font-size: 13px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #444;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .reg-btn:hover {
+            background: #e9ecef;
+            border-color: #aaa;
+        }
+        .reg-btn.active {
+            background: #4a90d9;
+            color: white;
+            border-color: #4a90d9;
+        }
+
         /* Algorithm-specific colors */
         .algo-btn.dmrg.active { background: #27ae60; color: white; border-color: #27ae60; }
         .algo-btn.tdvp.active { background: #2980b9; color: white; border-color: #2980b9; }
@@ -398,15 +413,18 @@
                             New Simulation
                             <small>Run a new simulation</small>
                         </button>
-                        <button class="selector-btn" id="mode-analysis" onclick="setMode('analysis')">
-                            Analysis
-                            <small>Compute observables on existing data</small>
+                        <button class="selector-btn" id="mode-query_calculate" onclick="setMode('query_calculate')">
+                            Query &amp; Calculate
+                            <small>Find runs &amp; compute observables</small>
+                        </button>
+                        <button class="selector-btn" id="mode-registry" onclick="setMode('registry')">
+                            Registry
+                            <small>Build &amp; manage models/states</small>
                         </button>
                     </div>
                 </div>
                 
-                <div class="selector-row">
-                    <span class="selector-label">Algorithm</span>
+                <div class="selector-row" id="algorithm-selector-row">
                     <div class="selector-buttons">
                         <button class="selector-btn algo-btn dmrg active" id="algo-dmrg" onclick="setAlgorithm('dmrg')">
                             DMRG
@@ -428,10 +446,7 @@
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════════════════
-                 SYSTEM SECTION
-                 ══════════════════════════════════════════════════════════════════════ -->
-            <div class="section">
+            <div class="section" id="system-section">
                 <h2>System</h2>
                 <div class="form-group">
                     <label>System Type</label>
@@ -484,7 +499,7 @@
             <!-- ══════════════════════════════════════════════════════════════════════
                  MODEL SECTION
                  ══════════════════════════════════════════════════════════════════════ -->
-            <div class="section">
+            <div class="section" id="model-section">
                 <h2>Model</h2>
                 <div class="form-group">
                     <label>Model</label>
@@ -493,14 +508,16 @@
                             <option value="transverse_field_ising">Transverse Field Ising</option>
                             <option value="heisenberg">Heisenberg</option>
                             <option value="long_range_ising">Long-Range Ising</option>
-                            <option value="custom_spin">Custom Spin Model</option>
                         </optgroup>
                         <optgroup label="Spin-Boson Models" id="optgroup-spinboson">
                             <option value="ising_dicke">Ising-Dicke</option>
                             <option value="long_range_ising_dicke">Long-Range Ising-Dicke</option>
-                            <option value="custom_spinboson">Custom Spin-Boson Model</option>
+                        </optgroup>
+                        <optgroup label="Saved Models" id="optgroup-user">
+                            <!-- Populated dynamically from registry by pipeline_automation.js -->
                         </optgroup>
                     </select>
+                    <small style="color:#6c5ce7; margin-top:4px; display:block;">Need a custom Hamiltonian? Build and save it in the <strong>Registry</strong> tab, then select it from "Saved Models" above.</small>
                 </div>
 
                 <!-- TFI Parameters -->
@@ -726,60 +743,6 @@
                     </div>
                 </div>
 
-                <!-- Custom Spin Model -->
-                <div id="params-custom_spin" class="subsection hidden">
-                    <h3>Custom Spin Channels</h3>
-                    <div class="info-box">
-                        Build custom Hamiltonian from coupling and field terms.<br>
-                        <strong>Note:</strong> "range" means sites <em>exactly</em> that distance apart (range=1 → nearest-neighbor, range=2 → next-nearest-neighbor).<br>
-                        <span id="custom-spin-format-hint"></span>
-                    </div>
-                    <div id="custom-spin-channels"></div>
-                    <button class="btn-add" onclick="addSpinChannel()">+ Add Channel</button>
-                </div>
-
-                <!-- Custom Spin-Boson Model -->
-                <div id="params-custom_spinboson" class="subsection hidden">
-                    <h3>Custom Spin-Boson Channels</h3>
-                    <div class="info-box">
-                        Build custom spin-boson Hamiltonian with spin, boson, and coupling terms.
-                    </div>
-                    
-                    <!-- Spin Channels Category -->
-                    <div class="channel-category">
-                        <div class="collapsible-header" onclick="toggleCollapse(this)">
-                            <h4>Spin Channels <small>(auto-wrapped with Ib)</small></h4>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div id="spinboson-spin-channels"></div>
-                            <button class="btn-add" onclick="addSpinBosonSpinChannel()">+ Add Spin Channel</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Boson Channels Category -->
-                    <div class="channel-category">
-                        <div class="collapsible-header" onclick="toggleCollapse(this)">
-                            <h4>Boson Channels</h4>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div id="spinboson-boson-channels"></div>
-                            <button class="btn-add" onclick="addBosonChannel()">+ Add Boson Channel</button>
-                        </div>
-                    </div>
-                    
-                    <!-- SpinBoson Coupling Channels Category -->
-                    <div class="channel-category">
-                        <div class="collapsible-header" onclick="toggleCollapse(this)">
-                            <h4>Spin-Boson Coupling Channels</h4>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div id="spinboson-coupling-channels"></div>
-                            <button class="btn-add" onclick="addSpinBosonCouplingChannel()">+ Add Coupling Channel</button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -792,8 +755,10 @@
                     <label>State Type</label>
                     <select id="state-type" onchange="onStateTypeChange()">
                         <option value="prebuilt">Prebuilt Pattern</option>
+                        <option value="saved">Saved State</option>
                         <option value="random">Random</option>
                     </select>
+                    <small style="color:#6c5ce7; margin-top:4px; display:block;">Need a custom site-by-site state? Build and save it in the <strong>Registry</strong> tab, then select it from "Saved State" above.</small>
                 </div>
 
                 <!-- Prebuilt state options -->
@@ -905,6 +870,18 @@
                         <label>Seed (optional)</label>
                         <input type="number" id="state-seed" placeholder="Random" onchange="updatePreview()">
                     </div>
+                </div>
+
+                <!-- Saved state selector -->
+                <div id="state-saved-options" class="hidden">
+                    <div class="form-group">
+                        <label>Saved State</label>
+                        <select id="state-saved-name" onchange="onSavedStateChange()">
+                            <option value="">— no saved states yet —</option>
+                        </select>
+                        <small>Saved states are loaded from the registry. Start the server to see them.</small>
+                    </div>
+                    <div id="saved-state-preview" style="margin-top:8px; padding:10px; background:#f0f4f8; border-radius:4px; font-size:12px; font-family:monospace; display:none;"></div>
                 </div>
             </div>
 
@@ -1048,256 +1025,442 @@
             </div>
 
             <!-- ══════════════════════════════════════════════════════════════════════
-                 ANALYSIS SECTION (Analysis mode only)
-                 ══════════════════════════════════════════════════════════════════════ -->
-            <div class="section hidden analysis-section" id="analysis-section">
-                <h2>Analysis Configuration</h2>
-                
-                <!-- Selection subsection -->
-                <div class="subsection">
-                    <h3 id="selection-title">Sweep Selection</h3>
-                    <div class="form-group">
-                        <label>Selection type</label>
-                        <select id="selection-type" onchange="onSelectionTypeChange()">
-                            <option value="all">All</option>
-                            <option value="range">Range</option>
-                            <option value="specific">Specific list</option>
-                            <option value="time_range" id="option-time_range">Time range</option>
-                            <option value="ground" id="option-ground" class="hidden">Ground state only</option>
-                        </select>
-                    </div>
-                    
-                    <div id="selection-range-params" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label id="range-start-label">Start</label>
-                                <input type="number" id="selection-range-start" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label id="range-end-label">End</label>
-                                <input type="number" id="selection-range-end" value="20" min="1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="selection-specific-params" class="hidden">
-                        <div class="form-group">
-                            <label id="list-label">List (comma-separated)</label>
-                            <input type="text" id="selection-list" value="1, 5, 10, 20" onchange="updatePreview()">
-                        </div>
-                    </div>
-                    
-                    <div id="selection-time_range-params" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>t_start</label>
-                                <input type="number" id="selection-time-start" value="0.0" step="0.1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>t_end</label>
-                                <input type="number" id="selection-time-end" value="5.0" step="0.1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Observable subsection -->
-                <div class="subsection">
-                    <h3>Observable</h3>
-                    <div class="form-group">
-                        <label>Observable type</label>
-                        <select id="observable-type" onchange="onObservableTypeChange()">
-                            <optgroup label="Local">
-                                <option value="single_site_expectation">Single site ⟨Oᵢ⟩</option>
-                                <option value="subsystem_expectation_sum">Subsystem sum Σᵢ⟨Oᵢ⟩</option>
-                            </optgroup>
-                            <optgroup label="Two-point">
-                                <option value="two_site_expectation">Two-site ⟨OᵢPⱼ⟩</option>
-                                <option value="correlation_function">Correlation ⟨OᵢOⱼ⟩</option>
-                                <option value="connected_correlation">Connected ⟨OᵢOⱼ⟩-⟨Oᵢ⟩⟨Oⱼ⟩</option>
-                            </optgroup>
-                            <optgroup label="Entanglement">
-                                <option value="entanglement_entropy">Entropy S(ρ_A)</option>
-                                <option value="entanglement_spectrum">Spectrum λᵢ</option>
-                            </optgroup>
-                            <optgroup label="Energy">
-                                <option value="energy_expectation">Energy ⟨H⟩</option>
-                                <option value="energy_variance">Variance ⟨H²⟩-⟨H⟩²</option>
-                            </optgroup>
-                        </select>
-                    </div>
-
-                    <!-- single_site_expectation params -->
-                    <div id="obs-params-single_site_expectation">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site</label>
-                                <input type="number" id="obs-site" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                    <option value="Sp">S+</option>
-                                    <option value="Sm">S-</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- subsystem_expectation_sum params -->
-                    <div id="obs-params-subsystem_expectation_sum" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator-subsystem" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>l (start)</label>
-                                <input type="number" id="obs-l" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>m (end)</label>
-                                <input type="number" id="obs-m" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- two_site_expectation params -->
-                    <div id="obs-params-two_site_expectation" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site i</label>
-                                <input type="number" id="obs-site_i-two" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Site j</label>
-                                <input type="number" id="obs-site_j-two" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Operator i</label>
-                                <select id="obs-operator_i" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                    <option value="Sp">S+</option>
-                                    <option value="Sm">S-</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Operator j</label>
-                                <select id="obs-operator_j" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                    <option value="Sp">S+</option>
-                                    <option value="Sm">S-</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- correlation_function params -->
-                    <div id="obs-params-correlation_function" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site i</label>
-                                <input type="number" id="obs-site_i-corr" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Site j</label>
-                                <input type="number" id="obs-site_j-corr" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator-corr" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- connected_correlation params -->
-                    <div id="obs-params-connected_correlation" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Site i</label>
-                                <input type="number" id="obs-site_i-conn" value="1" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Site j</label>
-                                <input type="number" id="obs-site_j-conn" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>Operator</label>
-                                <select id="obs-operator-conn" onchange="updatePreview()">
-                                    <option value="Z" selected>Z</option>
-                                    <option value="X">X</option>
-                                    <option value="Y">Y</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- entanglement_entropy params -->
-                    <div id="obs-params-entanglement_entropy" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Bond (cut position)</label>
-                                <input type="number" id="obs-bond-entropy" value="10" min="1" onchange="updatePreview()">
-                                <small>Bipartition: [1..bond] | [bond+1..N]</small>
-                            </div>
-                            <div class="form-group">
-                                <label>α (Renyi index)</label>
-                                <input type="number" id="obs-alpha" value="1" step="0.5" min="0" onchange="updatePreview()">
-                                <small>α=1 for von Neumann</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- entanglement_spectrum params -->
-                    <div id="obs-params-entanglement_spectrum" class="hidden">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Bond</label>
-                                <input type="number" id="obs-bond-spectrum" value="10" min="1" onchange="updatePreview()">
-                            </div>
-                            <div class="form-group">
-                                <label>n_values (optional)</label>
-                                <input type="number" id="obs-n_values" placeholder="All" onchange="updatePreview()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- energy params -->
-                    <div id="obs-params-energy_expectation" class="hidden">
-                        <div class="info-box success">No parameters needed. H is rebuilt from config.</div>
-                    </div>
-                    <div id="obs-params-energy_variance" class="hidden">
-                        <div class="info-box success">No parameters needed. H is rebuilt from config.</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════════════════
                  DESCRIPTION
                  ══════════════════════════════════════════════════════════════════════ -->
-            <div class="section">
+            <div class="section" id="description-section">
                 <h2>Description (optional)</h2>
                 <div class="form-group">
                     <textarea id="config-description" rows="2" placeholder="Notes about this configuration..." onchange="updatePreview()"></textarea>
                 </div>
             </div>
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 QUERY & CALCULATE SECTION (hidden unless mode = query_calculate)
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div id="query-calculate-section" class="hidden">
+
+                <!-- Step 1: Search Simulations -->
+                <div class="section" style="border-left: 4px solid #17a2b8;">
+                    <h2 style="color:#17a2b8; border-color:#17a2b8;">Step 1: Find Simulation Data</h2>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Search the catalog for existing simulation runs, then select one.
+                    </p>
+
+                    <!-- Core filters row 1: System Type, Model, State, Algorithm, Status -->
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+                        <div class="form-group" style="flex:1; min-width:120px;">
+                            <label style="font-size:12px;">System Type</label>
+                            <select id="qc-filter-system_type">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:120px;">
+                            <label style="font-size:12px;">Model</label>
+                            <select id="qc-filter-model_name" onchange="onQCModelChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">State Kind</label>
+                            <select id="qc-filter-state_kind" onchange="onQCStateKindChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">State Name</label>
+                            <select id="qc-filter-state_name">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:120px;">
+                            <label style="font-size:12px;">Algorithm</label>
+                            <select id="qc-filter-algorithm" onchange="onQCAlgorithmChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">Status</label>
+                            <select id="qc-filter-status">
+                                <option value="">Any</option>
+                                <option value="completed" selected>Completed</option>
+                                <option value="running">Running</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Core filters row 2: N (with operator), S, dtype -->
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; align-items:flex-end;">
+                        <div class="form-group" style="min-width:60px; flex:0 0 auto;">
+                            <label style="font-size:12px;">N</label>
+                            <select id="qc-filter-N-op" style="width:60px;">
+                                <option value="=">=</option>
+                                <option value="_gte">≥</option>
+                                <option value="_gt">&gt;</option>
+                                <option value="_lte">≤</option>
+                                <option value="_lt">&lt;</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width:80px; flex:0 0 80px;">
+                            <input type="number" id="qc-filter-N" placeholder="Any" min="1">
+                        </div>
+                        <div class="form-group" style="min-width:60px; flex:0 0 auto;">
+                            <label style="font-size:12px;">S</label>
+                            <select id="qc-filter-S">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width:80px; flex:0 0 auto;">
+                            <label style="font-size:12px;">dtype</label>
+                            <select id="qc-filter-dtype">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Model-specific parameter filters (cascading) -->
+                    <div id="qc-model-params" style="display:none; margin-bottom:8px; padding:8px; background:#f0fff0; border-radius:4px; border-left:3px solid #28a745;">
+                        <div style="font-size:11px; color:#28a745; font-weight:600; margin-bottom:6px;">Model Parameters</div>
+                        <div id="qc-model-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <!-- State-specific parameter filters (cascading) -->
+                    <div id="qc-state-params" style="display:none; margin-bottom:8px; padding:8px; background:#fff8f0; border-radius:4px; border-left:3px solid #fd7e14;">
+                        <div style="font-size:11px; color:#fd7e14; font-weight:600; margin-bottom:6px;">State Parameters</div>
+                        <div id="qc-state-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <!-- Algorithm-specific parameter filters (cascading) -->
+                    <div id="qc-algo-params" style="display:none; margin-bottom:8px; padding:8px; background:#f0f8ff; border-radius:4px; border-left:3px solid #17a2b8;">
+                        <div style="font-size:11px; color:#17a2b8; font-weight:600; margin-bottom:6px;">Algorithm Parameters</div>
+                        <div id="qc-algo-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button class="btn btn-success" style="background:#17a2b8; width:auto; padding:8px 24px;" onclick="searchSimulations()">
+                            Search Catalog
+                        </button>
+                        <button class="btn" style="background:#6c757d; color:white; width:auto; padding:8px 16px; font-size:12px;" onclick="refreshCatalogInfo()" title="Refresh catalog metadata for filter dropdowns">
+                            Refresh Filters
+                        </button>
+                    </div>
+
+                    <div id="qc-search-status" style="display:none; margin-top:10px; font-size:13px;"></div>
+                    <div id="qc-selected-run" style="display:none; margin-top:6px; padding:6px 10px; background:#d4edda; border-radius:4px; font-size:13px;"></div>
+                    <div id="qc-search-results" style="margin-top:10px; max-height:250px; overflow-y:auto;"></div>
+                </div>
+
+                <!-- Step 2: Configure Observable -->
+                <div class="section" style="border-left: 4px solid #28a745;">
+                    <h2 style="color:#28a745;">Step 2: Configure Observable</h2>
+
+                    <div class="subsection">
+                        <h3 style="font-size:14px;">Selection</h3>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <div class="form-group" style="flex:1; min-width:120px;">
+                                <label style="font-size:12px;">Selection type</label>
+                                <select id="qc-selection-type" onchange="onQCSelectionChange()">
+                                    <option value="all">All</option>
+                                    <option value="range">Range</option>
+                                    <option value="specific">Specific list</option>
+                                    <option value="time_range">Time range</option>
+                                </select>
+                            </div>
+                            <div id="qc-sel-range-group" class="hidden" style="display:none; flex:2; gap:10px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">Start</label>
+                                    <input type="number" id="qc-sel-range-start" value="1" min="1">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">End</label>
+                                    <input type="number" id="qc-sel-range-end" value="20" min="1">
+                                </div>
+                            </div>
+                            <div id="qc-sel-specific-group" class="hidden" style="display:none; flex:2;">
+                                <div class="form-group" style="width:100%;">
+                                    <label style="font-size:12px;">List (comma-separated)</label>
+                                    <input type="text" id="qc-sel-list" value="1, 5, 10, 20">
+                                </div>
+                            </div>
+                            <div id="qc-sel-time-group" class="hidden" style="display:none; flex:2; gap:10px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">t_start</label>
+                                    <input type="number" id="qc-sel-time-start" value="0" step="0.1">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label style="font-size:12px;">t_end</label>
+                                    <input type="number" id="qc-sel-time-end" value="5" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3 style="font-size:14px;">Observable</h3>
+                        <div class="form-group">
+                            <label style="font-size:12px;">Observable type</label>
+                            <select id="qc-observable-type" onchange="renderObservableParams()">
+                                <!-- Populated dynamically from observables registry on server connect -->
+                                <option value="" disabled selected>Connect to server to load observables</option>
+                            </select>
+                        </div>
+                        <div id="qc-obs-params" style="margin-top:8px;"></div>
+                    </div>
+
+                    <button class="btn btn-success" style="margin-top:10px; padding:10px 24px;" onclick="runObservableCalculation()">
+                        Calculate Observable
+                    </button>
+                    <div id="qc-calc-status" style="display:none; margin-top:10px; padding:10px; background:#f8f9fa; border-radius:4px; font-size:13px;"></div>
+                </div>
+
+                <!-- Step 3: Results -->
+                <div id="qc-results-display" class="section" style="display:none; border-left: 4px solid #ffc107;">
+                </div>
+
+                <!-- ────────────────────────────────────────────────────── -->
+                <!-- Browse Observable Catalog -->
+                <!-- ────────────────────────────────────────────────────── -->
+                <div class="section" style="border-left: 4px solid #6f42c1; margin-top:16px;">
+                    <h2 style="color:#6f42c1;">Browse Observable Catalog</h2>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Search existing observable calculations across all simulations.
+                    </p>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+                        <div class="form-group" style="flex:1; min-width:130px;">
+                            <label style="font-size:12px;">Observable Type</label>
+                            <select id="obs-browse-type" onchange="onObsBrowseTypeChange()">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:110px;">
+                            <label style="font-size:12px;">Sim Algorithm</label>
+                            <select id="obs-browse-sim-algo">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:110px;">
+                            <label style="font-size:12px;">Sim Model</label>
+                            <select id="obs-browse-sim-model">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:100px;">
+                            <label style="font-size:12px;">Selection</label>
+                            <select id="obs-browse-selection">
+                                <option value="">Any</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:90px;">
+                            <label style="font-size:12px;">Status</label>
+                            <select id="obs-browse-status">
+                                <option value="">Any</option>
+                                <option value="completed" selected>Completed</option>
+                                <option value="running">Running</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Observable-type-specific param filters (cascading) -->
+                    <div id="obs-browse-params" style="display:none; margin-bottom:8px; padding:8px; background:#f8f0ff; border-radius:4px; border-left:3px solid #6f42c1;">
+                        <div style="font-size:11px; color:#6f42c1; font-weight:600; margin-bottom:6px;">Observable Parameters</div>
+                        <div id="obs-browse-params-inner" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    </div>
+
+                    <button class="btn" style="background:#6f42c1; color:white; width:auto; padding:8px 24px;" onclick="browseObservables()">
+                        Browse Observables
+                    </button>
+
+                    <div id="obs-browse-status-msg" style="display:none; margin-top:10px; font-size:13px;"></div>
+                    <div id="obs-browse-results" style="margin-top:10px; max-height:300px; overflow-y:auto;"></div>
+                </div>
+
+            </div>
+            <!-- end query-calculate-section -->
+
+            <!-- ══════════════════════════════════════════════════════════════════════
+                 REGISTRY SECTION (hidden unless mode = registry)
+                 ══════════════════════════════════════════════════════════════════════ -->
+            <div id="registry-section" class="hidden">
+
+                <!-- Tab row: Models | States -->
+                <div class="top-selector" style="margin-bottom:0;">
+                    <div class="selector-row">
+                        <span class="selector-label">Registry</span>
+                        <div class="selector-buttons">
+                            <button class="reg-btn active" id="reg-tab-models" onclick="setRegistryTab('models')">
+                                Models
+                                <small>Build &amp; manage Hamiltonians</small>
+                            </button>
+                            <button class="reg-btn" id="reg-tab-states" onclick="setRegistryTab('states')">
+                                States
+                                <small>Build &amp; manage initial states</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── MODELS TAB ── -->
+                <div id="registry-models-tab">
+
+                    <div class="section">
+                        <h2>Build New Model</h2>
+
+                        <!-- Backend + System selectors -->
+                        <div class="form-row" style="flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+                            <div class="form-group">
+                                <label>Backend</label>
+                                <div class="selector-buttons" style="gap:6px;">
+                                    <button class="reg-btn active" id="reg-backend-tn" onclick="setRegistryBackend('tn')" style="padding:7px 18px; font-size:13px;">
+                                        TN <small>channels</small>
+                                    </button>
+                                    <button class="reg-btn" id="reg-backend-ed" onclick="setRegistryBackend('ed')" style="padding:7px 18px; font-size:13px;">
+                                        ED <small>terms</small>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>System Type</label>
+                                <div class="selector-buttons" style="gap:6px;">
+                                    <button class="reg-btn active" id="reg-sys-spin" onclick="setRegistrySystem('spin')" style="padding:7px 18px; font-size:13px;">Spin</button>
+                                    <button class="reg-btn" id="reg-sys-spinboson" onclick="setRegistrySystem('spinboson')" style="padding:7px 18px; font-size:13px;">Spin-Boson</button>
+                                </div>
+                            </div>
+                            <div class="form-group" id="reg-N-group" style="min-width:100px;">
+                                <label>N <small>(for n_exp hint)</small></label>
+                                <input type="number" id="reg-N" value="20" min="2" onchange="renderRegistryModelBuilder()">
+                            </div>
+                            <div class="form-group hidden" id="reg-N_spins-group" style="min-width:100px;">
+                                <label>N_spins</label>
+                                <input type="number" id="reg-N_spins" value="8" min="1" onchange="renderRegistryModelBuilder()">
+                            </div>
+                        </div>
+
+                        <!-- Spin channel builder -->
+                        <div id="reg-spin-builder">
+                            <div id="reg-spin-channels"></div>
+                            <button class="btn-add" onclick="addRegSpinChannel()">+ Add Channel</button>
+                        </div>
+
+                        <!-- Spinboson builders -->
+                        <div id="reg-spinboson-builder" class="hidden">
+                            <div class="channel-category">
+                                <div class="collapsible-header" onclick="toggleCollapse(this)">
+                                    <h4>Spin Channels</h4><span class="arrow">▼</span>
+                                </div>
+                                <div class="collapsible-content">
+                                    <div id="reg-spinboson-spin-channels"></div>
+                                    <button class="btn-add" onclick="addRegSpinbosonSpinChannel()">+ Add Spin Channel</button>
+                                </div>
+                            </div>
+                            <div class="channel-category">
+                                <div class="collapsible-header" onclick="toggleCollapse(this)">
+                                    <h4>Boson Channels</h4><span class="arrow">▼</span>
+                                </div>
+                                <div class="collapsible-content">
+                                    <div id="reg-spinboson-boson-channels"></div>
+                                    <button class="btn-add" onclick="addRegBosonChannel()">+ Add Boson Channel</button>
+                                </div>
+                            </div>
+                            <div class="channel-category">
+                                <div class="collapsible-header" onclick="toggleCollapse(this)">
+                                    <h4>Spin-Boson Coupling Channels</h4><span class="arrow">▼</span>
+                                </div>
+                                <div class="collapsible-content">
+                                    <div id="reg-spinboson-coupling-channels"></div>
+                                    <button class="btn-add" onclick="addRegSpinBosonCouplingChannel()">+ Add Coupling Channel</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save row -->
+                        <div style="margin-top:16px; padding-top:14px; border-top:1px solid #ddd;">
+                            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                                <div style="flex:1.5; min-width:150px;">
+                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Model Name</label>
+                                    <input type="text" id="reg-model-display" placeholder="e.g. J1-J2 Frustrated Chain" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                </div>
+                                <div style="flex:2; min-width:160px;">
+                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">Description (optional)</label>
+                                    <input type="text" id="reg-model-description" placeholder="e.g. Frustrated chain with next-nearest-neighbor" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                </div>
+                                <button onclick="saveRegistryModel()" style="padding:8px 20px; background:#6c5ce7; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap;">Save Model</button>
+                            </div>
+                            <div id="reg-model-feedback" style="display:none; margin-top:8px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Models list (prebuilt + user) -->
+                    <div class="section">
+                        <h2>Saved Models</h2>
+                        <div id="registry-models-list">
+                            <div style="color:#999; font-style:italic; padding:12px 0;">Loading models...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── STATES TAB ── -->
+                <div id="registry-states-tab" class="hidden">
+
+                    <div class="section">
+                        <h2>Build New State</h2>
+
+                        <div class="form-row" style="flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+                            <div class="form-group">
+                                <label>System Type</label>
+                                <div class="selector-buttons" style="gap:6px;">
+                                    <button class="reg-btn active" id="reg-state-sys-spin" onclick="setRegistryStateSystem('spin')" style="padding:7px 18px; font-size:13px;">Spin</button>
+                                    <button class="reg-btn" id="reg-state-sys-spinboson" onclick="setRegistryStateSystem('spinboson')" style="padding:7px 18px; font-size:13px;">Spin-Boson</button>
+                                </div>
+                            </div>
+                            <div class="form-group" style="min-width:90px;">
+                                <label>S</label>
+                                <input type="number" id="reg-S" value="0.5" step="0.5" min="0.5" onchange="renderRegStateTable()">
+                            </div>
+                            <div class="form-group" id="reg-state-N-group" style="min-width:90px;">
+                                <label>N (sites)</label>
+                                <input type="number" id="reg-state-N" value="10" min="1" onchange="renderRegStateTable()">
+                            </div>
+                            <div class="form-group hidden" id="reg-state-N_spins-group" style="min-width:90px;">
+                                <label>N_spins</label>
+                                <input type="number" id="reg-state-N_spins" value="4" min="1" onchange="renderRegStateTable()">
+                            </div>
+                            <div class="form-group hidden" id="reg-state-boson-group" style="min-width:90px;">
+                                <label>Boson level |n⟩</label>
+                                <input type="number" id="reg-state-boson_level" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <div id="reg-state-table" style="max-height:300px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:6px; padding:10px; background:#fafafa;">
+                            <div style="color:#999; font-style:italic; text-align:center; padding:20px;">Set N then click the button below to render the site table.</div>
+                        </div>
+                        <button class="btn-add" style="margin-top:8px;" onclick="renderRegStateTable()">↺ Render / Refresh Table</button>
+
+                        <!-- Save row -->
+                        <div style="margin-top:16px; padding-top:14px; border-top:1px solid #ddd;">
+                            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                                <div style="flex:1.5; min-width:150px;">
+                                    <label style="font-size:12px; color:#777; display:block; margin-bottom:3px;">State Name</label>
+                                    <input type="text" id="reg-state-display" placeholder="e.g. Neel Z N=10" style="width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                </div>
+                                <button onclick="saveRegistryState()" style="padding:8px 20px; background:#6c5ce7; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap;">Save State</button>
+                            </div>
+                            <div id="reg-state-feedback" style="display:none; margin-top:8px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- States list (prebuilt + user) -->
+                    <div class="section">
+                        <h2>Saved States</h2>
+                        <div id="registry-states-list">
+                            <div style="color:#999; font-style:italic; padding:12px 0;">Loading states...</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- end registry-section -->
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════════════
@@ -1325,11 +1488,22 @@
         let currentMode = 'simulation';
         let currentAlgorithm = 'dmrg';
         
-        // Custom channel storage
+        // Custom channel storage (simulation mode)
         let customSpinChannels = [];
         let spinbosonSpinChannels = [];
         let spinbosonBosonChannels = [];
         let spinbosonCouplingChannels = [];
+
+        // Registry mode state
+        let registryBackend = 'tn';
+        let registrySystemType = 'spin';
+        let registryStateSystemType = 'spin';
+
+        // Registry channel storage (independent from simulation builders)
+        let regSpinChannels = [];
+        let regSpinbosonSpinChannels = [];
+        let regSpinbosonBosonChannels = [];
+        let regSpinbosonCouplingChannels = [];
         
         const SPIN_OPS = ['X', 'Y', 'Z', 'Sp', 'Sm', 'I'];
         const BOSON_OPS = ['a', 'adag', 'Bn', 'Ib'];
@@ -1348,16 +1522,28 @@
         // HELPERS
         // ════════════════════════════════════════════════════════════════════════
         
-        function isTN() { return currentAlgorithm === 'dmrg' || currentAlgorithm === 'tdvp'; }
-        function isED() { return currentAlgorithm === 'ed_spectrum' || currentAlgorithm === 'ed_time_evolution'; }
+        function isTN() {
+            if (currentMode === 'registry') return registryBackend === 'tn';
+            return currentAlgorithm === 'dmrg' || currentAlgorithm === 'tdvp';
+        }
+        function isED() {
+            if (currentMode === 'registry') return registryBackend === 'ed';
+            return currentAlgorithm === 'ed_spectrum' || currentAlgorithm === 'ed_time_evolution';
+        }
         function isTimeEvol() { return currentAlgorithm === 'tdvp' || currentAlgorithm === 'ed_time_evolution'; }
-        
+
         function getLocalDim() {
             const S = parseFloat(document.getElementById('system-S').value);
             return Math.floor(2 * S + 1);
         }
-        
+
         function getN() {
+            if (currentMode === 'registry') {
+                if (registrySystemType === 'spinboson') {
+                    return parseInt(document.getElementById('reg-N_spins').value) || 8;
+                }
+                return parseInt(document.getElementById('reg-N').value) || 20;
+            }
             const systemType = document.getElementById('system-type').value;
             if (systemType === 'spin') {
                 return parseInt(document.getElementById('system-N').value) || 20;
@@ -1392,13 +1578,49 @@
         
         function setMode(mode) {
             currentMode = mode;
-            
+
             document.getElementById('mode-simulation').classList.toggle('active', mode === 'simulation');
-            document.getElementById('mode-analysis').classList.toggle('active', mode === 'analysis');
-            document.getElementById('analysis-section').classList.toggle('hidden', mode === 'simulation');
-            
-            updateSelectionUI();
-            updatePreview();
+            document.getElementById('mode-query_calculate').classList.toggle('active', mode === 'query_calculate');
+            document.getElementById('mode-registry').classList.toggle('active', mode === 'registry');
+
+            const isRegistry = mode === 'registry';
+            const isQC = mode === 'query_calculate';
+            const hideConfigSections = isRegistry || isQC;
+
+            // Simulation content sections — hidden in registry and query_calculate modes
+            ['system-section', 'model-section', 'state-section',
+             'algo-dmrg-section', 'algo-tdvp-section',
+             'algo-ed_spectrum-section', 'algo-ed_time_evolution-section',
+             'description-section'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', hideConfigSections);
+            });
+
+            // Algorithm button row — hide in registry and query_calculate modes
+            const algoRow = document.getElementById('algorithm-selector-row');
+            if (algoRow) algoRow.classList.toggle('hidden', hideConfigSections);
+
+            // Query & Calculate section
+            document.getElementById('query-calculate-section').classList.toggle('hidden', !isQC);
+
+            // Registry section
+            document.getElementById('registry-section').classList.toggle('hidden', !isRegistry);
+
+            // Re-apply algorithm visibility (algo sections toggled above need correct state)
+            if (!isRegistry && !isQC) {
+                document.getElementById('algo-dmrg-section').classList.toggle('hidden', currentAlgorithm !== 'dmrg');
+                document.getElementById('algo-tdvp-section').classList.toggle('hidden', currentAlgorithm !== 'tdvp');
+                document.getElementById('algo-ed_spectrum-section').classList.toggle('hidden', currentAlgorithm !== 'ed_spectrum');
+                document.getElementById('algo-ed_time_evolution-section').classList.toggle('hidden', currentAlgorithm !== 'ed_time_evolution');
+                document.getElementById('state-section').classList.toggle('hidden', currentAlgorithm === 'ed_spectrum');
+            }
+
+            if (isRegistry) {
+                renderSavedModelsList();
+                renderSavedStatesList();
+            }
+
+            if (!isRegistry && !isQC) updatePreview();
         }
         
         function setAlgorithm(algo) {
@@ -1428,9 +1650,6 @@
             // Hilbert space warning for ED
             onSystemSizeChange();
             
-            // Update selection UI for analysis mode
-            updateSelectionUI();
-            
             // Update custom model hint
             updateCustomModelHint();
             
@@ -1438,19 +1657,15 @@
             renderCustomSpinChannels();
             renderSpinBosonSpinChannels();
             renderCouplingChannels();
+
+            // Filter user models in dropdown by backend
+            filterUserModelsInDropdown();
             
             updatePreview();
         }
         
         function updateCustomModelHint() {
-            const hint = document.getElementById('custom-spin-format-hint');
-            if (hint) {
-                if (isTN()) {
-                    hint.textContent = 'TN: channels format. ExpChannelCoupling available. n_exp needed for power-law.';
-                } else {
-                    hint.textContent = 'ED: terms format. Periodic BC + AllToAllCoupling available. No n_exp needed.';
-                }
-            }
+            // No-op: inline custom model builder removed; custom models are built via Registry tab.
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -1480,7 +1695,17 @@
             } else {
                 modelSelect.value = 'transverse_field_ising';
             }
-            
+
+            // Filter user models by system type and backend
+            const userOptgroup = document.getElementById('optgroup-user');
+            if (userOptgroup) {
+                Array.from(userOptgroup.children).forEach(opt => {
+                    const sysType = opt.dataset.systemType;
+                    opt.disabled = isSpinBoson ? sysType !== 'spinboson' : sysType !== 'spin';
+                });
+            }
+            filterUserModelsInDropdown();
+
             onModelChange();
             onSystemSizeChange();
             validateBosonLevel();
@@ -1535,14 +1760,63 @@
         function onModelChange() {
             const model = document.getElementById('model-name').value;
             
-            const allParams = ['transverse_field_ising', 'heisenberg', 'long_range_ising', 
-                              'ising_dicke', 'long_range_ising_dicke', 'custom_spin', 'custom_spinboson'];
-            allParams.forEach(m => {
+            const builtinModels = ['transverse_field_ising', 'heisenberg', 'long_range_ising',
+                              'ising_dicke', 'long_range_ising_dicke'];
+
+            // Hide all builtin param panels
+            builtinModels.forEach(m => {
                 const el = document.getElementById('params-' + m);
                 if (el) el.classList.toggle('hidden', m !== model);
             });
+
+            // Hide user model panel by default
             
+
+            // User-registered model: load its channels into the custom builder
+            const isUserModel = !builtinModels.includes(model);
+            if (isUserModel) {
+                loadUserModelIntoBuilder(model);
+            }
+
             updatePreview();
+        }
+
+        /**
+         * User-registered models are resolved by name at the backend.
+         * No inline builder needed — just update the preview.
+         */
+        function loadUserModelIntoBuilder(modelName) {
+            updatePreview();
+        }
+
+        /**
+         * Convert ED terms array back to TN-style channel objects for display in the builder.
+         */
+        function edTermsToChannels(terms) {
+            return terms.map(t => {
+                if (t.type === 'EDField') {
+                    return { type: 'Field', op: t.op, strength: t.strength };
+                } else if (t.type === 'EDCoupling') {
+                    const ch = { type: 'FiniteRangeCoupling', op1: t.op1, op2: t.op2, strength: t.strength };
+                    if (t.pattern === 'power_law') { ch.type = 'PowerLawCoupling'; ch.alpha = t.alpha || 1.5; }
+                    else if (t.pattern === 'all_to_all') { ch.type = 'AllToAllCoupling'; }
+                    else if (t.pattern === 'nearest_neighbor_periodic') { ch.range = 1; ch.periodic = true; }
+                    else if (t.pattern === 'finite_range' || t.pattern === 'finite_range_periodic') {
+                        ch.range = t.range || 2;
+                        ch.periodic = t.pattern === 'finite_range_periodic';
+                    } else { ch.range = 1; }
+                    return ch;
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        function showLoadedModelBanner(hintId, displayName, backend) {
+            const el = document.getElementById(hintId);
+            if (!el) return;
+            el.style.cssText = 'padding:6px 10px; background:#d0ebff; color:#1864ab; border-radius:4px; font-size:12px; margin-bottom:8px;';
+            el.textContent = `📂 Loaded from registry: "${displayName}" [${backend.toUpperCase()}] — adjust values then run`;
+            el.style.display = 'block';
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -1552,18 +1826,744 @@
         function onStateTypeChange() {
             const stateType = document.getElementById('state-type').value;
             document.getElementById('state-prebuilt-options').classList.toggle('hidden', stateType !== 'prebuilt');
-            document.getElementById('state-random-options').classList.toggle('hidden', stateType !== 'random');
+            document.getElementById('state-random-options').classList.toggle('hidden',   stateType !== 'random');
+            document.getElementById('state-saved-options').classList.toggle('hidden',    stateType !== 'saved');
+            updatePreview();
+        }
+
+        /**
+         * Called when the user selects a saved state from the dropdown.
+         * Loads site_configs into the custom builder and switches to custom view.
+         */
+        function onSavedStateChange() {
+            const savedName  = document.getElementById('state-saved-name').value;
+            if (!savedName) return;
+            const savedEntry = window.TNRegistry?.states?.user_states?.states?.[savedName];
+            if (!savedEntry) return;
+
+            // Show a preview of the saved state's site configs
+            const preview = document.getElementById('saved-state-preview');
+            if (preview && savedEntry.site_configs) {
+                const sites = savedEntry.site_configs;
+                const summary = sites.length <= 12
+                    ? sites.map(([dir, es], i) => `${i+1}:(${dir},${es})`).join('  ')
+                    : sites.slice(0, 6).map(([dir, es], i) => `${i+1}:(${dir},${es})`).join('  ')
+                      + ` ... ` + sites.slice(-3).map(([dir, es], i) => `${sites.length-2+i}:(${dir},${es})`).join('  ');
+                preview.innerHTML = `<strong>${savedEntry.display_name || savedName}</strong> — ${sites.length} sites<br>${summary}`;
+                if (savedEntry.boson_level !== undefined) {
+                    preview.innerHTML += `<br>Boson level: ${savedEntry.boson_level}`;
+                }
+                preview.style.display = 'block';
+            }
+
             updatePreview();
         }
         
         function onStateNameChange() {
             const name = document.getElementById('state-name').value;
+            // Only toggle built-in pattern param divs — user states have no param div
             ['polarized', 'neel', 'kink', 'domain'].forEach(s => {
-                document.getElementById('state-params-' + s).classList.toggle('hidden', s !== name);
+                const el = document.getElementById('state-params-' + s);
+                if (el) el.classList.toggle('hidden', s !== name);
             });
             updatePreview();
         }
-        
+
+        // ════════════════════════════════════════════════════════════════════════
+        // CUSTOM STATE BUILDER
+        // ════════════════════════════════════════════════════════════════════════
+
+        /**
+         * Render the site-by-site custom state table.
+         * Called when switching to custom state type or when N / system type changes.
+         */
+        function renderCustomStateBuilder() {
+            const container  = document.getElementById('custom-state-table');
+            if (!container) return;
+
+            const systemType = document.getElementById('system-type').value;
+            const N          = getN();
+            const S          = parseFloat(document.getElementById('system-S').value);
+            const d          = Math.floor(2 * S + 1);
+
+            // Show/hide boson level row for spinboson
+            const bosonRow = document.getElementById('custom-state-boson-row');
+            if (bosonRow) bosonRow.classList.toggle('hidden', systemType !== 'spinboson');
+
+            if (!N || N < 1) {
+                container.innerHTML = '<div style="color:#999; font-style:italic; text-align:center; padding:20px;">Set N (system size) to configure sites.</div>';
+                return;
+            }
+
+            // Header
+            let html = `
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr style="background:#e9ecef; position:sticky; top:0;">
+                            <th style="padding:6px 10px; text-align:left; width:60px;">Site</th>
+                            <th style="padding:6px 10px; text-align:left; width:90px;">Direction</th>
+                            <th style="padding:6px 10px; text-align:left;">Eigenstate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (let i = 1; i <= N; i++) {
+                // Read existing values if already rendered (preserve on re-render)
+                const existingDir = document.getElementById(`custom-state-dir-${i}`)?.value || 'Z';
+                const existingEs  = document.getElementById(`custom-state-es-${i}`)?.value  || '2';
+
+                html += `
+                    <tr style="border-bottom:1px solid #f0f0f0; ${i % 2 === 0 ? 'background:#f8f9fa;' : ''}">
+                        <td style="padding:5px 10px; color:#888; font-weight:500;">${i}</td>
+                        <td style="padding:5px 10px;">
+                            <select id="custom-state-dir-${i}" onchange="updatePreview()" style="width:100%; padding:4px 6px; border:1px solid #ddd; border-radius:3px; font-size:13px;">
+                                <option value="Z" ${existingDir === 'Z' ? 'selected' : ''}>Z</option>
+                                <option value="X" ${existingDir === 'X' ? 'selected' : ''}>X</option>
+                                <option value="Y" ${existingDir === 'Y' ? 'selected' : ''}>Y</option>
+                            </select>
+                        </td>
+                        <td style="padding:5px 10px;">
+                            <input type="number" id="custom-state-es-${i}" value="${existingEs}" min="1" max="${d}"
+                                   onchange="updatePreview()"
+                                   style="width:70px; padding:4px 6px; border:1px solid #ddd; border-radius:3px; font-size:13px;">
+                            <small style="color:#999;">&nbsp;1–${d}</small>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // SAVE STATE HANDLERS
+        // ════════════════════════════════════════════════════════════════════════
+
+        /**
+         * Expand the current prebuilt pattern into a concrete site_configs array,
+         * then register it as a named custom state.
+         */
+        async function saveCurrentPrebuiltState() {
+            const name    = document.getElementById('save-prebuilt-state-name')?.value?.trim();
+            const display = document.getElementById('save-prebuilt-state-display')?.value?.trim();
+            if (!name || !display) {
+                showRegistrationError('state', 'Both key name and display name are required.');
+                return;
+            }
+
+            const systemType = document.getElementById('system-type').value;
+            const N          = getN();
+            const S          = parseFloat(document.getElementById('system-S').value);
+            const d          = Math.floor(2 * S + 1);
+            const patternName = document.getElementById('state-name').value;
+            const dir        = document.getElementById('state-spin_direction').value;
+
+            // Expand pattern to site_configs
+            let siteConfigs = [];
+            if (patternName === 'polarized') {
+                const es = parseInt(document.getElementById('state-eigenstate').value);
+                siteConfigs = Array.from({length: N}, () => [dir, es]);
+
+            } else if (patternName === 'neel') {
+                const even = parseInt(document.getElementById('state-even_state').value);
+                const odd  = parseInt(document.getElementById('state-odd_state').value);
+                siteConfigs = Array.from({length: N}, (_, i) => [dir, (i + 1) % 2 === 0 ? even : odd]);
+
+            } else if (patternName === 'kink') {
+                const pos   = parseInt(document.getElementById('state-position').value);
+                const left  = parseInt(document.getElementById('state-left_state').value);
+                const right = parseInt(document.getElementById('state-right_state').value);
+                siteConfigs = Array.from({length: N}, (_, i) => [dir, (i + 1) <= pos ? left : right]);
+
+            } else if (patternName === 'domain') {
+                const start  = parseInt(document.getElementById('state-start_index').value);
+                const size   = parseInt(document.getElementById('state-domain_size').value);
+                const base   = parseInt(document.getElementById('state-base_state').value);
+                const flip   = parseInt(document.getElementById('state-flip_state').value);
+                siteConfigs = Array.from({length: N}, (_, i) => {
+                    const site = i + 1;
+                    return [dir, (site >= start && site < start + size) ? flip : base];
+                });
+            }
+
+            if (siteConfigs.length === 0) {
+                showRegistrationError('state', 'Could not expand pattern — check parameters.');
+                return;
+            }
+
+            const bosonLevel = systemType === 'spinboson'
+                ? parseInt(document.getElementById('state-boson_level').value) || 0
+                : null;
+
+            const ok = await registerState(name, display, `Saved from prebuilt: ${patternName}`, systemType, siteConfigs, bosonLevel);
+            if (ok) {
+                document.getElementById('save-prebuilt-state-name').value  = '';
+                document.getElementById('save-prebuilt-state-display').value = '';
+            }
+        }
+
+        /**
+         * Read the current custom site-by-site table and register it as a named state.
+         */
+        async function saveCurrentCustomState() {
+            const name    = document.getElementById('save-custom-state-name')?.value?.trim();
+            const display = document.getElementById('save-custom-state-display')?.value?.trim();
+            if (!name || !display) {
+                showRegistrationError('state-custom', 'Both key name and display name are required.');
+                return;
+            }
+
+            const systemType = document.getElementById('system-type').value;
+            const N          = getN();
+            const siteConfigs = [];
+
+            for (let i = 1; i <= N; i++) {
+                const dir = document.getElementById(`custom-state-dir-${i}`)?.value;
+                const es  = document.getElementById(`custom-state-es-${i}`)?.value;
+                if (!dir || !es) {
+                    showRegistrationError('state-custom', `Site ${i} is missing — render the table first.`);
+                    return;
+                }
+                siteConfigs.push([dir, parseInt(es)]);
+            }
+
+            if (siteConfigs.length === 0) {
+                showRegistrationError('state-custom', 'No sites configured.');
+                return;
+            }
+
+            const bosonLevel = systemType === 'spinboson'
+                ? parseInt(document.getElementById('custom-state-boson_level').value) || 0
+                : null;
+
+            const ok = await registerState(name, display, '', systemType, siteConfigs, bosonLevel);
+            if (ok) {
+                document.getElementById('save-custom-state-name').value  = '';
+                document.getElementById('save-custom-state-display').value = '';
+            }
+        }
+
+        /**
+         * Helper: show registration error in the right feedback element.
+         * Bridges to pipeline_automation.js showRegistrationError/Success,
+         * handling the extra 'state-custom' id case.
+         */
+        function showRegistrationError(type, message) {
+            // try the hyphenated id first (for state-custom), then fall back
+            const elId = `register-${type}-feedback`;
+            let el = document.getElementById(elId);
+            // fallback: state-custom → register-state-feedback-custom
+            if (!el && type === 'state-custom') el = document.getElementById('register-state-feedback-custom');
+            if (!el) { console.error(`[Register] ${message}`); return; }
+            el.style.cssText = 'margin-top:8px; padding:8px 12px; border-radius:4px; background:#f8d7da; color:#721c24; font-size:13px;';
+            el.textContent = `✗ ${message}`;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 6000);
+        }
+
+        function showRegistrationSuccess(type, message) {
+            const elId = `register-${type}-feedback`;
+            let el = document.getElementById(elId);
+            if (!el && type === 'state-custom') el = document.getElementById('register-state-feedback-custom');
+            if (!el) { console.log(`[Register] ${message}`); return; }
+            el.style.cssText = 'margin-top:8px; padding:8px 12px; border-radius:4px; background:#d4edda; color:#155724; font-size:13px;';
+            el.textContent = `✓ ${message}`;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // REGISTRY MODE — TAB / BACKEND / SYSTEM SELECTORS
+        // ════════════════════════════════════════════════════════════════════════
+
+        function setRegistryTab(tab) {
+            document.getElementById('reg-tab-models').classList.toggle('active', tab === 'models');
+            document.getElementById('reg-tab-states').classList.toggle('active', tab === 'states');
+            document.getElementById('registry-models-tab').classList.toggle('hidden', tab !== 'models');
+            document.getElementById('registry-states-tab').classList.toggle('hidden', tab !== 'states');
+        }
+
+        function setRegistryBackend(backend) {
+            registryBackend = backend;
+            document.getElementById('reg-backend-tn').classList.toggle('active', backend === 'tn');
+            document.getElementById('reg-backend-ed').classList.toggle('active', backend === 'ed');
+            renderRegistryModelBuilder();
+        }
+
+        function setRegistrySystem(sysType) {
+            registrySystemType = sysType;
+            document.getElementById('reg-sys-spin').classList.toggle('active', sysType === 'spin');
+            document.getElementById('reg-sys-spinboson').classList.toggle('active', sysType === 'spinboson');
+            document.getElementById('reg-N-group').classList.toggle('hidden', sysType === 'spinboson');
+            document.getElementById('reg-N_spins-group').classList.toggle('hidden', sysType !== 'spinboson');
+            document.getElementById('reg-spin-builder').classList.toggle('hidden', sysType !== 'spin');
+            document.getElementById('reg-spinboson-builder').classList.toggle('hidden', sysType !== 'spinboson');
+            renderRegistryModelBuilder();
+        }
+
+        function setRegistryStateSystem(sysType) {
+            registryStateSystemType = sysType;
+            document.getElementById('reg-state-sys-spin').classList.toggle('active', sysType === 'spin');
+            document.getElementById('reg-state-sys-spinboson').classList.toggle('active', sysType === 'spinboson');
+            document.getElementById('reg-state-N-group').classList.toggle('hidden', sysType === 'spinboson');
+            document.getElementById('reg-state-N_spins-group').classList.toggle('hidden', sysType !== 'spinboson');
+            document.getElementById('reg-state-boson-group').classList.toggle('hidden', sysType !== 'spinboson');
+            renderRegStateTable();
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // REGISTRY MODEL BUILDER — channel arrays and render functions
+        // (mirrors the simulation builders but uses reg- prefixed IDs and arrays)
+        // ════════════════════════════════════════════════════════════════════════
+
+        function renderRegistryModelBuilder() {
+            // Re-render whichever builder is visible
+            if (registrySystemType === 'spin') {
+                renderRegSpinChannels();
+            } else {
+                renderRegSpinbosonSpinChannels();
+                renderRegBosonChannels();
+                renderRegCouplingChannels();
+            }
+        }
+
+        // ── Spin channels ──
+        function addRegSpinChannel() {
+            regSpinChannels.push({ id: Date.now(), type: 'FiniteRangeCoupling' });
+            renderRegSpinChannels();
+        }
+        function removeRegSpinChannel(id) {
+            regSpinChannels = regSpinChannels.filter(ch => ch.id !== id);
+            renderRegSpinChannels();
+        }
+        function renderRegSpinChannels() {
+            const container = document.getElementById('reg-spin-channels');
+            if (!container) return;
+            if (regSpinChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No channels added yet</div>';
+                return;
+            }
+            const availableTypes = getSpinChannelTypes();
+            container.innerHTML = regSpinChannels.map((ch, idx) => {
+                const prefix = `reg-spin-ch-${ch.id}`;
+                let chType = ch.type || 'FiniteRangeCoupling';
+                if (!availableTypes.includes(chType)) { chType = availableTypes[0]; ch.type = chType; }
+                return `<div class="channel-block">
+                    <div class="channel-header"><span>Channel ${idx + 1}</span>
+                        <button class="btn-remove" onclick="removeRegSpinChannel(${ch.id})">✕ Remove</button></div>
+                    <div class="form-group type-select"><label>Type</label>
+                        ${createChannelTypeSelect(`${prefix}-type`, chType)}</div>
+                    <div id="${prefix}-params"><div class="inline-form">${getChannelTypeParams(chType, prefix)}</div></div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Spinboson: spin channels ──
+        function addRegSpinbosonSpinChannel() {
+            regSpinbosonSpinChannels.push({ id: Date.now(), type: 'FiniteRangeCoupling' });
+            renderRegSpinbosonSpinChannels();
+        }
+        function removeRegSpinbosonSpinChannel(id) {
+            regSpinbosonSpinChannels = regSpinbosonSpinChannels.filter(ch => ch.id !== id);
+            renderRegSpinbosonSpinChannels();
+        }
+        function renderRegSpinbosonSpinChannels() {
+            const container = document.getElementById('reg-spinboson-spin-channels');
+            if (!container) return;
+            if (regSpinbosonSpinChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No spin channels added</div>'; return;
+            }
+            const availableTypes = getSpinChannelTypes();
+            container.innerHTML = regSpinbosonSpinChannels.map((ch, idx) => {
+                const prefix = `reg-sbspin-ch-${ch.id}`;
+                let chType = ch.type || 'FiniteRangeCoupling';
+                if (!availableTypes.includes(chType)) { chType = availableTypes[0]; ch.type = chType; }
+                return `<div class="channel-block">
+                    <div class="channel-header"><span>Spin Channel ${idx + 1}</span>
+                        <button class="btn-remove" onclick="removeRegSpinbosonSpinChannel(${ch.id})">✕ Remove</button></div>
+                    <div class="form-group type-select"><label>Type</label>
+                        ${createChannelTypeSelect(`${prefix}-type`, chType)}</div>
+                    <div id="${prefix}-params"><div class="inline-form">${getChannelTypeParams(chType, prefix)}</div></div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Spinboson: boson channels ──
+        function addRegBosonChannel() {
+            regSpinbosonBosonChannels.push({ id: Date.now() });
+            renderRegBosonChannels();
+        }
+        function removeRegBosonChannel(id) {
+            regSpinbosonBosonChannels = regSpinbosonBosonChannels.filter(ch => ch.id !== id);
+            renderRegBosonChannels();
+        }
+        function renderRegBosonChannels() {
+            const container = document.getElementById('reg-spinboson-boson-channels');
+            if (!container) return;
+            if (regSpinbosonBosonChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No boson channels added</div>'; return;
+            }
+            container.innerHTML = regSpinbosonBosonChannels.map((ch, idx) => {
+                const prefix = `reg-boson-ch-${ch.id}`;
+                return `<div class="channel-block">
+                    <div class="channel-header"><span>Boson Channel ${idx + 1}</span>
+                        <button class="btn-remove" onclick="removeRegBosonChannel(${ch.id})">✕ Remove</button></div>
+                    <div class="inline-form">
+                        <div class="form-group"><label>op</label>${createBosonOpSelect(`${prefix}-op`, 'Bn')}</div>
+                        <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="1.0" step="0.1"></div>
+                    </div></div>`;
+            }).join('');
+        }
+
+        // ── Spinboson: coupling channels ──
+        function addRegSpinBosonCouplingChannel() {
+            regSpinbosonCouplingChannels.push({ id: Date.now(), innerChannels: [] });
+            renderRegCouplingChannels();
+        }
+        function removeRegSpinBosonCouplingChannel(id) {
+            regSpinbosonCouplingChannels = regSpinbosonCouplingChannels.filter(ch => ch.id !== id);
+            renderRegCouplingChannels();
+        }
+        function addRegInnerSpinChannel(couplingId) {
+            const coupling = regSpinbosonCouplingChannels.find(ch => ch.id === couplingId);
+            if (coupling) { coupling.innerChannels.push({ id: Date.now(), type: 'Field' }); renderRegCouplingChannels(); }
+        }
+        function removeRegInnerSpinChannel(couplingId, innerId) {
+            const coupling = regSpinbosonCouplingChannels.find(ch => ch.id === couplingId);
+            if (coupling) { coupling.innerChannels = coupling.innerChannels.filter(ch => ch.id !== innerId); renderRegCouplingChannels(); }
+        }
+        function renderRegCouplingChannels() {
+            const container = document.getElementById('reg-spinboson-coupling-channels');
+            if (!container) return;
+            const availableInnerTypes = isED() ? ['Field'] : getSpinChannelTypes();
+            if (regSpinbosonCouplingChannels.length === 0) {
+                container.innerHTML = '<div class="empty-message">No coupling channels added</div>'; return;
+            }
+            container.innerHTML = regSpinbosonCouplingChannels.map((ch, idx) => {
+                const prefix = `reg-coupling-ch-${ch.id}`;
+                const innerHtml = ch.innerChannels.length === 0
+                    ? '<div class="empty-message">No inner spin channels</div>'
+                    : ch.innerChannels.map((inner, innerIdx) => {
+                        const ip = `${prefix}-inner-${inner.id}`;
+                        let iType = inner.type || 'Field';
+                        if (!availableInnerTypes.includes(iType)) { iType = 'Field'; inner.type = iType; }
+                        const typeSelect = isED()
+                            ? `<select id="${ip}-type"><option value="Field" selected>Field</option></select>`
+                            : createChannelTypeSelect(`${ip}-type`, iType);
+                        return `<div class="channel-block-inner">
+                            <div class="channel-header"><span>Inner ${innerIdx + 1}</span>
+                                <button class="btn-remove" onclick="removeRegInnerSpinChannel(${ch.id}, ${inner.id})">✕</button></div>
+                            <div class="form-group type-select"><label>Type</label>${typeSelect}</div>
+                            <div id="${ip}-params"><div class="inline-form">${getChannelTypeParams(iType, ip)}</div></div>
+                        </div>`;
+                    }).join('');
+                return `<div class="channel-block">
+                    <div class="channel-header"><span>Coupling ${idx + 1}</span>
+                        <button class="btn-remove" onclick="removeRegSpinBosonCouplingChannel(${ch.id})">✕ Remove</button></div>
+                    <div class="inline-form" style="margin-bottom:10px;">
+                        <div class="form-group"><label>boson_op</label>${createBosonOpSelect(`${prefix}-boson_op`, 'a')}</div>
+                        <div class="form-group"><label>strength</label><input type="number" id="${prefix}-strength" value="0.2" step="0.1"></div>
+                    </div>
+                    <div style="margin-left:10px;">
+                        <label style="font-weight:500;color:#666;font-size:0.9em;">Spin Channels:</label>
+                        ${innerHtml}
+                        <button class="btn-add btn-add-small" onclick="addRegInnerSpinChannel(${ch.id})">+ Add Spin Channel</button>
+                    </div></div>`;
+            }).join('');
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // REGISTRY STATE BUILDER
+        // ════════════════════════════════════════════════════════════════════════
+
+        function renderRegStateTable() {
+            const container = document.getElementById('reg-state-table');
+            if (!container) return;
+            const sysType = registryStateSystemType;
+            const N = sysType === 'spinboson'
+                ? (parseInt(document.getElementById('reg-state-N_spins').value) || 4)
+                : (parseInt(document.getElementById('reg-state-N').value) || 10);
+            const S = parseFloat(document.getElementById('reg-S').value) || 0.5;
+            const d = Math.floor(2 * S + 1);
+
+            if (!N || N < 1) {
+                container.innerHTML = '<div style="color:#999;font-style:italic;text-align:center;padding:20px;">Set N to configure sites.</div>';
+                return;
+            }
+
+            let html = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#e9ecef;position:sticky;top:0;">
+                    <th style="padding:6px 10px;text-align:left;width:60px;">Site</th>
+                    <th style="padding:6px 10px;text-align:left;width:90px;">Direction</th>
+                    <th style="padding:6px 10px;text-align:left;">Eigenstate</th>
+                </tr></thead><tbody>`;
+
+            for (let i = 1; i <= N; i++) {
+                const existingDir = document.getElementById(`reg-state-dir-${i}`)?.value || 'Z';
+                const existingEs  = document.getElementById(`reg-state-es-${i}`)?.value  || '2';
+                html += `<tr style="border-bottom:1px solid #f0f0f0;${i%2===0?'background:#f8f9fa;':''}">
+                    <td style="padding:5px 10px;color:#888;font-weight:500;">${i}</td>
+                    <td style="padding:5px 10px;">
+                        <select id="reg-state-dir-${i}" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:13px;">
+                            <option value="Z" ${existingDir==='Z'?'selected':''}>Z</option>
+                            <option value="X" ${existingDir==='X'?'selected':''}>X</option>
+                            <option value="Y" ${existingDir==='Y'?'selected':''}>Y</option>
+                        </select></td>
+                    <td style="padding:5px 10px;">
+                        <input type="number" id="reg-state-es-${i}" value="${existingEs}" min="1" max="${d}"
+                               style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:13px;">
+                        <small style="color:#999;">&nbsp;1–${d}</small>
+                    </td></tr>`;
+            }
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // REGISTRY SAVE HANDLERS
+        // ════════════════════════════════════════════════════════════════════════
+
+        async function saveRegistryModel() {
+            const displayName = document.getElementById('reg-model-display').value.trim();
+            const description = document.getElementById('reg-model-description').value.trim();
+
+            if (!displayName) {
+                showRegFeedback('model', 'error', 'Model name is required.');
+                return;
+            }
+
+            // Derive key from display name: "J1-J2 Frustrated Chain" → "j1_j2_frustrated_chain"
+            const name = displayName.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+            let payload;
+
+            if (registrySystemType === 'spin') {
+                const channels = [];
+                regSpinChannels.forEach(ch => {
+                    const c = readSpinChannelFromDOM(`reg-spin-ch-${ch.id}`);
+                    if (c) channels.push(c);
+                });
+                if (channels.length === 0) {
+                    showRegFeedback('model', 'error', 'Add at least one channel before saving.');
+                    return;
+                }
+
+                if (registryBackend === 'tn') {
+                    payload = { name, display_name: displayName, description,
+                                system_type: 'spin', backend: 'tn', channels };
+                } else {
+                    const terms = channels.map(convertChannelToEDTerm).filter(t => t !== null);
+                    if (terms.length === 0) {
+                        showRegFeedback('model', 'error', 'No valid ED terms — check channel types (ExpChannelCoupling is TN-only).');
+                        return;
+                    }
+                    payload = { name, display_name: displayName, description,
+                                system_type: 'spin', backend: 'ed', terms };
+                }
+
+            } else {
+                // spinboson
+                if (registryBackend === 'tn') {
+                    const channels = { spin_channels: [], boson_channels: [], spinboson_channels: [] };
+                    regSpinbosonSpinChannels.forEach(ch => {
+                        const c = readSpinChannelFromDOM(`reg-sbspin-ch-${ch.id}`);
+                        if (c) channels.spin_channels.push(c);
+                    });
+                    regSpinbosonBosonChannels.forEach(ch => {
+                        channels.boson_channels.push(readBosonChannelFromDOM(`reg-boson-ch-${ch.id}`));
+                    });
+                    regSpinbosonCouplingChannels.forEach(ch => {
+                        const prefix = `reg-coupling-ch-${ch.id}`;
+                        const coupling = {
+                            spin_channels: [],
+                            boson_op: document.getElementById(`${prefix}-boson_op`)?.value || 'a',
+                            strength: parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2
+                        };
+                        ch.innerChannels.forEach(inner => {
+                            const ic = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
+                            if (ic) coupling.spin_channels.push(ic);
+                        });
+                        channels.spinboson_channels.push(coupling);
+                    });
+                    payload = { name, display_name: displayName, description,
+                                system_type: 'spinboson', backend: 'tn', channels };
+                } else {
+                    const terms = { spin_terms: [], boson_terms: [], spinboson_terms: [] };
+                    regSpinbosonSpinChannels.forEach(ch => {
+                        const c = readSpinChannelFromDOM(`reg-sbspin-ch-${ch.id}`);
+                        if (c) { const t = convertChannelToEDTerm(c); if (t) terms.spin_terms.push(t); }
+                    });
+                    regSpinbosonBosonChannels.forEach(ch => {
+                        const bc = readBosonChannelFromDOM(`reg-boson-ch-${ch.id}`);
+                        terms.boson_terms.push({ op: bc.op, strength: bc.strength });
+                    });
+                    regSpinbosonCouplingChannels.forEach(ch => {
+                        const prefix = `reg-coupling-ch-${ch.id}`;
+                        const bosonOp = document.getElementById(`${prefix}-boson_op`)?.value || 'a';
+                        const strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2;
+                        ch.innerChannels.forEach(inner => {
+                            const ic = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
+                            if (ic && ic.type === 'Field') {
+                                terms.spinboson_terms.push({ boson_op: bosonOp, spin_op: ic.op, strength: strength * ic.strength });
+                            }
+                        });
+                    });
+                    payload = { name, display_name: displayName, description,
+                                system_type: 'spinboson', backend: 'ed', terms };
+                }
+            }
+
+            const ok = await registerModel(payload);
+            if (ok) {
+                document.getElementById('reg-model-display').value = '';
+                document.getElementById('reg-model-description').value = '';
+                // Clear channel arrays and params
+                regSpinChannels = []; regSpinbosonSpinChannels = [];
+                regSpinbosonBosonChannels = []; regSpinbosonCouplingChannels = [];
+                
+                renderRegistryModelBuilder();
+                
+            }
+        }
+
+        async function saveRegistryState() {
+            const displayName = document.getElementById('reg-state-display').value.trim();
+            if (!displayName) {
+                showRegFeedback('state', 'error', 'State name is required.');
+                return;
+            }
+
+            // Derive key from display name: "Neel Z N=10" → "neel_z_n10"
+            const name = displayName.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+            const sysType = registryStateSystemType;
+            const N = sysType === 'spinboson'
+                ? (parseInt(document.getElementById('reg-state-N_spins').value) || 4)
+                : (parseInt(document.getElementById('reg-state-N').value) || 10);
+
+            const siteConfigs = [];
+            for (let i = 1; i <= N; i++) {
+                const dir = document.getElementById(`reg-state-dir-${i}`)?.value;
+                const es  = document.getElementById(`reg-state-es-${i}`)?.value;
+                if (!dir || !es) {
+                    showRegFeedback('state', 'error', `Site ${i} missing — click "Render / Refresh Table" first.`);
+                    return;
+                }
+                siteConfigs.push([dir, parseInt(es)]);
+            }
+
+            if (siteConfigs.length === 0) {
+                showRegFeedback('state', 'error', 'No sites configured.');
+                return;
+            }
+
+            const bosonLevel = sysType === 'spinboson'
+                ? parseInt(document.getElementById('reg-state-boson_level').value) || 0
+                : null;
+
+            const ok = await registerState(name, displayName, '', sysType, siteConfigs, bosonLevel);
+            if (ok) {
+                document.getElementById('reg-state-display').value = '';
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // REGISTRY SAVED LISTS
+        // ════════════════════════════════════════════════════════════════════════
+
+        function renderSavedModelsList() {
+            const container = document.getElementById('registry-models-list');
+            if (!container) return;
+
+            let html = '';
+
+            // User-registered models
+            const userModels = window.TNRegistry?.models?.user_models?.models || {};
+            const userEntries = Object.entries(userModels);
+            if (userEntries.length > 0) {
+                html += userEntries.map(([key, m]) => {
+                    const backendBadge = m.backend === 'tn'
+                        ? '<span style="background:#d0ebff;color:#1864ab;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">TN</span>'
+                        : '<span style="background:#d3f9d8;color:#1a6b2a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">ED</span>';
+                    const sysBadge = m.system_type === 'spinboson'
+                        ? '<span style="background:#ffe8cc;color:#b34a00;padding:2px 8px;border-radius:10px;font-size:11px;">spinboson</span>'
+                        : '<span style="background:#f3d9fa;color:#6b1d7c;padding:2px 8px;border-radius:10px;font-size:11px;">spin</span>';
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:6px;">
+                        <div>
+                            <span style="font-weight:500;font-size:14px;">${m.display_name || key}</span>
+                            <span style="color:#888;font-size:12px;margin-left:8px;">(${key})</span>
+                            <div style="margin-top:4px;display:flex;gap:6px;">${backendBadge}${sysBadge}</div>
+                            ${m.description ? `<div style="color:#666;font-size:12px;margin-top:2px;">${m.description}</div>` : ''}
+                        </div>
+                        <button onclick="deleteModel('${key}')" style="padding:6px 14px;background:#fff0f0;color:#c0392b;border:1px solid #ffcccc;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;margin-left:12px;">Delete</button>
+                    </div>`;
+                }).join('');
+            }
+
+            if (!html) {
+                html = '<div style="color:#999;font-style:italic;padding:12px 0;">No saved models yet. Build one above.</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderSavedStatesList() {
+            const container = document.getElementById('registry-states-list');
+            if (!container) return;
+
+            let html = '';
+
+            // User-registered states
+            const userStates = window.TNRegistry?.states?.user_states?.states || {};
+            const userEntries = Object.entries(userStates);
+            if (userEntries.length > 0) {
+                html += '<div style="font-size:12px;color:#6c5ce7;font-weight:600;margin:12px 0 6px;">User States</div>';
+                html += userEntries.map(([key, s]) => {
+                    const N = s.site_configs?.length ?? '?';
+                    const sysBadge = s.system_type === 'spinboson'
+                        ? '<span style="background:#ffe8cc;color:#b34a00;padding:2px 8px;border-radius:10px;font-size:11px;">spinboson</span>'
+                        : '<span style="background:#f3d9fa;color:#6b1d7c;padding:2px 8px;border-radius:10px;font-size:11px;">spin</span>';
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:6px;">
+                        <div>
+                            <span style="font-weight:500;font-size:14px;">${s.display_name || key}</span>
+                            <span style="color:#888;font-size:12px;margin-left:8px;">(${key})</span>
+                            <div style="margin-top:4px;display:flex;gap:6px;">${sysBadge}
+                                <span style="background:#e9ecef;color:#495057;padding:2px 8px;border-radius:10px;font-size:11px;">${N} sites</span>
+                                ${s.boson_level !== undefined ? `<span style="background:#e9ecef;color:#495057;padding:2px 8px;border-radius:10px;font-size:11px;">boson |${s.boson_level}⟩</span>` : ''}
+                            </div>
+                        </div>
+                        <button onclick="deleteState('${key}')" style="padding:6px 14px;background:#fff0f0;color:#c0392b;border:1px solid #ffcccc;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;margin-left:12px;">Delete</button>
+                    </div>`;
+                }).join('');
+            }
+
+            if (!html) {
+                html = '<div style="color:#999;font-style:italic;padding:12px 0;">No saved states yet. Build one above.</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // SIMULATION DROPDOWN FILTER
+        // ════════════════════════════════════════════════════════════════════════
+
+        function filterUserModelsInDropdown() {
+            const userOptgroup = document.getElementById('optgroup-user');
+            if (!userOptgroup) return;
+            const currentBackend = isTN() ? 'tn' : 'ed';
+            const isSpinBoson = document.getElementById('system-type')?.value === 'spinboson';
+            Array.from(userOptgroup.children).forEach(opt => {
+                const matchesBackend = (opt.dataset.backend || 'ed') === currentBackend;
+                const matchesSystem  = isSpinBoson
+                    ? opt.dataset.systemType === 'spinboson'
+                    : opt.dataset.systemType === 'spin';
+                opt.disabled = !(matchesBackend && matchesSystem);
+            });
+        }
+
         // ════════════════════════════════════════════════════════════════════════
         // CUSTOM CHANNEL UI HELPERS
         // ════════════════════════════════════════════════════════════════════════
@@ -1593,9 +2593,8 @@
         
         function getChannelTypeParams(type, prefix) {
             const N = getN();
-            
+
             if (type === 'FiniteRangeCoupling') {
-                // In ED: periodic BC available for any range
                 return `
                     <div class="form-group"><label>op1</label>${createSpinOpSelect(`${prefix}-op1`, 'Z')}</div>
                     <div class="form-group"><label>op2</label>${createSpinOpSelect(`${prefix}-op2`, 'Z')}</div>
@@ -1923,11 +2922,8 @@
                 channel.op2 = document.getElementById(`${prefix}-op2`)?.value || 'Z';
                 channel.range = parseInt(document.getElementById(`${prefix}-range`)?.value) || 1;
                 channel.strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0;
-                // Periodic option exists for ED (any range)
                 const periodicEl = document.getElementById(`${prefix}-periodic`);
-                if (periodicEl) {
-                    channel.periodic = periodicEl.value === 'true';
-                }
+                if (periodicEl) channel.periodic = periodicEl.value === 'true';
             } else if (type === 'Field') {
                 channel.op = document.getElementById(`${prefix}-op`)?.value || 'X';
                 channel.strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 1.0;
@@ -2025,94 +3021,16 @@
             return null;
         }
         
-        // ════════════════════════════════════════════════════════════════════════
-        // ANALYSIS SELECTION
-        // ════════════════════════════════════════════════════════════════════════
-        
-        function updateSelectionUI() {
-            const selectionTitle = document.getElementById('selection-title');
-            const timeRangeOption = document.getElementById('option-time_range');
-            const groundOption = document.getElementById('option-ground');
-            const selectionType = document.getElementById('selection-type');
-            
-            // Reset to 'all' if current selection is invalid for new algorithm
-            const currentSelection = selectionType.value;
-            
-            if (currentAlgorithm === 'ed_spectrum') {
-                selectionTitle.textContent = 'State Selection';
-                timeRangeOption.classList.add('hidden');
-                groundOption.classList.remove('hidden');
-                document.getElementById('range-start-label').textContent = 'Start state';
-                document.getElementById('range-end-label').textContent = 'End state';
-                document.getElementById('list-label').textContent = 'State indices (comma-separated)';
-                
-                // Reset if time_range was selected
-                if (currentSelection === 'time_range') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            } else if (currentAlgorithm === 'ed_time_evolution') {
-                selectionTitle.textContent = 'Step Selection';
-                timeRangeOption.classList.remove('hidden');
-                groundOption.classList.add('hidden');
-                document.getElementById('range-start-label').textContent = 'Start step';
-                document.getElementById('range-end-label').textContent = 'End step';
-                document.getElementById('list-label').textContent = 'Step indices (comma-separated)';
-                
-                // Reset if ground was selected
-                if (currentSelection === 'ground') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            } else if (currentAlgorithm === 'tdvp') {
-                selectionTitle.textContent = 'Sweep Selection';
-                timeRangeOption.classList.remove('hidden');
-                groundOption.classList.add('hidden');
-                document.getElementById('range-start-label').textContent = 'Start sweep';
-                document.getElementById('range-end-label').textContent = 'End sweep';
-                document.getElementById('list-label').textContent = 'Sweep indices (comma-separated)';
-                
-                // Reset if ground was selected
-                if (currentSelection === 'ground') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            } else {
-                // DMRG
-                selectionTitle.textContent = 'Sweep Selection';
-                timeRangeOption.classList.add('hidden');
-                groundOption.classList.add('hidden');
-                document.getElementById('range-start-label').textContent = 'Start sweep';
-                document.getElementById('range-end-label').textContent = 'End sweep';
-                document.getElementById('list-label').textContent = 'Sweep indices (comma-separated)';
-                
-                // Reset if ground or time_range was selected
-                if (currentSelection === 'ground' || currentSelection === 'time_range') {
-                    selectionType.value = 'all';
-                    onSelectionTypeChange();
-                }
-            }
-        }
-        
-        function onSelectionTypeChange() {
-            const type = document.getElementById('selection-type').value;
-            document.getElementById('selection-range-params').classList.toggle('hidden', type !== 'range');
-            document.getElementById('selection-specific-params').classList.toggle('hidden', type !== 'specific');
-            document.getElementById('selection-time_range-params').classList.toggle('hidden', type !== 'time_range');
-            updatePreview();
-        }
-        
-        function onObservableTypeChange() {
-            const obsType = document.getElementById('observable-type').value;
-            const allObs = ['single_site_expectation', 'subsystem_expectation_sum', 
-                           'two_site_expectation', 'correlation_function', 'connected_correlation',
-                           'entanglement_entropy', 'entanglement_spectrum',
-                           'energy_expectation', 'energy_variance'];
-            allObs.forEach(o => {
-                const el = document.getElementById('obs-params-' + o);
-                if (el) el.classList.toggle('hidden', o !== obsType);
-            });
-            updatePreview();
+        // Query & Calculate selection toggle
+        function onQCSelectionChange() {
+            const selType = document.getElementById('qc-selection-type').value;
+            const rangeG = document.getElementById('qc-sel-range-group');
+            const specG = document.getElementById('qc-sel-specific-group');
+            const timeG = document.getElementById('qc-sel-time-group');
+
+            if (rangeG) rangeG.style.display = selType === 'range' ? 'flex' : 'none';
+            if (specG) specG.style.display = selType === 'specific' ? 'flex' : 'none';
+            if (timeG) timeG.style.display = selType === 'time_range' ? 'flex' : 'none';
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -2209,114 +3127,27 @@
                 if (isTN()) {
                     model.params.n_exp = parseInt(document.getElementById('lrid-n_exp').value);
                 }
-            } else if (modelName === 'custom_spin') {
-                // Build channels from DOM
-                const channels = [];
-                customSpinChannels.forEach(ch => {
-                    const channel = readSpinChannelFromDOM(`spin-ch-${ch.id}`);
-                    if (channel) channels.push(channel);
-                });
-                
-                if (isTN()) {
-                    // TN format: channels array
-                    model.params.channels = channels;
-                } else {
-                    // ED format: terms array
-                    model.params.terms = channels.map(convertChannelToEDTerm).filter(t => t !== null);
-                }
-            } else if (modelName === 'custom_spinboson') {
-                if (isTN()) {
-                    // TN format: nested channels object
-                    const channels = {
-                        spin_channels: [],
-                        boson_channels: [],
-                        spinboson_channels: []
-                    };
-                    
-                    spinbosonSpinChannels.forEach(ch => {
-                        const channel = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
-                        if (channel) channels.spin_channels.push(channel);
-                    });
-                    
-                    spinbosonBosonChannels.forEach(ch => {
-                        channels.boson_channels.push(readBosonChannelFromDOM(`boson-ch-${ch.id}`));
-                    });
-                    
-                    spinbosonCouplingChannels.forEach(ch => {
-                        const prefix = `coupling-ch-${ch.id}`;
-                        const coupling = {
-                            spin_channels: [],
-                            boson_op: document.getElementById(`${prefix}-boson_op`)?.value || 'a',
-                            strength: parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2
-                        };
-                        
-                        ch.innerChannels.forEach(inner => {
-                            const innerChannel = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
-                            if (innerChannel) coupling.spin_channels.push(innerChannel);
-                        });
-                        
-                        channels.spinboson_channels.push(coupling);
-                    });
-                    
-                    model.params.channels = channels;
-                } else {
-                    // ED format: terms object with spin_terms, boson_terms, spinboson_terms
-                    const terms = {
-                        spin_terms: [],
-                        boson_terms: [],
-                        spinboson_terms: []
-                    };
-                    
-                    spinbosonSpinChannels.forEach(ch => {
-                        const channel = readSpinChannelFromDOM(`sbspin-ch-${ch.id}`);
-                        if (channel) {
-                            const term = convertChannelToEDTerm(channel);
-                            if (term) terms.spin_terms.push(term);
-                        }
-                    });
-                    
-                    spinbosonBosonChannels.forEach(ch => {
-                        const bosonCh = readBosonChannelFromDOM(`boson-ch-${ch.id}`);
-                        terms.boson_terms.push({
-                            op: bosonCh.op,
-                            strength: bosonCh.strength
-                        });
-                    });
-                    
-                    spinbosonCouplingChannels.forEach(ch => {
-                        const prefix = `coupling-ch-${ch.id}`;
-                        const bosonOp = document.getElementById(`${prefix}-boson_op`)?.value || 'a';
-                        const strength = parseFloat(document.getElementById(`${prefix}-strength`)?.value) || 0.2;
-                        
-                        ch.innerChannels.forEach(inner => {
-                            const innerChannel = readSpinChannelFromDOM(`${prefix}-inner-${inner.id}`);
-                            if (innerChannel) {
-                                if (innerChannel.type === 'Field') {
-                                    terms.spinboson_terms.push({
-                                        boson_op: bosonOp,
-                                        spin_op: innerChannel.op,
-                                        strength: strength * innerChannel.strength
-                                    });
-                                } else {
-                                    // ED only supports Field (single-site) spin ops in spinboson coupling
-                                    console.warn(`ED spinboson coupling: skipping ${innerChannel.type} (only Field supported)`);
-                                }
-                            }
-                        });
-                    });
-                    
-                    model.params.terms = terms;
-                }
+            } else {
+                // User-registered model from registry — keep its registry name.
+                // The model definition (channels/terms) is stored in the registry
+                // and resolved by the backend at build time.
+                // model.name is already set to the registry key (e.g. "test1")
+                // No need to embed channels/terms in the config — the backend
+                // looks them up from the registry by name.
             }
             
             return model;
         }
-        
+
+        // ════════════════════════════════════════════════════════════════════════
+        // STATE CONFIG BUILDER
+        // ════════════════════════════════════════════════════════════════════════
+
         function buildStateConfig() {
-            const stateType = document.getElementById('state-type').value;
+            const stateType  = document.getElementById('state-type').value;
             const systemType = document.getElementById('system-type').value;
-            const state = { type: stateType };
-            
+            const state      = { type: stateType };
+
             if (stateType === 'random') {
                 state.params = {};
                 if (isTN()) {
@@ -2324,13 +3155,31 @@
                 }
                 const seed = document.getElementById('state-seed').value;
                 if (seed) state.params.seed = parseInt(seed);
+
+            } else if (stateType === 'saved') {
+                // Resolve to a concrete custom state inline from registry
+                const savedName  = document.getElementById('state-saved-name').value;
+                const savedEntry = window.TNRegistry?.states?.user_states?.states?.[savedName];
+                state.type = 'custom';
+                if (savedEntry) {
+                    if (savedEntry.system_type === 'spinboson') {
+                        state.boson_level = savedEntry.boson_level ?? 0;
+                        state.spin_label  = savedEntry.site_configs;
+                    } else {
+                        state.spin_label = savedEntry.site_configs;
+                    }
+                }
+                // If registry not loaded, backend will receive type=custom with no spin_label —
+                // the runner should surface a clear error in that case.
+
             } else {
+                // prebuilt
                 const name = document.getElementById('state-name').value;
-                state.name = name;
+                state.name   = name;
                 state.params = {
                     spin_direction: document.getElementById('state-spin_direction').value
                 };
-                
+
                 if (name === 'polarized') {
                     if (systemType === 'spinboson') {
                         state.params.spin_eigenstate = parseInt(document.getElementById('state-eigenstate').value);
@@ -2339,23 +3188,23 @@
                     }
                 } else if (name === 'neel') {
                     state.params.even_state = parseInt(document.getElementById('state-even_state').value);
-                    state.params.odd_state = parseInt(document.getElementById('state-odd_state').value);
+                    state.params.odd_state  = parseInt(document.getElementById('state-odd_state').value);
                 } else if (name === 'kink') {
-                    state.params.position = parseInt(document.getElementById('state-position').value);
+                    state.params.position   = parseInt(document.getElementById('state-position').value);
                     state.params.left_state = parseInt(document.getElementById('state-left_state').value);
-                    state.params.right_state = parseInt(document.getElementById('state-right_state').value);
+                    state.params.right_state= parseInt(document.getElementById('state-right_state').value);
                 } else if (name === 'domain') {
                     state.params.start_index = parseInt(document.getElementById('state-start_index').value);
                     state.params.domain_size = parseInt(document.getElementById('state-domain_size').value);
-                    state.params.base_state = parseInt(document.getElementById('state-base_state').value);
-                    state.params.flip_state = parseInt(document.getElementById('state-flip_state').value);
+                    state.params.base_state  = parseInt(document.getElementById('state-base_state').value);
+                    state.params.flip_state  = parseInt(document.getElementById('state-flip_state').value);
                 }
-                
+
                 if (systemType === 'spinboson') {
                     state.params.boson_level = parseInt(document.getElementById('state-boson_level').value);
                 }
             }
-            
+
             return state;
         }
         
@@ -2407,101 +3256,20 @@
             return algorithm;
         }
         
-        function buildAnalysisConfig() {
-            const analysis = {};
-            
-            const selType = document.getElementById('selection-type').value;
-            const selection = { selection: selType };
-            
-            if (selType === 'range') {
-                selection.range = [
-                    parseInt(document.getElementById('selection-range-start').value),
-                    parseInt(document.getElementById('selection-range-end').value)
-                ];
-            } else if (selType === 'specific') {
-                const listStr = document.getElementById('selection-list').value;
-                selection.list = listStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-            } else if (selType === 'time_range') {
-                selection.time_range = [
-                    parseFloat(document.getElementById('selection-time-start').value),
-                    parseFloat(document.getElementById('selection-time-end').value)
-                ];
-            }
-            
-            if (currentAlgorithm === 'ed_spectrum') {
-                analysis.states = selection;
-            } else if (currentAlgorithm === 'ed_time_evolution') {
-                analysis.steps = selection;
-            } else {
-                analysis.sweeps = selection;
-            }
-            
-            const obsType = document.getElementById('observable-type').value;
-            const observable = { type: obsType, params: {} };
-            
-            if (obsType === 'single_site_expectation') {
-                observable.params.site = parseInt(document.getElementById('obs-site').value);
-                observable.params.operator = document.getElementById('obs-operator').value;
-            } else if (obsType === 'subsystem_expectation_sum') {
-                observable.params.operator = document.getElementById('obs-operator-subsystem').value;
-                observable.params.l = parseInt(document.getElementById('obs-l').value);
-                observable.params.m = parseInt(document.getElementById('obs-m').value);
-            } else if (obsType === 'two_site_expectation') {
-                observable.params.site_i = parseInt(document.getElementById('obs-site_i-two').value);
-                observable.params.site_j = parseInt(document.getElementById('obs-site_j-two').value);
-                observable.params.operator_i = document.getElementById('obs-operator_i').value;
-                observable.params.operator_j = document.getElementById('obs-operator_j').value;
-            } else if (obsType === 'correlation_function') {
-                observable.params.site_i = parseInt(document.getElementById('obs-site_i-corr').value);
-                observable.params.site_j = parseInt(document.getElementById('obs-site_j-corr').value);
-                observable.params.operator = document.getElementById('obs-operator-corr').value;
-            } else if (obsType === 'connected_correlation') {
-                observable.params.site_i = parseInt(document.getElementById('obs-site_i-conn').value);
-                observable.params.site_j = parseInt(document.getElementById('obs-site_j-conn').value);
-                observable.params.operator = document.getElementById('obs-operator-conn').value;
-            } else if (obsType === 'entanglement_entropy') {
-                observable.params.bond = parseInt(document.getElementById('obs-bond-entropy').value);
-                const alpha = parseFloat(document.getElementById('obs-alpha').value);
-                if (alpha !== 1) observable.params.alpha = alpha;
-            } else if (obsType === 'entanglement_spectrum') {
-                observable.params.bond = parseInt(document.getElementById('obs-bond-spectrum').value);
-                const nValues = document.getElementById('obs-n_values').value;
-                if (nValues) observable.params.n_values = parseInt(nValues);
-            }
-            
-            analysis.observable = observable;
-            return analysis;
-        }
-        
         function buildConfig() {
             const system = buildSystemConfig();
             const model = buildModelConfig();
             const algorithm = buildAlgorithmConfig();
             const description = document.getElementById('config-description').value.trim();
-            
-            if (currentMode === 'simulation') {
-                const config = { system, model, algorithm };
-                
-                if (currentAlgorithm !== 'ed_spectrum') {
-                    config.state = buildStateConfig();
-                }
-                
-                if (description) config.description = description;
-                return config;
-            } else {
-                const simulation = { system, model, algorithm };
-                if (currentAlgorithm !== 'ed_spectrum') {
-                    simulation.state = buildStateConfig();
-                }
-                
-                const config = {
-                    simulation: simulation,
-                    analysis: buildAnalysisConfig()
-                };
-                
-                if (description) config.description = description;
-                return config;
+
+            const config = { system, model, algorithm };
+
+            if (currentAlgorithm !== 'ed_spectrum') {
+                config.state = buildStateConfig();
             }
+
+            if (description) config.description = description;
+            return config;
         }
         
         // ════════════════════════════════════════════════════════════════════════
@@ -2519,9 +3287,7 @@
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
-            const filename = currentMode === 'simulation' 
-                ? `${currentAlgorithm}_simulation.json`
-                : `${currentAlgorithm}_analysis.json`;
+            const filename = `${currentAlgorithm}_simulation.json`;
             
             const a = document.createElement('a');
             a.href = url;
@@ -2540,9 +3306,87 @@
         }
         
         // ════════════════════════════════════════════════════════════════════════
+        // REGISTRY LOADER (self-contained, does not depend on pipeline_automation.js)
+        // ════════════════════════════════════════════════════════════════════════
+
+        /**
+         * Fetch registry JSON files from the server and populate user models/states.
+         * Called on page load to ensure saved models always appear in the GUI.
+         */
+        async function loadRegistriesIntoGUI() {
+            const base = 'http://localhost:8080';
+            const names = ['models', 'systems', 'states', 'algorithms'];
+
+            // Initialise global registry if pipeline_automation.js hasn't done so yet
+            if (!window.TNRegistry) {
+                window.TNRegistry = { models: null, systems: null, states: null, algorithms: null };
+            }
+
+            for (const name of names) {
+                try {
+                    const resp = await fetch(`${base}/api/registry/${name}`);
+                    if (resp.ok) {
+                        window.TNRegistry[name] = await resp.json();
+                        console.log(`[GUI-Registry] Loaded ${name}`);
+                    } else {
+                        console.warn(`[GUI-Registry] Failed to load ${name}: ${resp.status}`);
+                    }
+                } catch (e) {
+                    console.warn(`[GUI-Registry] Could not fetch ${name}:`, e.message);
+                }
+            }
+
+            // ── Populate user models in dropdown ──
+            if (window.TNRegistry.models) {
+                const userModels = window.TNRegistry.models.user_models?.models || {};
+                console.log(`[GUI-Registry] user_models: ${Object.keys(userModels).length}`, Object.keys(userModels));
+
+                const modelSelect = document.getElementById('model-name');
+                if (modelSelect) {
+                    // Remove any existing user optgroup (empty or stale)
+                    const existing = document.getElementById('optgroup-user');
+                    if (existing) existing.remove();
+
+                    const entries = Object.entries(userModels);
+                    if (entries.length > 0) {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.id = 'optgroup-user';
+                        optgroup.label = 'Saved Models';
+                        for (const [key, model] of entries) {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            const backendLabel = model.backend === 'tn' ? ' [TN]' : ' [ED]';
+                            option.textContent = (model.display_name || key) + backendLabel;
+                            option.dataset.systemType = model.system_type;
+                            option.dataset.backend = model.backend || 'ed';
+                            option.dataset.userModel = 'true';
+                            optgroup.appendChild(option);
+                        }
+                        modelSelect.appendChild(optgroup);
+                        console.log(`[GUI-Registry] Added ${entries.length} user model(s) to dropdown`);
+                    }
+                }
+                // Render the saved-models list in the Registry tab
+                renderSavedModelsList();
+                // Apply backend / system-type filter
+                filterUserModelsInDropdown();
+            }
+
+            // ── Populate user states ──
+            if (window.TNRegistry.states) {
+                const userStates = window.TNRegistry.states.user_states?.states || {};
+                const stateSelect = document.getElementById('state-saved-name');
+                if (stateSelect && typeof populateUserStates === 'function') {
+                    populateUserStates(userStates);
+                }
+                renderSavedStatesList();
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
         // INITIALIZATION
         // ════════════════════════════════════════════════════════════════════════
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             setMode('simulation');
             setAlgorithm('dmrg');
@@ -2559,6 +3403,12 @@
             updateEDTotalTime();
             updateCustomModelHint();
             updatePreview();
+
+            // Load user models/states from registry (runs async, updates GUI when done)
+            loadRegistriesIntoGUI();
+
+            // Initialize observable params rendering for Query & Calculate
+            renderObservableParams('qc-observable-type', 'qc-obs-params');
         });
     </script>
     <script src="pipeline_automation.js"></script>

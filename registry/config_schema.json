@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Structural conventions for assembling config JSON from registry data. Read by builder.py and validator.py. The 4 domain registries (models, systems, states, algorithms) define WHAT is available; this file defines HOW to assemble it.",
+
+  "backend_categories": {
+    "description": "Maps each algorithm to its backend category. The builder uses this instead of hardcoding algorithm names.",
+    "mapping": {
+      "dmrg":              "tensor_network",
+      "tdvp":              "tensor_network",
+      "ed_spectrum":       "exact_diagonalization",
+      "ed_time_evolution": "exact_diagonalization"
+    }
+  },
+
+  "model_assembly": {
+    "description": "How to assemble the model block. Declares which system fields get copied into model.params, and what format custom models use per backend.",
+
+    "prebuilt": {
+      "description": "For prebuilt models, model.params always includes these system fields (for hash consistency). The builder copies them from the completed system block.",
+      "system_fields_to_copy": {
+        "spin":      ["N", "dtype"],
+        "spinboson": ["N_spins", "nmax", "dtype"]
+      }
+    },
+
+    "custom": {
+      "description": "Custom models use different format keys and extra params depending on backend category and system type. format_key is the key under model.params that holds the user's terms/channels. spinboson_sub_keys maps the 3 term categories to their backend-specific sub-key names.",
+      "tensor_network": {
+        "spin": {
+          "format_key": "channels",
+          "model_name": "custom_spin",
+          "extra_params": {"N": "system.N", "d": "local_dim", "dtype": "system.dtype"}
+        },
+        "spinboson": {
+          "format_key": "channels",
+          "model_name": "custom_spinboson",
+          "extra_params": {"N_spins": "system.N_spins", "nmax": "system.nmax", "dtype": "system.dtype"},
+          "spinboson_sub_keys": {
+            "spin": "spin_channels",
+            "boson": "boson_channels",
+            "spinboson": "spinboson_channels"
+          }
+        }
+      },
+      "exact_diagonalization": {
+        "spin": {
+          "format_key": "terms",
+          "model_name": "custom_spin",
+          "extra_params": {"N": "system.N", "dtype": "system.dtype"}
+        },
+        "spinboson": {
+          "format_key": "terms",
+          "model_name": "custom_spinboson",
+          "extra_params": {"N_spins": "system.N_spins", "nmax": "system.nmax", "dtype": "system.dtype"},
+          "spinboson_sub_keys": {
+            "spin": "spin_terms",
+            "boson": "boson_terms",
+            "spinboson": "spinboson_terms"
+          }
+        }
+      }
+    }
+  },
+
+  "state_assembly": {
+    "description": "How to assemble state blocks. Field names and nesting differ by backend category and system type.",
+
+    "custom": {
+      "description": "Custom states: site_field is the key name for the per-site array. location is where these fields go (root = directly on state object, params = nested inside state.params).",
+      "tensor_network": {
+        "spin":      {"site_field": "spin_label", "location": "root"},
+        "spinboson": {"site_field": "spin_label", "boson_field": "boson_level", "location": "root"}
+      },
+      "exact_diagonalization": {
+        "spin":      {"site_field": "site_configs", "location": "root"},
+        "spinboson": {"site_field": "site_configs", "boson_field": "boson_level", "location": "params"}
+      }
+    },
+
+    "random": {
+      "description": "Random states include bond_dim only for TN algorithms. ED random states ignore bond_dim.",
+      "tensor_network":        {"include_bond_dim": true},
+      "exact_diagonalization": {"include_bond_dim": false}
+    },
+
+    "prebuilt": {
+      "description": "Prebuilt states use the same format for both backends. Polarized uses a different eigenstate field name for spinboson systems.",
+      "polarized_eigenstate_field": {
+        "spin": "eigenstate",
+        "spinboson": "spin_eigenstate"
+      }
+    }
+  },
+
+  "algorithm_assembly": {
+    "description": "How to build algorithm blocks. The builder reads config_structure from algorithms.json and uses this to map flat user params into the nested structure.",
+
+    "flat_param_mapping": {
+      "description": "Maps flat user-provided param names to their nested location in the algorithm config_structure. The builder uses this to accept {chi_max: 128} and place it at algorithm.options.chi_max. Dot notation indicates nesting.",
+      "dmrg": {
+        "krylov_dim": "solver.krylov_dim",
+        "max_iter":   "solver.max_iter",
+        "chi_max":    "options.chi_max",
+        "cutoff":     "options.cutoff",
+        "n_sweeps":   "run.n_sweeps"
+      },
+      "tdvp": {
+        "krylov_dim": "solver.krylov_dim",
+        "tol":        "solver.tol",
+        "evol_type":  "solver.evol_type",
+        "dt":         "options.dt",
+        "chi_max":    "options.chi_max",
+        "cutoff":     "options.cutoff",
+        "n_sweeps":   "run.n_sweeps"
+      },
+      "ed_spectrum": {
+        "n_states":   "n_states",
+        "use_sparse": "use_sparse"
+      },
+      "ed_time_evolution": {
+        "dt":      "dt",
+        "n_steps": "n_steps"
+      }
+    },
+
+    "auto_derived_fields": {
+      "description": "Fields computed from system params, not user-provided. The builder evaluates the formula and inserts the result at the target path.",
+      "local_dim": {
+        "formula": "floor(2 * S + 1)",
+        "source": "system.S",
+        "target": "options.local_dim",
+        "applies_to_categories": ["tensor_network"]
+      }
+    },
+
+    "solver_defaults": {
+      "description": "Fixed solver type strings per algorithm. These are always injected and never user-configurable.",
+      "dmrg": {"solver.type": "lanczos"},
+      "tdvp": {"solver.type": "krylov_exponential"}
+    }
+  },
+
+  "analysis_assembly": {
+    "description": "How to map algorithm type to the correct selection key in analysis configs. Each algorithm produces output indexed by a different dimension.",
+    "selection_key": {
+      "dmrg":              "sweeps",
+      "tdvp":              "sweeps",
+      "ed_spectrum":       "states",
+      "ed_time_evolution": "steps"
+    }
+  },
+
+  "dtype_resolution": {
+    "description": "How to auto-resolve dtype when the user hasn't set it explicitly. For prebuilt models: evaluate dtype_logic rules from models.json. For custom models: scan all operator strings against the spin_operators registry.",
+    "custom_model_scan": {
+      "description": "For custom models, extract all spin operator strings from the terms/channels. If any operator has real=false in systems.json spin_operators.operators, dtype must be ComplexF64. Otherwise Float64 is safe.",
+      "operator_source": "spin_operators.operators",
+      "check_field": "real",
+      "complex_when": false,
+      "default_dtype": "ComplexF64"
+    }
+  }
+}

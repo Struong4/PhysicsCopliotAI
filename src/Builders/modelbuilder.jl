@@ -309,11 +309,126 @@ function _get_channels_from_config(config)
                  nmax=params["nmax"], dtype=dtype)
         
     else
-        error("Unknown model name: $name\n" *
-              "Available models:\n" *
-              "  Pre-built: transverse_field_ising, heisenberg, long_range_ising, spin_boson\n" *
-              "  Custom: custom_spin, custom_spinboson")
+        # User-registered model: look up definition from registry
+        channels, system = _resolve_user_model(name, params, dtype)
     end
     
     return channels, system
+end
+
+# ============================================================================
+# PART 5: User Model Resolution from Registry
+# ============================================================================
+
+"""
+    _resolve_user_model(name, params, dtype)
+
+Look up a user-registered model from the registry and build its channels.
+The registry file (registry/models.json) stores the model definition
+(channels for TN, terms for ED) under user_models.models.<name>.
+"""
+function _resolve_user_model(name::AbstractString, params::Dict, dtype)
+    # Find registry/models.json relative to project root
+    # Project root is the parent of src/
+    project_root = dirname(dirname(@__DIR__))
+    registry_path = joinpath(project_root, "registry", "models.json")
+
+    if !isfile(registry_path)
+        error("Registry file not found: $registry_path")
+    end
+
+    registry = JSON.parsefile(registry_path)
+    user_models = get(get(registry, "user_models", Dict()), "models", Dict())
+
+    if !haskey(user_models, name)
+        error("Unknown model: \"$name\"\n" *
+              "Not found in prebuilt models or user registry.\n" *
+              "Available user models: $(join(keys(user_models), ", "))")
+    end
+
+    model_def = user_models[name]
+    sys_type = get(model_def, "system_type", "spin")
+    backend = get(model_def, "backend", "tn")
+
+    if sys_type == "spin"
+        if backend == "tn"
+            channels = _parse_spin_channels(model_def["channels"])
+        else
+            channels = _parse_spin_channels_from_ed_terms(model_def["terms"])
+        end
+        N = get(params, "N", nothing)
+        N === nothing && error("User model '$name' requires N in params")
+        system = (type="spin", N=N, dtype=dtype)
+    else
+        # spinboson
+        if backend == "tn"
+            channels = _parse_spinboson_channels(model_def["channels"])
+        else
+            channels = _parse_spinboson_channels_from_ed_terms(model_def["terms"])
+        end
+        N_spins = get(params, "N_spins", nothing)
+        nmax = get(params, "nmax", nothing)
+        (N_spins === nothing || nmax === nothing) && error("User model '$name' requires N_spins and nmax in params")
+        system = (type="spinboson", N=N_spins+1, nmax=nmax, dtype=dtype)
+    end
+
+    return channels, system
+end
+
+"""
+Parse ED terms format back to spin channels.
+ED terms have: {type, op/op1/op2, strength, ...}
+"""
+function _parse_spin_channels_from_ed_terms(terms::Vector)
+    channels = []
+    for term in terms
+        t = term["type"]
+        if t == "Field"
+            push!(channels, Field(Symbol(term["op"]), term["strength"]))
+        elseif t == "Coupling"
+            push!(channels, FiniteRangeCoupling(
+                Symbol(term["op1"]), Symbol(term["op2"]),
+                get(term, "range", 1), term["strength"]
+            ))
+        elseif t == "ExponentialCoupling"
+            push!(channels, ExponentialCoupling(
+                Symbol(term["op1"]), Symbol(term["op2"]),
+                term["strength"], term["lambda"]
+            ))
+        end
+    end
+    return channels
+end
+
+"""
+Parse ED spinboson terms format back to boson channels.
+"""
+function _parse_spinboson_channels_from_ed_terms(terms::Dict)
+    channels = Boson[]
+
+    # Spin terms → wrap with Ib
+    if haskey(terms, "spin_terms")
+        for ch in _parse_spin_channels_from_ed_terms(terms["spin_terms"])
+            push!(channels, SpinBosonInteraction([ch], :Ib, 1.0))
+        end
+    end
+
+    # Boson terms
+    if haskey(terms, "boson_terms")
+        for bt in terms["boson_terms"]
+            push!(channels, BosonOnly(Symbol(bt["op"]), bt["strength"]))
+        end
+    end
+
+    # Spinboson coupling terms
+    if haskey(terms, "spinboson_terms")
+        for st in terms["spinboson_terms"]
+            spin_ch = Field(Symbol(st["spin_op"]), 1.0)
+            push!(channels, SpinBosonInteraction(
+                [spin_ch], Symbol(st["boson_op"]), st["strength"]
+            ))
+        end
+    end
+
+    return channels
 end

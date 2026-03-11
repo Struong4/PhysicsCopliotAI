@@ -4,10 +4,10 @@
   "description": "Defines all available initial state types for quantum simulations. States are product states or random states used to initialize TN and ED algorithms. The state block is REQUIRED for DMRG, TDVP, and ED time evolution, and must be OMITTED for ED Spectrum.",
 
   "algorithm_requirement": {
-    "ed_spectrum":       "NO state block. ED Spectrum diagonalizes H directly and does not need an initial state.",
-    "dmrg":              "REQUIRES state block. Initial MPS is variationally optimized toward the ground state.",
-    "tdvp":              "REQUIRES state block. Time evolution propagates from this initial state.",
-    "ed_time_evolution": "REQUIRES state block. Exact unitary evolution starts from this state vector."
+    "ed_spectrum":       {"requires_state": false, "description": "ED Spectrum diagonalizes H directly and does not need an initial state."},
+    "dmrg":              {"requires_state": true,  "description": "Initial MPS is variationally optimized toward the ground state."},
+    "tdvp":              {"requires_state": true,  "description": "Time evolution propagates from this initial state."},
+    "ed_time_evolution": {"requires_state": true,  "description": "Exact unitary evolution starts from this state vector."}
   },
 
   "state_types": {

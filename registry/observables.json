@@ -1,0 +1,815 @@
+{
+  "registry_type": "observables",
+  "version": "1.0.0",
+  "description": "Defines all available observables that can be computed on simulation data. The observable runner receives a run_dir (from a catalog query) and an observable config built from this registry. The runner auto-detects the data format (MPS tensors vs ED state vectors) and system type (spin vs spinboson) from the run metadata, then dispatches to the correct backend function.",
+
+  "usage": {
+    "workflow": [
+      "1. Query the catalog to locate a simulation run → returns run_dir, algorithm, system_type, metadata",
+      "2. Choose an observable from this registry (filtered by backend compatibility)",
+      "3. Build an observable config: { run_id, observable: { type, params }, selection: { mode, ... } }",
+      "4. Submit to the observable runner or POST /api/observables/calculate"
+    ],
+    "observable_config_structure": {
+      "run_id": "<string — simulation run_id from catalog query>",
+      "observable": {
+        "type": "<string — observable name from this registry>",
+        "params": "<object — parameters as defined in this registry>"
+      },
+      "selection": {
+        "mode": "<string — which sweeps/steps/states to process>",
+        "params": "<object — mode-specific parameters>"
+      }
+    }
+  },
+
+  "selection_modes": {
+    "description": "Controls which sweeps (TN) or steps/states (ED) the observable is computed over.",
+    "modes": {
+      "all": {
+        "description": "Compute on all available sweeps/steps/states.",
+        "params": {}
+      },
+      "range": {
+        "description": "Compute on a contiguous range of indices.",
+        "params": {
+          "start_idx": { "type": "int", "required": true, "description": "First index (1-based)." },
+          "end_idx": { "type": "int", "required": true, "description": "Last index (1-based, inclusive)." }
+        }
+      },
+      "specific": {
+        "description": "Compute on a list of specific indices.",
+        "params": {
+          "indices": { "type": "array_of_int", "required": true, "description": "List of 1-based indices." }
+        }
+      },
+      "time_range": {
+        "description": "Compute on all steps within a time window. Only valid for TDVP and ED time evolution.",
+        "params": {
+          "t_start": { "type": "float", "required": true, "description": "Start time." },
+          "t_end": { "type": "float", "required": true, "description": "End time." }
+        },
+        "applies_to": ["tdvp", "ed_time_evolution"]
+      }
+    }
+  },
+
+  "categories": {
+    "local": {
+      "display_name": "Local Observables",
+      "description": "Single-site expectation values and sums over subsystems."
+    },
+    "two_point": {
+      "display_name": "Two-Point Observables",
+      "description": "Two-site expectation values, correlation functions, and connected correlators."
+    },
+    "entanglement": {
+      "display_name": "Entanglement Observables",
+      "description": "Entanglement entropy, spectrum, and bipartite measures."
+    },
+    "energy": {
+      "display_name": "Energy Observables",
+      "description": "Energy expectation value and variance. Requires Hamiltonian reconstruction."
+    },
+    "state_property": {
+      "display_name": "State Properties",
+      "description": "Norm, overlap, fidelity, and dynamical quantities like Loschmidt echo."
+    },
+    "boson": {
+      "display_name": "Boson Observables",
+      "description": "Boson-specific measurements for spin-boson systems."
+    }
+  },
+
+  "operator_spec": {
+    "description": "Many observables take an operator parameter. This defines the valid operator strings and their physics. The runner maps these to matrices using _build_tn_operator() for TN or spin_matrices(S) for ED.",
+    "spin_operators": {
+      "X":  { "description": "Sx spin operator. Real, Hermitian.", "requires_complex": false },
+      "Y":  { "description": "Sy spin operator. Imaginary, Hermitian.", "requires_complex": true },
+      "Z":  { "description": "Sz spin operator. Real, diagonal, Hermitian.", "requires_complex": false },
+      "Sp": { "description": "S+ raising operator. Non-Hermitian.", "requires_complex": true },
+      "Sm": { "description": "S- lowering operator. Non-Hermitian.", "requires_complex": true }
+    },
+    "boson_operators": {
+      "a":    { "description": "Annihilation operator.", "requires_complex": false },
+      "adag": { "description": "Creation operator.", "requires_complex": false },
+      "Bn":   { "description": "Number operator b†b.", "requires_complex": false }
+    }
+  },
+
+  "observables": {
+
+    "single_site_expectation": {
+      "display_name": "Single Site Expectation",
+      "category": "local",
+      "description": "Expectation value of a single-site operator: ⟨ψ|Oᵢ|ψ⟩. Measures the local magnetization or spin component at one site.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "site": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Site index (1-based). For spinboson: refers to spin sites only (1 to N_spins)."
+        },
+        "operator": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z", "Sp", "Sm"],
+          "default": "Z",
+          "description": "Spin operator to measure at the site."
+        }
+      },
+      "backend_function": {
+        "tn": "single_site_expectation(site, operator_matrix, psi)",
+        "ed_spin": "single_site_expectation(site, operator, psi, N, S)",
+        "ed_spinboson": "single_site_expectation_sb(site, operator, psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "single_site_expectation",
+          "params": { "site": 5, "operator": "Z" }
+        }
+      }
+    },
+
+    "expectation_all_sites": {
+      "display_name": "Expectation All Sites",
+      "category": "local",
+      "description": "Expectation value of the same operator at every site: [⟨O₁⟩, ⟨O₂⟩, ..., ⟨Oₙ⟩]. Returns the full local profile in one call.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "vector",
+      "params": {
+        "operator": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z", "Sp", "Sm"],
+          "default": "Z",
+          "description": "Spin operator to measure at every site."
+        }
+      },
+      "backend_function": {
+        "ed_spin": "expectation_value_all_sites(operator, psi, N, S)",
+        "ed_spinboson": "expectation_value_all_sites_sb(operator, psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "expectation_all_sites",
+          "params": { "operator": "Z" }
+        }
+      }
+    },
+
+    "subsystem_expectation_sum": {
+      "display_name": "Subsystem Expectation Sum",
+      "category": "local",
+      "description": "Sum of single-site expectation values over a contiguous subsystem: Σᵢ∈[l,m] ⟨ψ|Oᵢ|ψ⟩. Useful for total magnetization of a subsystem.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "operator": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z"],
+          "default": "Z",
+          "description": "Spin operator to sum over."
+        },
+        "l": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Start site of subsystem (1-based, inclusive)."
+        },
+        "m": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "End site of subsystem (1-based, inclusive). Must satisfy l ≤ m ≤ N."
+        }
+      },
+      "backend_function": {
+        "tn": "subsystem_expectation_sum(operator_matrix, psi, l, m)",
+        "ed_spin": "subsystem_expectation_sum(operator, psi, l, m, N, S)",
+        "ed_spinboson": "subsystem_expectation_sum_sb(operator, psi, l, m, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "subsystem_expectation_sum",
+          "params": { "operator": "Z", "l": 1, "m": 10 }
+        }
+      }
+    },
+
+    "two_site_expectation": {
+      "display_name": "Two-Site Expectation",
+      "category": "two_point",
+      "description": "Expectation value of a product of two operators at different sites: ⟨ψ|Oᵢ Pⱼ|ψ⟩. The operators can be different (use correlation_function for same-operator case).",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "site_i": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "First site index (1-based)."
+        },
+        "site_j": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Second site index (1-based). Must differ from site_i."
+        },
+        "operator_i": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z", "Sp", "Sm"],
+          "default": "Z",
+          "description": "Operator at site i."
+        },
+        "operator_j": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z", "Sp", "Sm"],
+          "default": "Z",
+          "description": "Operator at site j."
+        }
+      },
+      "backend_function": {
+        "tn": "two_site_expectation(site_i, op_i_matrix, site_j, op_j_matrix, psi)",
+        "ed_spin": "two_site_expectation(site_i, op_i, site_j, op_j, psi, N, S)",
+        "ed_spinboson": "two_site_expectation_sb(site_i, op_i, site_j, op_j, psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "two_site_expectation",
+          "params": { "site_i": 1, "site_j": 10, "operator_i": "Z", "operator_j": "Z" }
+        }
+      }
+    },
+
+    "correlation_function": {
+      "display_name": "Correlation Function",
+      "category": "two_point",
+      "description": "Two-point correlation function with the same operator: ⟨ψ|Oᵢ Oⱼ|ψ⟩. Measures spatial correlations of a single observable.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "site_i": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "First site index (1-based)."
+        },
+        "site_j": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Second site index (1-based). Must differ from site_i."
+        },
+        "operator": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z"],
+          "default": "Z",
+          "description": "Operator applied at both sites."
+        }
+      },
+      "backend_function": {
+        "tn": "correlation_function(site_i, site_j, operator_matrix, psi)",
+        "ed_spin": "correlation_function(site_i, site_j, operator, psi, N, S)",
+        "ed_spinboson": "correlation_function_sb(site_i, site_j, operator, psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "correlation_function",
+          "params": { "site_i": 1, "site_j": 10, "operator": "Z" }
+        }
+      }
+    },
+
+    "connected_correlation": {
+      "display_name": "Connected Correlation",
+      "category": "two_point",
+      "description": "Connected correlation function: ⟨Oᵢ Oⱼ⟩ - ⟨Oᵢ⟩⟨Oⱼ⟩. Measures genuine quantum correlations beyond mean-field, removing the contribution from local expectation values.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "site_i": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "First site index (1-based)."
+        },
+        "site_j": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Second site index (1-based)."
+        },
+        "operator": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z"],
+          "default": "Z",
+          "description": "Operator applied at both sites."
+        }
+      },
+      "backend_function": {
+        "tn": "connected_correlation(site_i, site_j, operator_matrix, psi)",
+        "ed_spin": "connected_correlation(site_i, site_j, operator, psi, N, S)",
+        "ed_spinboson": "connected_correlation_sb(site_i, site_j, operator, psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "connected_correlation",
+          "params": { "site_i": 1, "site_j": 10, "operator": "Z" }
+        }
+      }
+    },
+
+    "correlation_matrix": {
+      "display_name": "Correlation Matrix",
+      "category": "two_point",
+      "description": "Full N×N correlation matrix: C[i,j] = ⟨Oᵢ Oⱼ⟩ for all site pairs. Returns the complete spatial correlation structure in one call.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "matrix",
+      "params": {
+        "operator": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["X", "Y", "Z"],
+          "default": "Z",
+          "description": "Operator for correlation matrix entries."
+        }
+      },
+      "backend_function": {
+        "ed_spin": "correlation_matrix(operator, psi, N, S)",
+        "ed_spinboson": "correlation_matrix_sb(operator, psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "correlation_matrix",
+          "params": { "operator": "Z" }
+        }
+      }
+    },
+
+    "entanglement_entropy": {
+      "display_name": "Entanglement Entropy",
+      "category": "entanglement",
+      "description": "Entanglement entropy across a bipartition at the specified bond. alpha=1 gives von Neumann entropy S = -Σ λᵢ² log(λᵢ²). alpha≠1 gives Renyi entropy Sₐ = log(Σ λᵢ^(2α)) / (1-α).",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "bond": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Bond index for the bipartition. Cuts between site 'bond' and site 'bond+1'. Must be in [1, N-1]."
+        },
+        "alpha": {
+          "type": "float",
+          "required": false,
+          "default": 1,
+          "minimum_exclusive": 0,
+          "description": "Renyi index. alpha=1 (default) gives von Neumann entropy. alpha=2 gives Renyi-2 entropy."
+        }
+      },
+      "backend_function": {
+        "tn": "entanglement_entropy(bond, psi; alpha)",
+        "ed_spin": "entanglement_entropy(cut, psi, N, d; alpha)",
+        "ed_spinboson": "entanglement_entropy_sb(cut, psi, N_spins, d_spin, d_boson; alpha)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "entanglement_entropy",
+          "params": { "bond": 50, "alpha": 1 }
+        }
+      }
+    },
+
+    "entanglement_spectrum": {
+      "display_name": "Entanglement Spectrum",
+      "category": "entanglement",
+      "description": "Schmidt values λᵢ at a bond, in descending order. The squares λᵢ² are the eigenvalues of the reduced density matrix. Useful for topological order detection and entanglement structure analysis.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "vector",
+      "params": {
+        "bond": {
+          "type": "int",
+          "required": true,
+          "minimum": 1,
+          "description": "Bond index for the bipartition. Must be in [1, N-1]."
+        },
+        "n_values": {
+          "type": "int",
+          "required": false,
+          "default": null,
+          "minimum": 1,
+          "description": "Number of Schmidt values to return. null or omitted returns all."
+        }
+      },
+      "backend_function": {
+        "tn": "entanglement_spectrum(bond, psi; n_values)",
+        "ed_spin": "entanglement_spectrum(cut, psi, N, d; n_values)",
+        "ed_spinboson": "entanglement_spectrum_sb(cut, psi, N_spins, d_spin, d_boson; n_values)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "entanglement_spectrum",
+          "params": { "bond": 50, "n_values": 20 }
+        }
+      }
+    },
+
+    "energy_expectation": {
+      "display_name": "Energy Expectation",
+      "category": "energy",
+      "description": "Energy expectation value ⟨ψ|H|ψ⟩. The Hamiltonian is automatically reconstructed from the simulation config metadata.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": true,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "tn": "energy_expectation(psi, ham)",
+        "ed": "energy_expectation(psi, H)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "energy_expectation",
+          "params": {}
+        }
+      }
+    },
+
+    "energy_variance": {
+      "display_name": "Energy Variance",
+      "category": "energy",
+      "description": "Energy variance ⟨H²⟩ - ⟨H⟩². Measures distance from an eigenstate. Variance = 0 means exact eigenstate.",
+      "backends": {
+        "tn_spin": true,
+        "tn_spinboson": true,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["dmrg", "tdvp", "ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": true,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "tn": "energy_variance(psi, ham)",
+        "ed": "energy_variance(psi, H)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "energy_variance",
+          "params": {}
+        }
+      }
+    },
+
+    "inner_product": {
+      "display_name": "Inner Product (Norm²)",
+      "category": "state_property",
+      "description": "Squared norm of the state: ⟨ψ|ψ⟩. Should be 1.0 for normalized states. Useful for checking normalization after truncation.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "ed": "inner_product(psi)"
+      },
+      "note": "TN inner_product exists in Analysis/core.jl but is not exposed through the observable runner.",
+      "example_config": {
+        "observable": {
+          "type": "inner_product",
+          "params": {}
+        }
+      }
+    },
+
+    "fidelity": {
+      "display_name": "Fidelity",
+      "category": "state_property",
+      "description": "Fidelity between two states: |⟨ψ₁|ψ₂⟩|². Measures state overlap. Fidelity = 1 means identical states. Typically computed between the evolved state and a reference (e.g., initial state or ground state).",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "requires_reference_state": true,
+      "return_type": "scalar",
+      "params": {
+        "reference": {
+          "type": "string",
+          "required": true,
+          "allowed_values": ["initial", "ground_state"],
+          "description": "Which state to compare against. 'initial' uses the t=0 state. 'ground_state' uses the lowest eigenstate."
+        }
+      },
+      "backend_function": {
+        "ed": "fidelity(psi1, psi2)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "fidelity",
+          "params": { "reference": "initial" }
+        }
+      }
+    },
+
+    "survival_probability": {
+      "display_name": "Survival Probability",
+      "category": "state_property",
+      "description": "Probability of remaining in the initial state: |⟨ψ(0)|ψ(t)⟩|². Same as fidelity with reference=initial, but semantically distinct for time evolution contexts.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "requires_reference_state": true,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "ed": "fidelity(psi0, psi_t)"
+      },
+      "note": "Internally uses fidelity(psi0, psi_t). The initial state is loaded automatically from the run data.",
+      "example_config": {
+        "observable": {
+          "type": "survival_probability",
+          "params": {}
+        }
+      }
+    },
+
+    "loschmidt_echo": {
+      "display_name": "Loschmidt Echo",
+      "category": "state_property",
+      "description": "Loschmidt echo: -log|⟨ψ(0)|ψ(t)⟩|²/N. Rate function of the return probability, normalized by system size. Non-analyticities signal dynamical quantum phase transitions.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "requires_reference_state": true,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "ed": "loschmidt_echo(psi0, psi_t, N)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "loschmidt_echo",
+          "params": {}
+        }
+      }
+    },
+
+    "state_norm": {
+      "display_name": "State Norm",
+      "category": "state_property",
+      "description": "Norm of the state vector: ||ψ||. Should be 1.0 for properly normalized states.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": true,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "ed": "norm(psi)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "state_norm",
+          "params": {}
+        }
+      }
+    },
+
+    "boson_number": {
+      "display_name": "Boson Number",
+      "category": "boson",
+      "description": "Expectation value of the boson number operator: ⟨ψ|b†b|ψ⟩. Average photon/phonon occupation of the cavity mode.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": false,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "ed_spinboson": "boson_number(psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "boson_number",
+          "params": {}
+        }
+      }
+    },
+
+    "boson_distribution": {
+      "display_name": "Boson Distribution",
+      "category": "boson",
+      "description": "Probability distribution over Fock states: P(n) = ⟨ψ|n⟩⟨n|ψ⟩ for n = 0, 1, ..., nmax. Returns a vector of nmax+1 probabilities.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": false,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "vector",
+      "params": {},
+      "backend_function": {
+        "ed_spinboson": "boson_distribution(psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "boson_distribution",
+          "params": {}
+        }
+      }
+    },
+
+    "boson_field": {
+      "display_name": "Boson Field",
+      "category": "boson",
+      "description": "Expectation value of the boson field operator: ⟨ψ|(a + a†)|ψ⟩. Measures the real quadrature of the cavity field.",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": false,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {},
+      "backend_function": {
+        "ed_spinboson": "boson_field_expectation(psi, N_spins, nmax, S)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "boson_field",
+          "params": {}
+        }
+      }
+    },
+
+    "boson_spin_entanglement": {
+      "display_name": "Boson-Spin Entanglement",
+      "category": "boson",
+      "description": "Entanglement entropy between the boson cavity and the entire spin chain. Bipartition is always at bond 1 (between boson site and first spin site).",
+      "backends": {
+        "tn_spin": false,
+        "tn_spinboson": false,
+        "ed_spin": false,
+        "ed_spinboson": true
+      },
+      "applies_to_algorithms": ["ed_spectrum", "ed_time_evolution"],
+      "requires_hamiltonian": false,
+      "return_type": "scalar",
+      "params": {
+        "alpha": {
+          "type": "float",
+          "required": false,
+          "default": 1,
+          "minimum_exclusive": 0,
+          "description": "Renyi index. alpha=1 gives von Neumann entropy."
+        }
+      },
+      "backend_function": {
+        "ed_spinboson": "boson_spin_entanglement(psi, N_spins, d_spin, d_boson; alpha)"
+      },
+      "example_config": {
+        "observable": {
+          "type": "boson_spin_entanglement",
+          "params": { "alpha": 1 }
+        }
+      }
+    }
+  },
+
+  "aliases": {
+    "description": "Legacy observable names that map to canonical names. The runner accepts these for backwards compatibility.",
+    "mapping": {
+      "local_expectation": "single_site_expectation",
+      "two_point_correlation": "correlation_function",
+      "bipartite_entanglement_entropy": "entanglement_entropy",
+      "total_magnetization": "subsystem_expectation_sum",
+      "spinboson_local_spin_expectation": "single_site_expectation",
+      "spinboson_expectation_all_sites": "expectation_all_sites",
+      "spinboson_total_magnetization": "subsystem_expectation_sum",
+      "spinboson_two_point_correlation": "correlation_function",
+      "spinboson_correlation_matrix": "correlation_matrix",
+      "spinboson_entanglement_spectrum": "entanglement_spectrum",
+      "spinboson_entanglement_entropy": "entanglement_entropy",
+      "boson_number_expectation": "boson_number",
+      "boson_number_distribution": "boson_distribution"
+    }
+  },
+
+  "backend_resolution": {
+    "description": "How the runner resolves which backend function to call. Given algorithm and system_type from the catalog query metadata, the runner determines the backend key.",
+    "rules": {
+      "tn_spin":       { "algorithms": ["dmrg", "tdvp"], "system_type": "spin" },
+      "tn_spinboson":  { "algorithms": ["dmrg", "tdvp"], "system_type": "spinboson" },
+      "ed_spin":       { "algorithms": ["ed_spectrum", "ed_time_evolution"], "system_type": "spin" },
+      "ed_spinboson":  { "algorithms": ["ed_spectrum", "ed_time_evolution"], "system_type": "spinboson" }
+    },
+    "note": "TN spinboson observables use the same functions as TN spin (the MPS structure handles heterogeneous sites transparently). ED spinboson uses _sb suffixed functions that require N_spins, nmax parameters."
+  }
+}

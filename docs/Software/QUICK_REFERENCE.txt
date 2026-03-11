@@ -12,15 +12,15 @@
   1. Copy files to project root:
      
      cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
-     cp /downloads/start_server.jl .
-     cp /downloads/pipeline_server.jl .
-     cp /downloads/pipeline_automation.js tools/
+     cp /downloads/start_server.jl server/
+     cp /downloads/pipeline_server.jl server/
+     cp /downloads/pipeline_automation.js frontend/
 
   2. Install HTTP.jl:
      
      julia -e 'using Pkg; Pkg.add("HTTP")'
 
-  3. Edit tools/config_builder_v4.html (add before </body>):
+  3. Edit frontend/config_builder.html (add before </body>):
      
      <script src="pipeline_automation.js"></script>
 
@@ -31,7 +31,7 @@
 
   START SERVER:
     cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware
-    julia start_server.jl
+    julia server/start_server.jl
 
   OPEN GUI:
     Browser → http://localhost:8080
@@ -49,11 +49,13 @@
 
   YOUR PROJECT:
     /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware/
-    ├── start_server.jl           ← Run this to start
-    ├── pipeline_server.jl        ← HTTP server
-    ├── tools/
-    │   ├── config_builder_v4.html  ← GUI (modified)
-    │   └── pipeline_automation.js  ← New JavaScript
+    ├── server/
+    │   ├── start_server.jl         ← Run this to start
+    │   ├── pipeline_server.jl      ← HTTP server
+    │   └── query.jl                ← CLI query utility
+    ├── frontend/
+    │   ├── config_builder.html     ← GUI
+    │   └── pipeline_automation.js  ← JavaScript client
     ├── src/                      ← Your code (unchanged)
     ├── data/                     ← Simulation results
     └── data_obs/                 ← Observable results
@@ -94,11 +96,11 @@
 └─────────────────────────────────────────────────────────────────────────┘
 
   START SERVER:
-    julia start_server.jl
+    julia server/start_server.jl
 
   START IN BACKGROUND (screen):
     screen -S tn_server
-    julia start_server.jl
+    julia server/start_server.jl
     # Press Ctrl+A, then D to detach
 
   REATTACH TO BACKGROUND:
@@ -129,13 +131,13 @@
 
   BUTTON DOESN'T APPEAR:
     ✗ No "Run Pipeline" button in GUI
-    ✓ Check: tools/pipeline_automation.js exists
+    ✓ Check: frontend/pipeline_automation.js exists
     ✓ Check: <script> tag added to HTML
     ✓ Hard refresh: Ctrl+Shift+R
 
   CONNECTION REFUSED:
     ✗ Browser can't connect
-    ✓ Check: julia start_server.jl is running
+    ✓ Check: julia server/start_server.jl is running
     ✓ Check: No errors in terminal
 
   PIPELINE FAILS:
@@ -189,21 +191,21 @@
   MULTIPLE VERSIONS:
     Run different versions on different ports:
     
-    v1: julia start_server.jl          # Port 8080
-    v2: PORT=8081 julia start_server.jl # Port 8081 (modify script)
+    v1: julia server/start_server.jl          # Port 8080
+    v2: PORT=8081 julia server/start_server.jl # Port 8081 (modify script)
 
   DIFFERENT DATA LOCATION:
-    Edit pipeline_server.jl to change DATA_DIR and OBSERVABLES_DIR
+    Edit server/pipeline_server.jl to change DATA_DIR and OBSERVABLES_DIR
 
   VIEW SERVER LOGS:
     All output goes to terminal where you ran julia
-    Or redirect: julia start_server.jl > server.log 2>&1
+    Or redirect: julia server/start_server.jl > server.log 2>&1
 
   MONITOR ACTIVE RUNS:
     curl http://localhost:8080/api/active
 
   FORCE RERUN (ignore deduplication):
-    Edit pipeline_server.jl:
+    Edit server/pipeline_server.jl:
     force_rerun=true in execute_*_pipeline()
 
 
@@ -222,9 +224,9 @@
 │ PATHS CHEAT SHEET                                                       │
 └─────────────────────────────────────────────────────────────────────────┘
 
-  PROJECT_ROOT  = @__DIR__  (where start_server.jl is located)
+  PROJECT_ROOT  = dirname(@__DIR__)  (parent of server/ directory)
   SRC_DIR       = PROJECT_ROOT/src
-  TOOLS_DIR     = PROJECT_ROOT/tools
+  FRONTEND_DIR  = PROJECT_ROOT/frontend
   DATA_DIR      = PROJECT_ROOT/data
   OBSERVABLES   = PROJECT_ROOT/data_obs
 
@@ -242,10 +244,10 @@
   ✓ All your builders                    (unchanged)
 
   Only additions:
-  • start_server.jl     (new, in root)
-  • pipeline_server.jl  (new, in root)
-  • pipeline_automation.js (new, in tools/)
-  • One line in config_builder_v4.html
+  • server/start_server.jl     (in server/)
+  • server/pipeline_server.jl  (in server/)
+  • frontend/pipeline_automation.js (in frontend/)
+  • One line in config_builder.html
 
 
 ╔══════════════════════════════════════════════════════════════════════════╗
@@ -253,7 +255,7 @@
 ║  QUICK START:                                                            ║
 ║                                                                          ║
 ║    cd /home/nishan/PD_UMBC/Research/Software_Dev/TNSoftware             ║
-║    julia start_server.jl                                                 ║
+║    julia server/start_server.jl                                                 ║
 ║    # Browser → http://localhost:8080                                     ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝

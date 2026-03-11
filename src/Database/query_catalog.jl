@@ -756,8 +756,13 @@ function _extract_catalog_info(entries::Vector{Dict{String, Any}})
     )
     
     for entry in entries
+        # Skip entries with missing core structure
+        if !haskey(entry, "core") || !haskey(entry["core"], "algorithm")
+            continue
+        end
+
         algo = entry["core"]["algorithm"]
-        
+
         # Algorithm params grouped by algorithm
         if !haskey(info["algorithms"], algo)
             info["algorithms"][algo] = Dict{String, Set}()
@@ -770,27 +775,30 @@ function _extract_catalog_info(entries::Vector{Dict{String, Any}})
                 push!(info["algorithms"][algo][k], v)
             end
         end
-        
+
         # Model params grouped by model name
-        model_name = entry["model"]["name"]
-        if !haskey(info["models"], model_name)
-            info["models"][model_name] = Dict{String, Any}(
-                "kind" => entry["model"]["kind"],
-                "params" => Dict{String, Set}()
-            )
-        end
-        if haskey(entry["model"], "params")
-            for (k, v) in entry["model"]["params"]
-                if !haskey(info["models"][model_name]["params"], k)
-                    info["models"][model_name]["params"][k] = Set()
+        # (Skip if model or model name is missing — e.g. custom models without name)
+        if haskey(entry, "model") && haskey(entry["model"], "name")
+            model_name = entry["model"]["name"]
+            if !haskey(info["models"], model_name)
+                info["models"][model_name] = Dict{String, Any}(
+                    "kind" => get(entry["model"], "kind", "unknown"),
+                    "params" => Dict{String, Set}()
+                )
+            end
+            if haskey(entry["model"], "params")
+                for (k, v) in entry["model"]["params"]
+                    if !haskey(info["models"][model_name]["params"], k)
+                        info["models"][model_name]["params"][k] = Set()
+                    end
+                    push!(info["models"][model_name]["params"][k], v)
                 end
-                push!(info["models"][model_name]["params"][k], v)
             end
         end
-        
+
         # State: organized by kind, then by name within kind
         # (Only process if state exists - ed_spectrum doesn't have initial state)
-        if haskey(entry, "state")
+        if haskey(entry, "state") && haskey(entry["state"], "kind")
             state_kind = entry["state"]["kind"]
             state_name = get(entry["state"], "name", nothing)
             

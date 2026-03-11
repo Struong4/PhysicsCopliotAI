@@ -5,21 +5,21 @@
 # Single entry point for calculating observables on ALL simulation types:
 # TN (DMRG/TDVP) and ED (ed_spectrum/ed_time_evolution).
 #
-# The engine automatically detects algorithm type from config and dispatches.
+# The engine automatically detects algorithm type from the saved config.
 #
-# USAGE:
+# PRIMARY ENTRY POINT (run_id-based):
+#   obs_run_id, obs_run_dir = run_observable_from_run_id(
+#       "20260309_143000_abc12345",
+#       Dict("type" => "entanglement_entropy", "params" => Dict("bond" => 10)),
+#       Dict("selection" => "all")
+#   )
+#
+# LEGACY ENTRY POINT (full config-based):
 #   config = JSON.parsefile("analysis_config.json")
 #   obs_run_id, obs_run_dir = run_observable_calculation_from_config(config)
 #
-# CONFIG STRUCTURE:
-# {
-#   "simulation": { ... },      ← Identifies which simulation data to use
-#   "analysis": {
-#     "sweeps": { ... },        ← For TN (or "steps" for ED time evolution)
-#     "states": { ... },        ← For ED spectrum (which eigenstates to analyze)
-#     "observable": { ... }     ← What to calculate
-#   }
-# }
+# The simulation config (system, model, algorithm) is loaded from the saved
+# run directory — callers only need to provide run_id + observable + selection.
 #
 # UNIFIED OBSERVABLE TYPES (work for both TN and ED):
 #   "single_site_expectation"    - Local ⟨Oᵢ⟩
@@ -536,204 +536,98 @@ end
 """
     run_observable_calculation_from_config(config; base_dir="data", obs_base_dir="observables", force_recalculate=false)
 
-Unified entry point for observable calculations. Automatically detects TN vs ED
-and dispatches to appropriate handler.
+Legacy entry point: accepts full config with "simulation" and "analysis" sections.
+Locates the simulation run via config hash, then delegates to `run_observable_from_run_id`.
 
-# Arguments
-- `config::Dict`: Analysis configuration with "simulation" and "analysis" sections
-- `base_dir::String`: Simulation data directory (default: "data")
-- `obs_base_dir::String`: Observable output directory (default: "observables")
-- `force_recalculate::Bool`: If true, recalculate even if results exist
-
-# Returns
-- `(obs_run_id, obs_run_dir)`: Observable run identifier and path
-
-# Config Structure
-```json
-{
-  "simulation": {
-    "system": { "type": "spin", "N": 20, "S": 0.5 },
-    "model": { "type": "tfi", "J": 1.0, "h": 0.5 },
-    "algorithm": { "type": "dmrg", ... }
-  },
-  "analysis": {
-    "sweeps": { "selection": "all" },
-    "observable": {
-      "type": "correlation_function",
-      "params": { "site_i": 1, "site_j": 10, "operator": "Z" }
-    }
-  }
-}
-```
+For new code, prefer `run_observable_from_run_id()` which takes a `run_id` directly.
 """
-function run_observable_calculation_from_config(config::Dict; 
+function run_observable_calculation_from_config(config::Dict;
                                                base_dir::String="data",
                                                obs_base_dir::String="observables",
                                                force_recalculate::Bool=false)
-    
-    println("\n" * "="^70)
-    println("Starting Observable Calculation from Config")
-    println("="^70)
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # Step 1: Extract simulation config and detect algorithm type
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    println("\n[1/6] Extracting simulation config and finding run...")
-    
+
+    base_dir = abspath(base_dir)
+    obs_base_dir = abspath(obs_base_dir)
+
     sim_config = config["simulation"]
     algorithm = sim_config["algorithm"]["type"]
-    
-    # Detect TN vs ED
-    if is_tn_algorithm(algorithm)
-        println("  ✓ Algorithm: $algorithm (TN)")
-    elseif is_ed_algorithm(algorithm)
-        println("  ✓ Algorithm: $algorithm (ED)")
-    else
-        error("Unknown algorithm type: $algorithm")
-    end
-    
-    # Find simulation run
+
+    # Find simulation run via config hash
     runs = _find_runs_by_config(sim_config, base_dir)
-    
+
     if isempty(runs)
         error("No simulation found matching config.\n" *
               "Run simulation first with run_simulation_from_config()")
     end
-    
-    # Use latest run
+
     sim_run = runs[end]
-    sim_run_id = sim_run["run_id"]
-    sim_run_dir = sim_run["run_dir"]
-    
-    println("  ✓ Found simulation run: $sim_run_id")
-    println("  ✓ Simulation directory: $sim_run_dir")
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # Step 2: Check for existing calculation (deduplication)
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    println("\n[2/6] Checking for existing calculations...")
-    
-    if !force_recalculate
-        existing = _get_completed_observable_run(config, sim_run_id, obs_base_dir=obs_base_dir)
-        
-        if existing !== nothing
-            println("  ✓ Found existing completed calculation!")
-            println("  Observable run: $(existing["obs_run_id"])")
-            println("  Directory: $(existing["obs_run_dir"])")
-            println("\n  Use force_recalculate=true to recompute.")
-            return existing["obs_run_id"], existing["obs_run_dir"]
-        end
+    run_id = sim_run["run_id"]
+
+    # Extract observable and selection configs from the analysis section
+    analysis = config["analysis"]
+    observable_config = analysis["observable"]
+
+    # Determine selection key based on algorithm
+    if is_tn_algorithm(algorithm)
+        selection_config = get(analysis, "sweeps", Dict("selection" => "all"))
+    elseif algorithm == "ed_time_evolution"
+        selection_config = get(analysis, "steps", get(analysis, "sweeps", Dict("selection" => "all")))
+    elseif algorithm == "ed_spectrum"
+        selection_config = get(analysis, "states", Dict("selection" => "ground"))
+    else
+        selection_config = get(analysis, "sweeps", Dict("selection" => "all"))
     end
-    
-    println("  No completed calculation found. Proceeding...")
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # Step 3: Setup observable directory
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    println("\n[3/6] Setting up observable directory...")
-    
-    obs_run_id, obs_run_dir = _setup_observable_directory(
-        config, sim_run_id, algorithm, obs_base_dir=obs_base_dir
+
+    return run_observable_from_run_id(
+        run_id, observable_config, selection_config;
+        base_dir=base_dir, obs_base_dir=obs_base_dir,
+        force_recalculate=force_recalculate
     )
-    
-    println("  ✓ Observable run ID: $obs_run_id")
-    println("  ✓ Observable directory: $obs_run_dir")
-    
-    obs_type = config["analysis"]["observable"]["type"]
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # Step 4-6: Dispatch to TN or ED handler
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    try
-        local n_processed
-        
-        if is_tn_algorithm(algorithm)
-            n_processed = _run_tn_observable_calculation(
-                config, sim_config, sim_run_dir, obs_run_dir
-            )
-        else
-            n_processed = _run_ed_observable_calculation(
-                config, sim_config, sim_run_dir, obs_run_dir, algorithm
-            )
-        end
-        
-        # Finalize
-        println("="^70)
-        println("\nFinalizing...")
-        _finalize_observable_run(obs_run_dir, status="completed")
-        
-        # ═══════════════════════════════════════════════════════════════════════
-        # Append to observable catalog
-        # ═══════════════════════════════════════════════════════════════════════
-        _append_to_observables_catalog(config, obs_run_id, sim_run_id, "completed", 
-                                        obs_run_dir; obs_base_dir=obs_base_dir)
-        
-        # Summary
-        println("\n" * "="^70)
-        println("Observable Calculation Complete")
-        println("="^70)
-        println("  Simulation run: $sim_run_id")
-        println("  Observable run: $obs_run_id")
-        println("  Observable type: $obs_type")
-        println("  Items processed: $n_processed")
-        println("  Results saved in: $obs_run_dir")
-        println("="^70)
-        
-    catch e
-        println("\n❌ Observable calculation failed!")
-        _finalize_observable_run(obs_run_dir, status="failed")
-        rethrow(e)
-    end
-    
-    return obs_run_id, obs_run_dir
 end
 
 # ============================================================================
 # PART 7: TN Observable Handler
 # ============================================================================
 
-function _run_tn_observable_calculation(config::Dict, sim_config::Dict,
-                                        sim_run_dir::String, obs_run_dir::String)
-    
+function _run_tn_observable_calculation(sim_config::Dict, sim_run_dir::String,
+                                        obs_run_dir::String, observable_config::Dict,
+                                        selection_config::Dict)
+
     println("\n[4/6] Processing TN observables...")
-    
+
     # Get sweeps to process
-    sweeps_to_process = _get_sweeps_to_process(config["analysis"]["sweeps"], sim_run_dir)
+    sweeps_to_process = _get_sweeps_to_process(selection_config, sim_run_dir)
     println("  ✓ Sweeps to process: $(length(sweeps_to_process))")
     println("    Range: $(minimum(sweeps_to_process)) to $(maximum(sweeps_to_process))")
-    
+
     # Observable config
-    obs_type = config["analysis"]["observable"]["type"]
-    obs_params = config["analysis"]["observable"]["params"]
+    obs_type = observable_config["type"]
+    obs_params = get(observable_config, "params", Dict())
     println("\n[5/6] Observable type: $obs_type")
-    
-    # Build Hamiltonian if needed
+
+    # Build Hamiltonian if needed (requires sim_config to rebuild H)
     needs_ham = obs_type in ["energy_expectation", "energy_variance"]
     ham = nothing
     if needs_ham
-        println("  Building Hamiltonian...")
+        println("  Building Hamiltonian from saved config...")
         ham_mpo = build_mpo_from_config(sim_config)
         ham = ham_mpo.tensors
     end
-    
+
     # Calculate for each sweep
     println("\n[6/6] Calculating observables...")
     println("="^70)
-    
+
     for (idx, sweep) in enumerate(sweeps_to_process)
         mps, extra_data = load_mps_sweep(sim_run_dir, sweep)
         obs_value = _calculate_tn_observable(obs_type, obs_params, mps.tensors, ham)
         _save_observable_sweep(obs_value, obs_run_dir, sweep; extra_data=extra_data)
-        
+
         if idx % max(1, length(sweeps_to_process) ÷ 10) == 0
             println("  Progress: $idx/$(length(sweeps_to_process)) sweeps")
         end
     end
-    
+
     return length(sweeps_to_process)
 end
 
@@ -741,34 +635,36 @@ end
 # PART 8: ED Observable Handler
 # ============================================================================
 
-function _run_ed_observable_calculation(config::Dict, sim_config::Dict,
-                                        sim_run_dir::String, obs_run_dir::String,
-                                        algorithm::String)
-    
+function _run_ed_observable_calculation(sim_config::Dict, sim_run_dir::String,
+                                        obs_run_dir::String, observable_config::Dict,
+                                        selection_config::Dict, algorithm::String)
+
     println("\n[4/6] Processing ED observables...")
-    
+
     system_config = sim_config["system"]
-    obs_type = config["analysis"]["observable"]["type"]
-    obs_params = config["analysis"]["observable"]["params"]
-    
+    obs_type = observable_config["type"]
+    obs_params = get(observable_config, "params", Dict())
+
     println("  Observable type: $obs_type")
-    
-    # Build Hamiltonian if energy observable requested
+
+    # Build Hamiltonian if energy observable requested (requires sim_config)
     needs_ham = obs_type in ["energy_expectation", "energy_variance"]
     H = nothing
     if needs_ham
-        println("  Building Hamiltonian for energy observable...")
+        println("  Building Hamiltonian from saved config...")
         H = build_H_from_config(sim_config)
         println("  ✓ Hamiltonian built: $(size(H, 1)) × $(size(H, 1))")
     end
-    
+
     if algorithm == "ed_spectrum"
-        return _run_ed_spectrum_observable(config, sim_config, sim_run_dir, obs_run_dir, 
-                                           system_config, obs_type, obs_params, H)
-        
+        return _run_ed_spectrum_observable(sim_run_dir, obs_run_dir,
+                                           system_config, obs_type, obs_params,
+                                           selection_config, H)
+
     elseif algorithm == "ed_time_evolution"
-        return _run_ed_time_evolution_observable(config, sim_config, sim_run_dir, obs_run_dir,
-                                                  system_config, obs_type, obs_params, H)
+        return _run_ed_time_evolution_observable(sim_run_dir, obs_run_dir,
+                                                  system_config, obs_type, obs_params,
+                                                  selection_config, H)
     else
         error("Unknown ED algorithm: $algorithm")
     end
@@ -778,49 +674,49 @@ end
 # ED Spectrum Observable
 # ────────────────────────────────────────────────────────────────────────────
 
-function _run_ed_spectrum_observable(config, sim_config, sim_run_dir, obs_run_dir,
-                                     system_config, obs_type, obs_params, H)
-    
+function _run_ed_spectrum_observable(sim_run_dir, obs_run_dir,
+                                     system_config, obs_type, obs_params,
+                                     selection_config, H)
+
     println("\n[5/6] Loading spectrum results...")
     energies, states, _ = load_ed_spectrum(sim_run_dir)
     println("  ✓ Loaded $(length(energies)) eigenstates")
-    
+
     # Determine which states to analyze
-    state_selection = get(config["analysis"], "states", Dict("selection" => "ground"))
-    selection = state_selection["selection"]
-    
+    selection = get(selection_config, "selection", "ground")
+
     if selection == "ground"
         state_indices = [1]
     elseif selection == "range"
-        start_idx, end_idx = state_selection["range"]
+        start_idx, end_idx = selection_config["range"]
         state_indices = collect(start_idx:min(end_idx, length(energies)))
     elseif selection == "specific"
-        state_indices = state_selection["list"]
+        state_indices = selection_config["list"]
     elseif selection == "all"
         state_indices = collect(1:length(energies))
     else
         state_indices = [1]
     end
-    
+
     println("  States to analyze: $(length(state_indices))")
-    
+
     println("\n[6/6] Calculating observables...")
     println("="^70)
-    
+
     for (idx, state_idx) in enumerate(state_indices)
         psi = states[:, state_idx]
         E = energies[state_idx]
-        
+
         obs_value = _calculate_ed_observable(obs_type, obs_params, psi, system_config, H=H)
-        
+
         extra_data = Dict("energy" => E, "state_index" => state_idx)
         _save_observable_sweep(obs_value, obs_run_dir, state_idx; extra_data=extra_data)
-        
+
         if idx % max(1, length(state_indices) ÷ 10) == 0
             println("  Progress: $idx/$(length(state_indices)) states")
         end
     end
-    
+
     return length(state_indices)
 end
 
@@ -828,32 +724,27 @@ end
 # ED Time Evolution Observable
 # ────────────────────────────────────────────────────────────────────────────
 
-function _run_ed_time_evolution_observable(config, sim_config, sim_run_dir, obs_run_dir,
-                                           system_config, obs_type, obs_params, H)
-    
-    # Get steps to process (check "steps" first, fallback to "sweeps")
-    step_config = get(config["analysis"], "steps", get(config["analysis"], "sweeps", nothing))
-    if step_config === nothing
-        error("Analysis config must include 'steps' (or 'sweeps') selection for time evolution")
-    end
-    
-    steps_to_process = _get_sweeps_to_process(step_config, sim_run_dir)
+function _run_ed_time_evolution_observable(sim_run_dir, obs_run_dir,
+                                           system_config, obs_type, obs_params,
+                                           selection_config, H)
+
+    steps_to_process = _get_sweeps_to_process(selection_config, sim_run_dir)
     println("\n[5/6] Steps to process: $(length(steps_to_process))")
-    
+
     println("\n[6/6] Calculating observables...")
     println("="^70)
-    
+
     for (idx, step) in enumerate(steps_to_process)
         psi, extra_data = load_ed_step(sim_run_dir, step)
         obs_value = _calculate_ed_observable(obs_type, obs_params, psi, system_config, H=H)
         _save_observable_sweep(obs_value, obs_run_dir, step; extra_data=extra_data)
-        
+
         if idx % max(1, length(steps_to_process) ÷ 10) == 0
             t = get(extra_data, "time", step)
             println("  Progress: $idx/$(length(steps_to_process)) steps (t = $t)")
         end
     end
-    
+
     return length(steps_to_process)
 end
 
@@ -903,6 +794,185 @@ function _calculate_observable_at_sweep(obs_type::String, params::Dict,
     else
         error("Unknown algorithm: $algorithm")
     end
+end
+
+"""
+    run_observable_from_run_id(run_id, observable_config, selection_config;
+                               base_dir="data", obs_base_dir="observables",
+                               force_recalculate=false)
+
+Primary entry point for observable calculations. Takes a simulation `run_id`,
+loads the simulation config from the saved run directory, and calculates
+the requested observable.
+
+The simulation config (needed for rebuilding H, system params, etc.) is loaded
+directly from `run_dir/config.json` — no need to pass it in from outside.
+
+# Arguments
+- `run_id::String`: Simulation run ID (from catalog query)
+- `observable_config::Dict`: Observable specification, e.g.
+    `Dict("type" => "correlation_function", "params" => Dict("site_i" => 1, "site_j" => 10, "operator" => "Z"))`
+- `selection_config::Dict`: Sweep/step/state selection, e.g.
+    `Dict("selection" => "all")` or `Dict("selection" => "range", "range" => [1, 10])`
+- `base_dir::String`: Simulation data directory
+- `obs_base_dir::String`: Observable output directory
+- `force_recalculate::Bool`: Recalculate even if results exist
+
+# Returns
+- `(obs_run_id, obs_run_dir)`: Observable run identifier and path
+"""
+function run_observable_from_run_id(run_id::String,
+                                    observable_config::Dict,
+                                    selection_config::Dict;
+                                    base_dir::String="data",
+                                    obs_base_dir::String="observables",
+                                    force_recalculate::Bool=false)
+
+    base_dir = abspath(base_dir)
+    obs_base_dir = abspath(obs_base_dir)
+
+    println("\n" * "="^70)
+    println("Starting Observable Calculation")
+    println("="^70)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 1: Locate simulation run and load saved config
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    println("\n[1/6] Locating simulation run: $run_id")
+
+    sim_results = query_catalog(; base_dir=base_dir, run_id=run_id)
+
+    if isempty(sim_results)
+        error("Simulation run not found: $run_id\n" *
+              "Use query_catalog() or GET /api/query/simulations to find available runs.")
+    end
+
+    sim_run_dir = sim_results[1]["run_dir"]
+    println("  ✓ Run directory: $sim_run_dir")
+
+    # Load simulation config from saved data (the run directory has everything)
+    config_path = joinpath(sim_run_dir, "config.json")
+    if !isfile(config_path)
+        error("Simulation config not found at: $config_path")
+    end
+    sim_config = JSON.parsefile(config_path)
+
+    algorithm = sim_config["algorithm"]["type"]
+    if is_tn_algorithm(algorithm)
+        println("  ✓ Algorithm: $algorithm (TN)")
+    elseif is_ed_algorithm(algorithm)
+        println("  ✓ Algorithm: $algorithm (ED)")
+    else
+        error("Unknown algorithm type: $algorithm")
+    end
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 2: Assemble full config for hashing/dedup/catalog (internal only)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    # Determine the selection key for this algorithm type
+    if is_tn_algorithm(algorithm)
+        selection_key = "sweeps"
+    elseif algorithm == "ed_time_evolution"
+        selection_key = "steps"
+    elseif algorithm == "ed_spectrum"
+        selection_key = "states"
+    else
+        selection_key = "sweeps"
+    end
+
+    # The full config is assembled internally for deduplication hashing,
+    # directory setup, and catalog entry — NOT passed in from outside.
+    full_config = Dict(
+        "simulation" => sim_config,
+        "analysis" => Dict(
+            selection_key => selection_config,
+            "observable" => observable_config
+        )
+    )
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 3: Check for existing calculation (deduplication)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    println("\n[2/6] Checking for existing calculations...")
+
+    if !force_recalculate
+        existing = _get_completed_observable_run(full_config, run_id, obs_base_dir=obs_base_dir)
+
+        if existing !== nothing
+            println("  ✓ Found existing completed calculation!")
+            println("  Observable run: $(existing["obs_run_id"])")
+            println("  Directory: $(existing["obs_run_dir"])")
+            println("\n  Use force_recalculate=true to recompute.")
+            return existing["obs_run_id"], existing["obs_run_dir"]
+        end
+    end
+
+    println("  No completed calculation found. Proceeding...")
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 4: Setup observable directory
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    println("\n[3/6] Setting up observable directory...")
+
+    obs_run_id, obs_run_dir = _setup_observable_directory(
+        full_config, run_id, algorithm, obs_base_dir=obs_base_dir
+    )
+
+    println("  ✓ Observable run ID: $obs_run_id")
+    println("  ✓ Observable directory: $obs_run_dir")
+
+    obs_type = observable_config["type"]
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Step 5-6: Dispatch to TN or ED handler
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    try
+        local n_processed
+
+        if is_tn_algorithm(algorithm)
+            n_processed = _run_tn_observable_calculation(
+                sim_config, sim_run_dir, obs_run_dir,
+                observable_config, selection_config
+            )
+        else
+            n_processed = _run_ed_observable_calculation(
+                sim_config, sim_run_dir, obs_run_dir,
+                observable_config, selection_config, algorithm
+            )
+        end
+
+        # Finalize
+        println("="^70)
+        println("\nFinalizing...")
+        _finalize_observable_run(obs_run_dir, status="completed")
+
+        # Append to observable catalog
+        _append_to_observables_catalog(full_config, obs_run_id, run_id, "completed",
+                                        obs_run_dir; obs_base_dir=obs_base_dir)
+
+        # Summary
+        println("\n" * "="^70)
+        println("Observable Calculation Complete")
+        println("="^70)
+        println("  Simulation run: $run_id")
+        println("  Observable run: $obs_run_id")
+        println("  Observable type: $obs_type")
+        println("  Items processed: $n_processed")
+        println("  Results saved in: $obs_run_dir")
+        println("="^70)
+
+    catch e
+        println("\n❌ Observable calculation failed!")
+        _finalize_observable_run(obs_run_dir, status="failed")
+        rethrow(e)
+    end
+
+    return obs_run_id, obs_run_dir
 end
 
 """

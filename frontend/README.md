@@ -1,4 +1,4 @@
-# Tools
+# Frontend
 
 ## Config Builder
 
@@ -15,12 +15,12 @@ Interactive web form for generating simulation configuration files.
 
 **Linux:**
 ```bash
-xdg-open tools/config_builder.html
+xdg-open frontend/config_builder.html
 ```
 
 **macOS:**
 ```bash
-open tools/config_builder.html
+open frontend/config_builder.html
 ```
 
 **Windows:**
