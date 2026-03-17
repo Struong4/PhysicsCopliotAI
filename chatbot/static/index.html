@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TNCodebase — ED Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Index.html uses CSS for appearance, HTML for content, and JS for the logic, state, and interactivity */
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f4f5f7;
+      color: #1a1a2e;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a1a2e;
+      color: #e0e0f0;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
+    header span { color: #7c86ff; }
+
+    /* ── Main layout ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Chat panel ── */
+    .chat-panel {
+      flex: 0 0 54%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-right: 1px solid #dde1ea;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .bubble {
+      max-width: 82%;
+      padding: 0.6rem 1rem;
+      border-radius: 1.1rem;
+      line-height: 1.5;
+      font-size: 1rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.user {
+      background: #4f6ef7;
+      color: #fff;
+      margin-left: auto;
+      border-radius: 1.1rem 1.1rem 0.25rem 1.1rem;
+    }
+    .bubble.assistant {
+      background: #f0f1f5;
+      color: #1a1a2e;
+      margin-right: auto;
+      border-radius: 1.1rem 1.1rem 1.1rem 0.25rem;
+    }
+    .bubble.info {
+      background: #fffbe6;
+      color: #7a5c00;
+      margin: 0 auto;
+      font-size: 0.82rem;
+      border-radius: 0.5rem;
+      border: 1px solid #ffe97a;
+      max-width: 96%;
+    }
+
+    .typing-indicator {
+      padding: 0.3rem 1rem;
+      font-size: 0.82rem;
+      color: #9a9db0;
+      font-style: italic;
+      height: 1.5rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #dde1ea;
+      background: #fff;
+    }
+    .input-row textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid #c8ccd8;
+      border-radius: 0.6rem;
+      padding: 0.55rem 0.85rem;
+      font-family: inherit;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      height: 44px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-row textarea:focus { border-color: #4f6ef7; }
+    .input-row textarea:disabled { background: #f4f5f7; }
+    .input-row button {
+      padding: 0 1.2rem;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 0.6rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .input-row button:hover { background: #3a57d4; }
+    .input-row button:disabled { background: #b0b8d8; cursor: not-allowed; }
+
+    /* ── Config panel ── */
+    .config-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .placeholder-msg {
+      text-align: center;
+      color: #9a9db0;
+      margin-top: 4rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .placeholder-msg strong { display: block; font-size: 1.05rem; color: #6b6f82; margin-bottom: 0.4rem; }
+
+    #config-card { display: none; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #dde1ea;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .card-header {
+      background: #f0f1f8;
+      padding: 0.6rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b6f8a;
+    }
+
+    .summary-text {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: #2a2d4a;
+      background: #f7f8ff;
+      border-bottom: 1px solid #dde1ea;
+      line-height: 1.5;
+    }
+
+    .config-json {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      padding: 1rem;
+      overflow: auto;
+      max-height: 340px;
+      white-space: pre;
+      margin: 0;
+    }
+
+    /* Edit textarea replaces the JSON display */
+    #edit-area {
+      display: none;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Consolas', 'Cascadia Code', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      padding: 1rem;
+      border: none;
+      width: 100%;
+      min-height: 280px;
+      resize: vertical;
+      outline: none;
+    }
+
+    .edit-error {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      color: #c0392b;
+      background: #fdf0ef;
+      display: none;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #dde1ea;
+      background: #fafbff;
+    }
+    .btn { padding: 0.45rem 1.1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.87; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-confirm  { background: #22a06b; color: #fff; }
+    .btn-edit     { background: #4f6ef7; color: #fff; }
+    .btn-save     { background: #22a06b; color: #fff; display: none; }
+    .btn-discard  { background: #6c757d; color: #fff; display: none; }
+    .btn-cancel   { background: #6c757d; color: #fff; }
+
+    /* ── Status card ── */
+    #status-card { display: none; }
+
+    .status-inner { padding: 0.85rem 1rem; }
+    .status-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-queued   { background: #fff0b3; color: #7a5700; }
+    .badge-running  { background: #deebff; color: #0747a6; }
+    .badge-completed{ background: #e3fcef; color: #006644; }
+    .badge-failed   { background: #ffebe6; color: #bf2600; }
+
+    .status-msg { font-size: 0.85rem; color: #5a5d72; }
+
+    .run-info {
+      display: none;
+      margin-top: 0.6rem;
+      background: #f4f5f7;
+      border-radius: 0.4rem;
+      padding: 0.5rem 0.75rem;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid #4f6ef7;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Observable cards ── */
+    #obs-card { display: none; }
+    #obs-results-card { display: none; }
+
+    .obs-config-display {
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      color: #2a2d4a;
+      line-height: 1.7;
+    }
+    .obs-config-display .obs-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    .obs-config-display .obs-label {
+      font-weight: 700;
+      color: #6b6f8a;
+      min-width: 120px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .analysis-box {
+      margin: 0.5rem 1rem 0.75rem;
+      background: #f7f8ff;
+      border: 1px solid #dde1ea;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      color: #2a2d4a;
+      line-height: 1.7;
+    }
+    .analysis-box .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.2rem;
+    }
+    .analysis-box .stat {
+      display: flex;
+      gap: 0.3rem;
+    }
+    .analysis-box .stat-label { color: #6b6f8a; font-weight: 600; }
+    .analysis-box .insight {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #dde1ea;
+      color: #444;
+      font-style: italic;
+    }
+  </style>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+
+<header>TNCodebase &nbsp;<span>ED</span>&nbsp; Simulation Assistant</header>
+
+<div class="main">
+
+  <!-- ── Chat panel ── -->
+  <div class="chat-panel">
+    <div class="messages" id="messages">
+      <div class="bubble assistant">
+        Hi! I can help you set up and run quantum many-body simulations using exact diagonalization (ED) or tensor network (TN) methods.<br><br>
+        What kind of simulation are you thinking about? For example:<br>
+        &bull; "Find the ground state of a Heisenberg chain with DMRG"<br>
+        &bull; "Time-evolve an Ising model after a quench with TDVP"<br>
+        &bull; "Compute the energy spectrum of a Heisenberg model (N=8)"<br>
+        &bull; "Run ED time evolution on a long-range Ising model"
+      </div>
+    </div>
+    <div class="typing-indicator" id="typing"></div>
+    <div class="input-row">
+      <textarea id="msg-input" placeholder="Describe your simulation…" rows="1"
+                onkeydown="handleKey(event)"></textarea>
+      <button id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- ── Config panel ── -->
+  <div class="config-panel">
+
+    <div class="placeholder-msg" id="placeholder">
+      <strong>Config will appear here</strong>
+      Describe your simulation in the chat and Claude<br>will build the config for you to review.
+    </div>
+
+    <!-- Config card -->
+    <div class="card" id="config-card">
+      <div class="card-header">Simulation Config</div>
+      <div class="summary-text" id="summary-text"></div>
+      <pre class="config-json" id="config-json"></pre>
+      <textarea id="edit-area" spellcheck="false"></textarea>
+      <div class="edit-error" id="edit-error"></div>
+      <div class="action-row">
+        <button class="btn btn-confirm"  id="btn-confirm"  onclick="confirmRun()">▶ Confirm &amp; Run</button>
+        <button class="btn btn-edit"     id="btn-edit"     onclick="startEdit()">✎ Edit</button>
+        <button class="btn btn-save"     id="btn-save"     onclick="saveEdit()">✔ Save</button>
+        <button class="btn btn-discard"  id="btn-discard"  onclick="discardEdit()">✕ Discard</button>
+        <button class="btn btn-cancel"   id="btn-cancel"   onclick="cancelConfig()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Observable config card -->
+    <div class="card" id="obs-card">
+      <div class="card-header">Observable Calculation</div>
+      <div class="summary-text" id="obs-summary-text"></div>
+      <div class="obs-config-display" id="obs-config-display"></div>
+      <div class="action-row">
+        <button class="btn btn-confirm" id="btn-obs-confirm" onclick="confirmObsRun()">▶ Confirm &amp; Calculate</button>
+        <button class="btn btn-cancel" onclick="cancelObs()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Observable results card -->
+    <div class="card" id="obs-results-card">
+      <div class="card-header" id="obs-results-header">Observable Results</div>
+      <div id="obs-plot-container" style="padding: 0.75rem 0.5rem; min-height: 340px;"></div>
+      <div class="analysis-box" id="obs-analysis-box" style="display:none;"></div>
+      <div class="action-row">
+        <button class="btn btn-cancel" onclick="dismissObsResults()">✕ Dismiss</button>
+      </div>
+    </div>
+
+    <!-- Status card -->
+    <div class="card" id="status-card">
+      <div class="card-header">Pipeline Status</div>
+      <div class="status-inner">
+        <div class="status-row">
+          <span class="badge" id="status-badge"></span>
+          <span id="status-spinner"></span>
+        </div>
+        <div class="status-msg" id="status-msg"></div>
+        <div class="run-info" id="run-info"></div>
+      </div>
+      <div class="action-row" id="status-action-row" style="display:none;">
+        <button class="btn btn-cancel" onclick="dismissStatus()">✕ Dismiss</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // JS to store states and make api calls to the backend or bedrock
+  // ── State ─────────────────────────────────────────────────────────────────
+  let sessionId = localStorage.getItem("tn_ed_session") || null;
+  let currentConfig = null;
+  let lastSubmittedConfig = null;
+  let pollTimer = null;
+  let currentObsConfig = null;
+  let obsPolTimer = null;
+
+  // ── Chat helpers ──────────────────────────────────────────────────────────
+  // creates bubble for the message
+  function addBubble(text, role) {
+    const el = document.createElement("div");
+    el.className = `bubble ${role}`;
+    el.textContent = text;
+    document.getElementById("messages").appendChild(el);
+    el.scrollIntoView({ behavior: "smooth" });
+  }
+
+  // when claude is thinking to disable input and send button while its creating response
+  function setThinking(on) {
+    const t = document.getElementById("typing");
+    t.textContent = on ? "Claude is thinking…" : "";
+    document.getElementById("msg-input").disabled = on;
+    document.getElementById("send-btn").disabled = on;
+  }
+
+  // sees enter as a key to send the response
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // reads the users text and sends the message by making a POST Api call to
+  // the chat andf adds claude's reply text as a assistant bubble.
+  async function sendMessage() {
+    const input = document.getElementById("msg-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = "";
+    addBubble(text, "user");
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: text }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Error: " + (err.detail || res.statusText), "info");
+        return;
+      }
+
+      const data = await res.json();
+      sessionId = data.session_id;
+      localStorage.setItem("tn_ed_session", sessionId);
+
+      if (data.text) addBubble(data.text, "assistant");
+
+      if (data.config) {
+        currentConfig = data.config;
+        lastSubmittedConfig = data.config;
+        showConfigCard(data.config, data.summary);
+      }
+
+      if (data.obs_config) {
+        currentObsConfig = data.obs_config;
+        showObsCard(data.obs_config, data.obs_summary);
+      }
+
+      if (data.show_obs_run_id) {
+        addBubble("Loading observable results…", "info");
+        await fetchAndRenderObsResults(data.show_obs_run_id);
+      }
+    } catch (e) {
+      addBubble("Could not reach the server. Is it running on port 8000?", "info");
+    } finally {
+      setThinking(false);
+      document.getElementById("msg-input").focus();
+    }
+  }
+
+  // Shows the config builder to aaccess and send data to julia pipeline
+  function showConfigCard(config, summary) {
+    document.getElementById("placeholder").style.display = "none";
+    document.getElementById("status-card").style.display = "none";
+    document.getElementById("config-card").style.display = "block";
+    document.getElementById("summary-text").textContent = summary || "Review the config below.";
+    document.getElementById("config-json").textContent = JSON.stringify(config, null, 2);
+
+    // Reset edit mode and re-enable buttons (may have been disabled by a previous run)
+    document.getElementById("edit-area").style.display = "none";
+    document.getElementById("config-json").style.display = "block";
+    document.getElementById("btn-confirm").style.display = "";
+    document.getElementById("btn-edit").style.display = "";
+    document.getElementById("btn-save").style.display = "none";
+    document.getElementById("btn-discard").style.display = "none";
+    document.getElementById("edit-error").style.display = "none";
+    ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+      document.getElementById(id).disabled = false
+    );
+  }
+
+  // dismisses the status card after a completed or failed run
+  function dismissStatus() {
+    document.getElementById("status-card").style.display = "none";
+    document.getElementById("status-action-row").style.display = "none";
+    document.getElementById("run-info").style.display = "none";
+  }
+
+  // cancel config to not be sent to pipeline
+  function cancelConfig() {
+    currentConfig = null;
+    document.getElementById("config-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+    addBubble("Config cancelled. What would you like to change?", "info");
+  }
+
+  // allows user to edit the config json manually if they would want to
+  function startEdit() {
+    const ta = document.getElementById("edit-area");
+    ta.value = JSON.stringify(currentConfig, null, 2);
+    ta.style.display = "block";
+    document.getElementById("config-json").style.display = "none";
+    document.getElementById("btn-confirm").style.display = "none";
+    document.getElementById("btn-edit").style.display = "none";
+    document.getElementById("btn-save").style.display = "inline-block";
+    document.getElementById("btn-discard").style.display = "inline-block";
+    document.getElementById("edit-error").style.display = "none";
+    ta.focus();
+  }
+
+  // clears config
+  function discardEdit() {
+    document.getElementById("edit-area").style.display = "none";
+    document.getElementById("config-json").style.display = "block";
+    document.getElementById("btn-confirm").style.display = "";
+    document.getElementById("btn-edit").style.display = "";
+    document.getElementById("btn-save").style.display = "none";
+    document.getElementById("btn-discard").style.display = "none";
+    document.getElementById("edit-error").style.display = "none";
+  }
+
+
+  // saves user edit of the config they edited
+  function saveEdit() {
+    const ta = document.getElementById("edit-area");
+    let parsed;
+    try {
+      parsed = JSON.parse(ta.value);
+    } catch (e) {
+      const errEl = document.getElementById("edit-error");
+      errEl.textContent = "Invalid JSON: " + e.message;
+      errEl.style.display = "block";
+      return;
+    }
+    currentConfig = parsed;
+    document.getElementById("config-json").textContent = JSON.stringify(parsed, null, 2);
+    discardEdit();
+  }
+
+  // confirms the run and sends the config json to the julia pipeline by sending a POST
+  // API call which will store data if successful and give a analysis, on error let you run again,
+  // and adding more features for now
+  async function confirmRun() {
+    if (!currentConfig) return;
+
+    // Disable action buttons
+    ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+      document.getElementById(id).disabled = true
+    );
+
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: currentConfig, mode: "simulation" }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Failed to start simulation: " + (data.detail || res.statusText), "info");
+        ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+          document.getElementById(id).disabled = false
+        );
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.tracking_id) {
+        showStatusCard("queued", "Pipeline queued…");
+        // Keep input locked while simulation runs and Claude interprets results
+        document.getElementById("msg-input").disabled = true;
+        document.getElementById("send-btn").disabled = true;
+        startPolling(data.tracking_id);
+      } else {
+        addBubble("Unexpected response from pipeline: " + JSON.stringify(data), "info");
+      }
+    } catch (e) {
+      addBubble("Network error reaching server: " + e.message, "info");
+      ["btn-confirm", "btn-edit", "btn-cancel"].forEach(id =>
+        document.getElementById(id).disabled = false
+      );
+    }
+  }
+
+  // shows status of the run (queued, running, completed, failed)
+  function showStatusCard(status, msg) {
+    document.getElementById("status-card").style.display = "block";
+
+    const badge = document.getElementById("status-badge");
+    badge.textContent = status;
+    badge.className = `badge badge-${status}`;
+
+    document.getElementById("status-msg").textContent = msg;
+
+    const spinner = document.getElementById("status-spinner");
+    spinner.innerHTML = (status === "running" || status === "queued")
+      ? '<span class="spinner"></span>'
+      : "";
+  }
+
+  // lets system know if simulations are completed or failed.
+  function startPolling(trackingId) {
+    if (pollTimer) clearInterval(pollTimer);
+    let done = false;
+    let polling = false;
+
+    pollTimer = setInterval(async () => {
+      if (done || polling) return;
+      polling = true;
+      try {
+        const res = await fetch(`/api/status/${trackingId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const status = data.status || "unknown";
+        const msg = data.last_message || "";
+        showStatusCard(status, msg);
+
+        if (status === "completed") {
+          done = true;
+          clearInterval(pollTimer);
+          const result = data.result || {};
+          let info = "";
+          if (result.run_id)  info += `Run ID:  ${result.run_id}\n`;
+          if (result.run_dir) info += `Output:  ${result.run_dir}`;
+          if (result.deduplicated) info += "\n(Existing run found — no recomputation needed)";
+          if (info) {
+            const el = document.getElementById("run-info");
+            el.textContent = info;
+            el.style.display = "block";
+          }
+          document.getElementById("status-action-row").style.display = "";
+          currentConfig = null;
+          await injectResultAndChat(result, trackingId);
+
+        } else if (status === "failed") {
+          done = true;
+          clearInterval(pollTimer);
+          document.getElementById("status-action-row").style.display = "";
+          setThinking(false);
+          addBubble("Simulation failed. Check the Julia server output for details.", "info");
+        }
+      } catch (_) { /* keep trying */ }
+      finally { polling = false; }
+    }, 2000);
+  }
+
+  // ── Observable card ────────────────────────────────────────────────────────
+
+  function showObsCard(obsConfig, obsSummary) {
+    document.getElementById("placeholder").style.display = "none";
+    document.getElementById("config-card").style.display = "none";
+    document.getElementById("obs-results-card").style.display = "none";
+    document.getElementById("obs-card").style.display = "block";
+    document.getElementById("obs-summary-text").textContent = obsSummary || "Review the observable config below.";
+
+    const display = document.getElementById("obs-config-display");
+    const rows = [
+      ["Run ID",     obsConfig.run_id],
+      ["Observable", obsConfig.observable_type],
+      ["Params",     JSON.stringify(obsConfig.params)],
+      ["Selection",  obsConfig.selection || "all"],
+    ];
+    display.innerHTML = rows.map(([label, val]) =>
+      `<div class="obs-row"><span class="obs-label">${label}</span><span>${val}</span></div>`
+    ).join("");
+
+    document.getElementById("btn-obs-confirm").disabled = false;
+  }
+
+  function cancelObs() {
+    currentObsConfig = null;
+    document.getElementById("obs-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+    addBubble("Observable cancelled. Let me know what you'd like to change.", "info");
+  }
+
+  function dismissObsResults() {
+    document.getElementById("obs-results-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+  }
+
+  async function confirmObsRun() {
+    if (!currentObsConfig) return;
+    document.getElementById("btn-obs-confirm").disabled = true;
+
+    try {
+      const res = await fetch("/api/observables/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentObsConfig),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Failed to start observable calculation: " + (err.detail || res.statusText), "info");
+        document.getElementById("btn-obs-confirm").disabled = false;
+        return;
+      }
+
+      const data = await res.json();
+      if (data.tracking_id) {
+        document.getElementById("obs-card").style.display = "none";
+        showStatusCard("queued", "Observable calculation queued…");
+        startObsPolling(data.tracking_id);
+      } else {
+        addBubble("Unexpected response: " + JSON.stringify(data), "info");
+        document.getElementById("btn-obs-confirm").disabled = false;
+      }
+    } catch (e) {
+      addBubble("Network error: " + e.message, "info");
+      document.getElementById("btn-obs-confirm").disabled = false;
+    }
+  }
+
+  function startObsPolling(trackingId) {
+    if (obsPolTimer) clearInterval(obsPolTimer);
+    let done = false;
+    let polling = false;
+
+    obsPolTimer = setInterval(async () => {
+      if (done || polling) return;
+      polling = true;
+      try {
+        const res = await fetch(`/api/status/${trackingId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const status = data.status || "unknown";
+        showStatusCard(status, data.last_message || "");
+
+        if (status === "completed") {
+          done = true;
+          clearInterval(obsPolTimer);
+          document.getElementById("status-action-row").style.display = "";
+          const obsRunId = data.result?.obs_run_id;
+          if (obsRunId) {
+            await fetchAndRenderObsResults(obsRunId);
+          } else {
+            addBubble("Calculation completed but no results ID returned.", "info");
+          }
+        } else if (status === "failed") {
+          done = true;
+          clearInterval(obsPolTimer);
+          document.getElementById("status-action-row").style.display = "";
+          addBubble("Observable calculation failed. Check the Julia server output.", "info");
+        }
+      } catch (_) { /* keep trying */ }
+      finally { polling = false; }
+    }, 2000);
+  }
+
+  async function fetchAndRenderObsResults(obsRunId) {
+    try {
+      const res = await fetch(`/api/obs_results/${obsRunId}`);
+      if (!res.ok) {
+        addBubble("Could not load observable results.", "info");
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById("status-card").style.display = "none";
+      document.getElementById("obs-results-card").style.display = "block";
+      document.getElementById("placeholder").style.display = "none";
+
+      const obsType = data.metadata?.observable_type || currentObsConfig?.observable_type || "Observable";
+      document.getElementById("obs-results-header").textContent = `Results: ${obsType}`;
+
+      renderObsPlot(data, obsType);
+      renderObsAnalysis(data, obsType);
+      await injectObsResultAndChat(data, obsRunId, obsType);
+
+    } catch (e) {
+      addBubble("Error loading results: " + e.message, "info");
+    }
+  }
+
+  function renderObsPlot(data, obsType) {
+    const container = document.getElementById("obs-plot-container");
+    const indices = data.data?.indices || [];
+    const values  = data.data?.values  || [];
+    const times   = data.data?.times   || null;
+    const energies = data.data?.energies || null;
+
+    if (indices.length === 0) {
+      container.innerHTML = '<p style="padding:1rem; color:#888;">No data points.</p>';
+      return;
+    }
+
+    const xVals = (times && times.length === indices.length) ? times : indices;
+    const xLabel = (times && times.length === indices.length) ? "Time" : "Sweep / Index";
+    const firstVal = values[0];
+
+    // Detect data shape
+    if (typeof firstVal === "number" || firstVal === null) {
+      // Scalar time series
+      _plotScalar(container, xVals, values, xLabel, obsType);
+
+    } else if (typeof firstVal === "object" && firstVal !== null && "real" in firstVal) {
+      // Complex scalar — plot real and imaginary separately
+      _plotComplex(container, xVals, values, xLabel, obsType);
+
+    } else if (Array.isArray(firstVal) && Array.isArray(firstVal[0])) {
+      // Matrix (e.g. correlation_matrix) — heatmap of the last sweep
+      _plotMatrix(container, values[values.length - 1], obsType);
+
+    } else if (Array.isArray(firstVal)) {
+      // Vector per sweep — heatmap (sweeps × sites) or bar if single sweep
+      if (values.length === 1) {
+        _plotVector(container, firstVal, obsType);
+      } else {
+        _plotVectorHeatmap(container, values, xVals, xLabel, obsType);
+      }
+    } else {
+      container.innerHTML = '<p style="padding:1rem; color:#888;">Unsupported data shape for plotting.</p>';
+    }
+  }
+
+  const _plotLayout = (xTitle, yTitle, extra = {}) => Object.assign({
+    height: 320,
+    margin: { t: 20, r: 30, b: 60, l: 75 },
+    xaxis: { title: { text: xTitle, standoff: 10 }, automargin: true },
+    yaxis: { title: { text: yTitle, standoff: 10 }, automargin: true },
+    plot_bgcolor: "#fafbff", paper_bgcolor: "#fafbff",
+    font: { family: "system-ui", size: 12 },
+  }, extra);
+
+  function _plotScalar(container, x, y, xLabel, obsType) {
+    Plotly.newPlot(container, [{
+      x, y, mode: "lines+markers", type: "scatter",
+      line: { color: "#4f6ef7", width: 2 },
+      marker: { size: 5, color: "#4f6ef7" },
+    }], _plotLayout(xLabel, obsType), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotComplex(container, x, values, xLabel, obsType) {
+    const realVals = values.map(v => v.real);
+    const imagVals = values.map(v => v.imag);
+    Plotly.newPlot(container, [
+      { x, y: realVals, mode: "lines+markers", name: "Real", line: { color: "#4f6ef7", width: 2 }, marker: { size: 5 } },
+      { x, y: imagVals, mode: "lines+markers", name: "Imag", line: { color: "#e05252", width: 2, dash: "dash" }, marker: { size: 5 } },
+    ], _plotLayout(xLabel, obsType, {
+      legend: { orientation: "h", x: 0, y: -0.22, xanchor: "left" },
+      margin: { t: 20, r: 30, b: 80, l: 75 },
+    }), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotVector(container, vec, obsType) {
+    const x = vec.map((_, i) => i + 1);
+    Plotly.newPlot(container, [{
+      x, y: vec, type: "bar",
+      marker: { color: "#4f6ef7", opacity: 0.8 },
+    }], _plotLayout("Site", obsType), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotVectorHeatmap(container, values, x, xLabel, obsType) {
+    Plotly.newPlot(container, [{
+      z: values, x,
+      y: values[0].map((_, i) => i + 1),
+      type: "heatmap", colorscale: "RdBu", reversescale: true,
+    }], _plotLayout(xLabel, "Site"), { responsive: true, displayModeBar: false });
+  }
+
+  function _plotMatrix(container, matrix, obsType) {
+    const n = matrix.length;
+    const sites = Array.from({ length: n }, (_, i) => i + 1);
+    Plotly.newPlot(container, [{
+      z: matrix, x: sites, y: sites,
+      type: "heatmap", colorscale: "RdBu", reversescale: true,
+    }], _plotLayout("Site j", "Site i"), { responsive: true, displayModeBar: false });
+  }
+
+  function renderObsAnalysis(data, obsType) {
+    const box = document.getElementById("obs-analysis-box");
+    const values = data.data?.values || [];
+    if (values.length === 0) return;
+
+    const firstVal = values[0];
+    let nums = null;
+
+    if (typeof firstVal === "number") {
+      nums = values;
+    } else if (typeof firstVal === "object" && "real" in firstVal) {
+      nums = values.map(v => v.real);
+    }
+
+    if (!nums) { box.style.display = "none"; return; }
+
+    const min  = Math.min(...nums).toFixed(6);
+    const max  = Math.max(...nums).toFixed(6);
+    const mean = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(6);
+    const std  = Math.sqrt(nums.map(v => (v - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length).toFixed(6);
+    const last = nums[nums.length - 1].toFixed(6);
+
+    const trend = nums.length > 1
+      ? (nums[nums.length - 1] > nums[0] ? "increasing" : nums[nums.length - 1] < nums[0] ? "decreasing" : "flat")
+      : "—";
+
+    box.style.display = "block";
+    box.innerHTML = `
+      <div class="stat-row">
+        <div class="stat"><span class="stat-label">Min</span><span>${min}</span></div>
+        <div class="stat"><span class="stat-label">Max</span><span>${max}</span></div>
+        <div class="stat"><span class="stat-label">Mean</span><span>${mean}</span></div>
+        <div class="stat"><span class="stat-label">Std</span><span>${std}</span></div>
+        <div class="stat"><span class="stat-label">Final</span><span>${last}</span></div>
+        <div class="stat"><span class="stat-label">Trend</span><span>${trend}</span></div>
+        <div class="stat"><span class="stat-label">Points</span><span>${nums.length}</span></div>
+      </div>`;
+  }
+
+  // ── Observable result injection to chat ───────────────────────────────────
+
+  async function injectObsResultAndChat(data, obsRunId, obsType) {
+    const values = data.data?.values || [];
+    // Extract scalar numbers — handle both plain floats and complex {real, imag} objects
+    const nums = values.reduce((acc, v) => {
+      if (typeof v === "number") acc.push(v);
+      else if (v && typeof v === "object" && "real" in v) acc.push(v.real);
+      return acc;
+    }, []);
+    const summary = {
+      obs_run_id: obsRunId,
+      observable_type: obsType,
+      params: data.metadata?.params || currentObsConfig?.params || {},
+      n_points: values.length,
+      final_value: nums.length > 0 ? nums[nums.length - 1] : null,
+      mean_value: nums.length > 0 ? (nums.reduce((a, b) => a + b, 0) / nums.length) : null,
+    };
+
+    const injectedText = "[OBSERVABLE RESULT]\n" + JSON.stringify(summary, null, 2);
+    addBubble("Calculation complete. Asking Claude to interpret the results…", "info");
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: injectedText }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Could not get interpretation: " + (err.detail || res.statusText), "info");
+        return;
+      }
+
+      const chatData = await res.json();
+      sessionId = chatData.session_id;
+      localStorage.setItem("tn_ed_session", sessionId);
+      if (chatData.text) addBubble(chatData.text, "assistant");
+    } catch (e) {
+      addBubble("Network error getting interpretation: " + e.message, "info");
+    } finally {
+      setThinking(false);
+      document.getElementById("msg-input").focus();
+    }
+  }
+
+  // Creating a feedback loop with the LLM (Claude currently) to have a flowing conversation
+  // for btter user friendliness.
+  async function injectResultAndChat(result, trackingId) {
+    // Build a terse summary for Claude — it knows how to interpret each field
+    const summary = {
+      tracking_id: trackingId,
+      status: result.status || "completed",
+      run_id: result.run_id || null,
+      run_dir: result.run_dir || null,
+      deduplicated: result.deduplicated || false,
+      algorithm: lastSubmittedConfig?.algorithm?.type || "unknown",
+      model: lastSubmittedConfig?.model?.type || "unknown",
+      N: lastSubmittedConfig?.system?.N || null,
+    };
+
+    const injectedText = "[SIMULATION RESULT]\n" + JSON.stringify(summary, null, 2);
+
+    addBubble("Simulation completed. Asking Claude to interpret the results…", "info");
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: injectedText }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Could not get result interpretation: " + (err.detail || res.statusText), "info");
+        return;
+      }
+
+      const data = await res.json();
+      sessionId = data.session_id;
+      localStorage.setItem("tn_ed_session", sessionId);
+
+      if (data.text) addBubble(data.text, "assistant");
+    } catch (e) {
+      addBubble("Network error getting result interpretation: " + e.message, "info");
+    } finally {
+      setThinking(false);
+      document.getElementById("msg-input").focus();
+    }
+  }
+</script>
+</body>
+</html>

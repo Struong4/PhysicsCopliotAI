@@ -17,6 +17,19 @@ Manifest.toml
 *.swo
 *~
 
+# Claude Code local settings
+.claude/
+CLAUDE.md
+
+# Local planning notes
+plan.md
+Design.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # OS files
 .DS_Store
 Thumbs.db
