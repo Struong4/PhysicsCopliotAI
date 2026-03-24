@@ -589,7 +589,7 @@ async def get_obs_results(obs_run_id: str):
 @app.get("/api/status/{tracking_id}")
 async def poll_status(tracking_id: str):
     """Proxy a status poll to the Julia pipeline server."""
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             r = await client.get(f"{JULIA_URL}/api/status/{tracking_id}")
         except httpx.ConnectError:
