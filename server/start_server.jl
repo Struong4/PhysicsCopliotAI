@@ -162,4 +162,4 @@ end
 # Open browser after a short delay (gives server time to start)
 open_browser("http://127.0.0.1:8080")
 
-start_server(8080, "127.0.0.1")
+start_server(8080, get(ENV, "SERVER_HOST", "127.0.0.1"))

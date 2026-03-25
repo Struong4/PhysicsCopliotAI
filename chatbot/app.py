@@ -12,6 +12,8 @@ Run:
   pip install -r chatbot/requirements.txt
   uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload
   python -m uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload 
+  http://localhost:8000
+  http://localhost:8080
 """
 
 # libraries needed for connecting this AWS bedrock, HTTP requests, and UI for web
