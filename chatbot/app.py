@@ -104,7 +104,7 @@ _keywords = yaml.safe_load(_KEYWORDS_PATH.read_text(encoding="utf-8"))
 
 app = FastAPI()
 _session = boto3.Session(
-    profile_name=os.getenv("AWS_PROFILE"),
+    profile_name=os.getenv("AWS_PROFILE") or None,
     region_name=AWS_REGION,
 )
 bedrock = _session.client("bedrock-runtime")
