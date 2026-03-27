@@ -8,10 +8,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./data_obs:/app/data_obs
-      - ~/.aws:/root/.aws:ro
     environment:
-      - AWS_PROFILE=${AWS_PROFILE}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
       - SERVER_HOST=0.0.0.0
 
@@ -24,10 +21,9 @@ services:
     volumes:
       - ./data:/app/data
       - ./data_obs:/app/data_obs
-      - ~/.aws:/root/.aws:ro
     environment:
-      - AWS_PROFILE=${AWS_PROFILE}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
       - JULIA_URL=http://julia-server:8080
     depends_on:

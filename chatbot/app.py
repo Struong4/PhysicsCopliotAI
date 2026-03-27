@@ -25,6 +25,8 @@ import uuid
 from pathlib import Path
 
 import boto3
+from dotenv import load_dotenv
+load_dotenv()
 import httpx
 import yaml
 from fastapi import FastAPI, HTTPException
@@ -93,7 +95,7 @@ if sys.platform == "win32":
 
 # access to the frontend html file, julia simulations, and LLM model
 STATIC_DIR = Path(__file__).parent / "static"
-JULIA_URL = "http://127.0.0.1:8080"
+JULIA_URL = os.environ.get("JULIA_URL", "http://127.0.0.1:8080")
 MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 AWS_REGION = "us-east-1"
 
