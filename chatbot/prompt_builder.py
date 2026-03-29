@@ -297,31 +297,74 @@ def _states_block(states: dict) -> str:
 def _conversation_rules_section(keywords: dict) -> str:
     lines = [
         "=== CONVERSATION RULES ===",
-        "1. Be efficient: ask ALL missing required info in ONE message, then generate the config.",
-        "   Do not ask questions one at a time. Do not ask for things the user already stated.",
-        "2. Use defaults silently without asking: chi_max=64, n_sweeps=20, krylov_dim=30,",
-        "   bond_dim=10, evol_type=real. Only ask if the user explicitly wants to customize.",
-        "3. Required from user - ed_spectrum: model, N.",
-        "   Required from user - ed_time_evolution: model, N, dt, total_time.",
-        "   Required from user - dmrg: model, N.",
-        "   Required from user - tdvp: model, N, dt, total_time.",
-        "   Required from user - long_range_ising only: also ask alpha and n_exp.",
-        "4. When you have all required info, immediately call submit_config. Do NOT show raw JSON.",
-        "5. After proposing a config, if the user asks for changes, call submit_config again.",
+        "GOLDEN RULE: Never silently default ANY parameter the user was asked about.",
+        "Always present it to the user with its default value as an option, and wait for",
+        "their explicit answer or confirmation before using it.",
         "",
-        "Algorithm-specific rules:",
+        "--- STEP 1: Collect required params ---",
+        "Ask ALL of the following in ONE message as soon as the user expresses intent to simulate.",
+        "Do not ask for things the user already stated.",
+        "",
+        "  ed_spectrum:        N, model name, model params (J, h, g, delta, etc.)",
+        "  ed_time_evolution:  N, model name, model params, dt, total_time, initial state",
+        "  dmrg:               N, model name, model params (J, h, g, delta, etc.)",
+        "  tdvp:               N, model name, model params, dt, total_time, initial state",
+        "  long_range_ising:   also ask alpha (and n_exp for TN/dmrg/tdvp)",
+        "",
+        "For initial state (ed_time_evolution / tdvp): always ask the user.",
+        "  Suggest the common default: 'polarized state (all spins up)' as an option,",
+        "  but wait for the user to confirm or choose something else.",
+        "For coupling_dir / field_dir (TFIM, long_range_ising): always ask the user.",
+        "  Suggest the common default: 'coupling_dir=Z, field_dir=X' as an option,",
+        "  but wait for the user to confirm or choose something else.",
+        "",
+        "--- STEP 2: Handle partial answers ---",
+        "After EVERY user reply, check: which required params are still unanswered?",
+        "It does NOT matter how many the user just provided. What matters is what is still missing.",
+        "Even if the user just gave you 2 or 3 params, if there are still more required params",
+        "that have NOT been explicitly provided or confirmed, you MUST ask for ALL of them",
+        "in your next reply before doing anything else.",
+        "NEVER default a param that the user was asked about but has not yet answered.",
+        "NEVER call submit_config while any required param is still unresolved.",
+        "",
+        "After each user reply, do this check mentally:",
+        "  Required list for this algorithm: [list every param]",
+        "  Provided so far: [what user has said]",
+        "  Still missing: [subtract] → if anything remains, ask for ALL of them now.",
+        "",
+        "Acknowledge what they gave you, then list ALL remaining items together in one reply.",
+        "For each remaining item show its suggested default so the user can confirm or override.",
+        "Example: you asked N, J, h, total_time, dt, initial state. User gave N=10, coupling_dir=Z, field_dir=X. Reply:",
+        "  'Got N=10, coupling_dir=Z, field_dir=X. Still need:",
+        "   - J (Ising coupling strength, suggested default: J=-1)",
+        "   - h (transverse field strength, suggested default: h=0.5)",
+        "   - total_time (how long to evolve)",
+        "   - dt (time step / output resolution)",
+        "   - initial state (suggested: polarized all-spins-up — confirm or specify another)",
+        "   Please provide values or confirm the suggested defaults.'",
+        "Never ask for remaining items one at a time. Always list all of them together.",
+        "",
+        "--- STEP 3: Optional parameters ---",
+        "Optional params and their defaults: chi_max=64, n_sweeps=20, krylov_dim=30,",
+        "bond_dim=10, evol_type=real.",
+        "Once ALL required params from Step 1/2 are resolved, ask ONE message:",
+        "  'I have everything I need. The optional parameters are:",
+        "   chi_max=64, n_sweeps=20, bond_dim=10 [, krylov_dim=30 for tdvp]",
+        "   Would you like to change any of these, or should I use the defaults?'",
+        "If the user changes SOME but not all, list the remaining ones with their defaults",
+        "and ask again. Keep asking until every optional param is confirmed.",
+        "",
+        "--- STEP 4: Submit ---",
+        "Only call submit_config after Steps 1-3 are fully complete. Do NOT show raw JSON.",
+        "After proposing a config, if the user asks for changes, call submit_config again.",
+        "",
+        "--- Algorithm-specific config rules (these are config constraints, NOT defaults to apply silently) ---",
         "  * ed_spectrum: NO state block. use_sparse=false for N<=12, use_sparse=true for N=13 or 14.",
-        "  * ed_time_evolution: requires state. dt controls output resolution, not accuracy.",
-        "  * dmrg/tdvp: include 'N' in model params equal to system.N (do NOT ask the user for this).",
+        "  * ed_time_evolution: requires state block.",
+        "  * dmrg/tdvp: include 'N' in model params equal to system.N (derive from system block, do NOT ask).",
         "  * ed_spectrum/ed_time_evolution: do NOT include 'N' in model params.",
-        "  * dmrg: requires state with bond_dim=10. local_dim=floor(2*S+1). chi_max=64, n_sweeps=20.",
-        "  * tdvp: requires state with bond_dim=10. local_dim=floor(2*S+1). evol_type=real.",
-        "    n_sweeps = total_time / dt. chi_max=64, krylov_dim=30.",
-        "  * For TFIM and long_range_ising: default coupling_dir=Z and field_dir=X unless user says otherwise.",
-        "  * For quench dynamics (ed_time_evolution or tdvp), default initial state to",
-        "    polarized eigenstate=2 (all spins up) unless user specifies otherwise.",
-        "  * long_range_ising with TN (dmrg/tdvp): n_exp is a required model param (ask for it).",
-        "    N is also required for TN but do NOT ask the user - use system.N.",
+        "  * dmrg: state requires bond_dim. local_dim=floor(2*S+1).",
+        "  * tdvp: state requires bond_dim. local_dim=floor(2*S+1). n_sweeps = total_time / dt.",
         "  * long_range_ising with ED: n_exp and N must be OMITTED from model params.",
     ]
 
@@ -437,15 +480,33 @@ def _catalog_section() -> str:
         "model (name, params), results_summary, and status.\n"
         "After receiving catalog results, summarize them clearly for the user —\n"
         "highlight run_id, timestamp, N, model, and key result values.\n"
-        "Do NOT call submit_config in response to a catalog query."
+        "Do NOT call submit_config in response to a catalog query.\n"
+        "Do NOT call show_observable_results or calculate_observable just because past runs exist.\n"
+        "Only call those tools if the user explicitly asks to view or compute an observable."
     )
 
 
 def _observable_tools_section() -> str:
     return (
         "=== OBSERVABLE CALCULATIONS ===\n"
+        "CRITICAL — WHEN TO CALL OBSERVABLE TOOLS:\n"
+        "calculate_observable, query_obs_catalog, and show_observable_results are ONLY allowed\n"
+        "when the user's message contains an explicit observable request. Look for:\n"
+        "  display-intent words: 'plot', 'show', 'display', 'view', 'visualize'\n"
+        "  OR specific observable names: 'entanglement entropy', 'magnetization', 'correlation',\n"
+        "    'expectation value', 'energy variance', 'boson number', etc.\n"
+        "Do NOT use 'calculate' or 'compute' alone as signals — those also appear in simulation\n"
+        "requests ('calculate the ground state with DMRG') and are NOT observable triggers.\n"
+        "Finding a previous run in the catalog is context only. It is NEVER a reason to call\n"
+        "observable tools. Do NOT call them just because a past run exists.\n"
+        "Do NOT call them because the user asked for a new simulation.\n"
+        "Do NOT call them proactively or 'helpfully' after a catalog lookup.\n\n"
+        "If the user says 'time-evolve', 'simulate', 'run', 'find ground state', 'quench' —\n"
+        "that is a simulation request. Go to STEP 1 of CONVERSATION RULES and collect params.\n"
+        "Do NOT call any observable tool in response to a simulation request.\n\n"
         "You can compute observables on past simulation runs using the calculate_observable tool.\n"
-        "Use this when the user asks to measure, compute, plot, or analyze an observable on a run.\n\n"
+        "Use this ONLY when the user explicitly asks to measure, compute, plot, or analyze an\n"
+        "observable on a past run — not when setting up a new simulation.\n\n"
         "Workflow:\n"
         "1. Use query_catalog to find the run_id if the user hasn't provided one.\n"
         "2. Call calculate_observable with run_id, observable_type, params, and a summary.\n"
