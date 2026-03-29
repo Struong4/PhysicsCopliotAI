@@ -57,6 +57,57 @@ using JLD2
 using Printf
 
 # ============================================================================
+# CROSS-PLATFORM JSON I/O HELPERS
+# ============================================================================
+#
+# On Windows, JSON.parsefile() can hold a file lock that is not fully released
+# by the time a subsequent open(..., "w") tries to write to the same file.
+# This causes "Invalid argument" (EINVAL) errors.
+#
+# These helpers decouple read and write:
+#   _safe_read_json:  reads entire file to string first, then parses
+#                     (guarantees the OS file handle is closed before return)
+#   _safe_write_json: writes to a .tmp file, then atomically renames
+#                     (prevents corruption if the process crashes mid-write)
+#
+# NOTE: If database_utils.jl is loaded in the same module, these are already
+# defined there. The duplicate definitions are kept so each file works
+# standalone. Julia will use whichever is loaded first.
+#
+# ============================================================================
+
+if !(@isdefined _safe_read_json)
+
+"""
+    _safe_read_json(path::String) -> Dict
+
+Read and parse a JSON file in a Windows-safe manner.
+Reads the entire file to a string first, ensuring the OS file handle
+is fully released before returning.
+"""
+function _safe_read_json(path::String)
+    content = read(path, String)
+    return JSON.parse(content)
+end
+
+"""
+    _safe_write_json(path::String, data; indent::Int=2)
+
+Write data to a JSON file in a cross-platform-safe manner.
+Writes to a temporary file first, then atomically renames to the target path.
+This avoids file lock conflicts on Windows and prevents corruption on all platforms.
+"""
+function _safe_write_json(path::String, data; indent::Int=2)
+    tmp = path * ".tmp"
+    open(tmp, "w") do f
+        JSON.print(f, data, indent)
+    end
+    mv(tmp, path, force=true)
+end
+
+end # if !(@isdefined _safe_read_json)
+
+# ============================================================================
 # PART 1: HASH AND ID GENERATION
 # ============================================================================
 
@@ -265,7 +316,7 @@ function _update_observable_index(config::Dict, sim_run_id::String,obs_run_id::S
     
     # Load existing index or create new
     if isfile(index_file)
-        index = JSON.parsefile(index_file)
+        index = _safe_read_json(index_file)
     else
         index = Dict(
             "by_simulation" => Dict(),
@@ -294,9 +345,7 @@ function _update_observable_index(config::Dict, sim_run_id::String,obs_run_id::S
     index["last_updated"] = string(now())
     
     # Save index
-    open(index_file, "w") do f
-        JSON.print(f, index, 2)
-    end
+    _safe_write_json(index_file, index)
 end
 
 # ============================================================================
@@ -352,7 +401,7 @@ function _save_observable_sweep(obs_value, obs_run_dir::String, sweep::Int; extr
     # ════════════════════════════════════════════════════════════════════════
     
     metadata_path = joinpath(obs_run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     # Update progress
     metadata["sweeps_processed"] = sweep
@@ -369,9 +418,7 @@ function _save_observable_sweep(obs_value, obs_run_dir::String, sweep::Int; extr
     push!(metadata["sweep_data"], sweep_info)
     
     # Save updated metadata
-    open(metadata_path, "w") do f
-        JSON.print(f, metadata, 2)
-    end
+    _safe_write_json(metadata_path, metadata)
 end
 
 """
@@ -388,16 +435,14 @@ function _finalize_observable_run(obs_run_dir::String; status::String="completed
     obs_run_dir = abspath(obs_run_dir)
 
     metadata_path = joinpath(obs_run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     # Update final status
     metadata["status"] = status
     metadata["end_time"] = string(now())
     
     # Save
-    open(metadata_path, "w") do f
-        JSON.print(f, metadata, 2)
-    end
+    _safe_write_json(metadata_path, metadata)
     
     println("  ✓ Observable calculation finalized with status: $status")
 end
@@ -448,7 +493,7 @@ function load_all_observable_results(obs_run_dir::String)
     obs_run_dir = abspath(obs_run_dir)
 
     metadata_path = joinpath(obs_run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     results = []
     for sweep_info in metadata["sweep_data"]
@@ -504,7 +549,7 @@ function find_observables_for_simulation(sim_run_id::String; obs_base_dir::Strin
         return []  # No observables calculated yet
     end
     
-    index = JSON.parsefile(index_file)
+    index = _safe_read_json(index_file)
     
     # Lookup by sim_run_id
     if !haskey(index["by_simulation"], sim_run_id)
@@ -590,7 +635,7 @@ function _get_completed_observable_run(config::Dict, sim_run_id::String; obs_bas
         end
         
         try
-            metadata = JSON.parsefile(metadata_path)
+            metadata = _safe_read_json(metadata_path)
             if get(metadata, "status", "") == "completed"
                 return obs  # Found a completed observable run
             end

@@ -1,0 +1,24 @@
+FROM julia:1.10
+
+# Install system dependencies required by Julia HTTP/OpenSSL packages
+RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy project files
+COPY Project.toml ./
+COPY src/ src/
+COPY server/ server/
+COPY registry/ registry/
+COPY frontend/ frontend/
+
+# Preinstantiate Julia packages (cached as a layer)
+RUN julia -e 'using Pkg; Pkg.Registry.update()'
+RUN julia --project=. -e 'using Pkg; Pkg.instantiate()'
+
+# Create data directories so volume mounts have a valid target
+RUN mkdir -p /app/data /app/data_obs
+
+EXPOSE 8080
+
+CMD ["julia", "--project=.", "server/start_server.jl"]

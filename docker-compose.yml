@@ -1,0 +1,30 @@
+services:
+  julia-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.julia
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./data_obs:/app/data_obs
+    environment:
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - SERVER_HOST=0.0.0.0
+
+  chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.chatbot
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./data_obs:/app/data_obs
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - JULIA_URL=http://julia-server:8080
+    depends_on:
+      - julia-server

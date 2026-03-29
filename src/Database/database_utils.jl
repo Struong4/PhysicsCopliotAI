@@ -60,6 +60,49 @@ using JLD2
 using Printf
 
 # ============================================================================
+# CROSS-PLATFORM JSON I/O HELPERS
+# ============================================================================
+#
+# On Windows, JSON.parsefile() can hold a file lock that is not fully released
+# by the time a subsequent open(..., "w") tries to write to the same file.
+# This causes "Invalid argument" (EINVAL) errors.
+#
+# These helpers decouple read and write:
+#   _safe_read_json:  reads entire file to string first, then parses
+#                     (guarantees the OS file handle is closed before return)
+#   _safe_write_json: writes to a .tmp file, then atomically renames
+#                     (prevents corruption if the process crashes mid-write)
+#
+# ============================================================================
+
+"""
+    _safe_read_json(path::String) -> Dict
+
+Read and parse a JSON file in a Windows-safe manner.
+Reads the entire file to a string first, ensuring the OS file handle
+is fully released before returning.
+"""
+function _safe_read_json(path::String)
+    content = read(path, String)
+    return JSON.parse(content)
+end
+
+"""
+    _safe_write_json(path::String, data; indent::Int=2)
+
+Write data to a JSON file in a cross-platform-safe manner.
+Writes to a temporary file first, then atomically renames to the target path.
+This avoids file lock conflicts on Windows and prevents corruption on all platforms.
+"""
+function _safe_write_json(path::String, data; indent::Int=2)
+    tmp = path * ".tmp"
+    open(tmp, "w") do f
+        JSON.print(f, data, indent)
+    end
+    mv(tmp, path, force=true)
+end
+
+# ============================================================================
 # PART 1: HASH AND ID GENERATION (Internal Utilities)
 # ============================================================================
 
@@ -343,7 +386,7 @@ function _update_index(config::Dict, run_id::String, base_dir::String)
     
     # Load existing index or create new
     index = if isfile(index_file)
-        JSON.parsefile(index_file)
+        _safe_read_json(index_file)
     else
         # First time - create structure
         Dict("by_config_hash" => Dict{String, Vector}())
@@ -370,9 +413,7 @@ function _update_index(config::Dict, run_id::String, base_dir::String)
     push!(index["by_config_hash"][config_hash], entry)
     
     # Save updated index
-    open(index_file, "w") do f
-        JSON.print(f, index, 2)
-    end
+    _safe_write_json(index_file, index)
 end
 
 # ============================================================================
@@ -485,7 +526,7 @@ function _save_mps_sweep(state::MPSState, run_dir::String, sweep::Int; extra_dat
     # ════════════════════════════════════════════════════════════════════════
     
     metadata_path = joinpath(run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     # Update progress counters
     metadata["sweeps_completed"] = sweep
@@ -502,9 +543,7 @@ function _save_mps_sweep(state::MPSState, run_dir::String, sweep::Int; extra_dat
     # 3. Save updated metadata
     # ════════════════════════════════════════════════════════════════════════
     
-    open(metadata_path, "w") do f
-        JSON.print(f, metadata, 2)
-    end
+    _safe_write_json(metadata_path, metadata)
 end
 
 function _finalize_run(run_dir::String; status::String="completed")
@@ -512,16 +551,14 @@ function _finalize_run(run_dir::String; status::String="completed")
     run_dir = abspath(run_dir) 
 
     metadata_path = joinpath(run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     # Update final status
     metadata["status"] = status
     metadata["end_time"] = string(now())
     
     # Save
-    open(metadata_path, "w") do f
-        JSON.print(f, metadata, 2)
-    end
+    _safe_write_json(metadata_path, metadata)
     
     println("  ✓ Run finalized with status: $status")
 end
@@ -561,7 +598,7 @@ function _find_runs_by_config(config::Dict, base_dir::String="data")
         return []  # No simulations yet
     end
     
-    index = JSON.parsefile(index_file)
+    index = _safe_read_json(index_file)
     
     # Lookup by hash (O(1))
     if !haskey(index["by_config_hash"], config_hash)
@@ -623,7 +660,7 @@ function _get_completed_run(config::Dict; base_dir::String="data")
         end
         
         try
-            metadata = JSON.parsefile(metadata_path)
+            metadata = _safe_read_json(metadata_path)
             if get(metadata, "status", "") == "completed"
                 return run  # Found a completed run
             end
@@ -691,7 +728,7 @@ function load_mps_at_time(run_dir::String; time::Float64=1.0, tol::Float64=1e-9)
         error("Metadata file not found: $metadata_path")
     end
     
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     # Check if TDVP run (has dt)
     if !haskey(metadata, "dt")
@@ -768,7 +805,7 @@ function list_times(run_dir::String)
         return []
     end
     
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     # Check if TDVP (has dt)
     if !haskey(metadata, "dt")
@@ -830,7 +867,7 @@ function _save_ed_spectrum(energies::Vector, states::AbstractMatrix, run_dir::St
     # ════════════════════════════════════════════════════════════════════════
     
     metadata_path = joinpath(run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     metadata["last_update"] = string(now())
     metadata["n_states"] = length(energies)
@@ -844,9 +881,7 @@ function _save_ed_spectrum(energies::Vector, states::AbstractMatrix, run_dir::St
     # Store energies for quick access (without loading full results)
     metadata["energies"] = energies
     
-    open(metadata_path, "w") do f
-        JSON.print(f, metadata, 2)
-    end
+    _safe_write_json(metadata_path, metadata)
 end
 
 # ============================================================================
@@ -885,7 +920,7 @@ function _save_ed_step(psi::AbstractVector, run_dir::String, step::Int; extra_da
     # ════════════════════════════════════════════════════════════════════════
     
     metadata_path = joinpath(run_dir, "metadata.json")
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     metadata["steps_completed"] = step
     metadata["last_update"] = string(now())
@@ -897,9 +932,7 @@ function _save_ed_step(psi::AbstractVector, run_dir::String, step::Int; extra_da
     )
     push!(metadata["step_data"], step_info)
     
-    open(metadata_path, "w") do f
-        JSON.print(f, metadata, 2)
-    end
+    _safe_write_json(metadata_path, metadata)
 end
 
 # ============================================================================
@@ -973,7 +1006,7 @@ function load_ed_at_time(run_dir::String; time::Float64, tol::Float64=1e-9)
         error("Metadata file not found: $metadata_path")
     end
     
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     if !haskey(metadata, "dt")
         error("This is not a time evolution run (no dt in metadata).\n" *
@@ -1027,7 +1060,7 @@ function list_ed_times(run_dir::String)
         return Tuple{Int, Float64}[]
     end
     
-    metadata = JSON.parsefile(metadata_path)
+    metadata = _safe_read_json(metadata_path)
     
     if !haskey(metadata, "step_data")
         return Tuple{Int, Float64}[]
