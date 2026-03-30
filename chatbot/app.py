@@ -12,6 +12,8 @@ Run:
   pip install -r chatbot/requirements.txt
   uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload
   python -m uvicorn chatbot.app:app --host 127.0.0.1 --port 8000 --reload 
+  http://localhost:8000
+  http://localhost:8080
 """
 
 # libraries needed for connecting this AWS bedrock, HTTP requests, and UI for web
@@ -23,6 +25,8 @@ import uuid
 from pathlib import Path
 
 import boto3
+from dotenv import load_dotenv
+load_dotenv()
 import httpx
 import yaml
 from fastapi import FastAPI, HTTPException
@@ -91,7 +95,7 @@ if sys.platform == "win32":
 
 # access to the frontend html file, julia simulations, and LLM model
 STATIC_DIR = Path(__file__).parent / "static"
-JULIA_URL = "http://127.0.0.1:8080"
+JULIA_URL = os.environ.get("JULIA_URL", "http://127.0.0.1:8080")
 MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 AWS_REGION = "us-east-1"
 
@@ -102,7 +106,7 @@ _keywords = yaml.safe_load(_KEYWORDS_PATH.read_text(encoding="utf-8"))
 
 app = FastAPI()
 _session = boto3.Session(
-    profile_name=os.getenv("AWS_PROFILE"),
+    profile_name=os.getenv("AWS_PROFILE") or None,
     region_name=AWS_REGION,
 )
 bedrock = _session.client("bedrock-runtime")
@@ -312,6 +316,26 @@ def index():
     return HTMLResponse((STATIC_DIR / "index.html").read_text(encoding="utf-8"))
 
 # creates convo for this session, appends user msg to LLM's prompt (role, content)
+# Words that indicate the user explicitly wants to view/calculate an observable.
+# Observable tool responses are blocked unless the message contains at least one of these.
+# Deliberately excludes "calculate" and "compute" — those also appear in simulation requests
+# (e.g. "calculate the ground state with DMRG") and would cause false positives.
+# The LLM handles that distinction; this guard is only a safety net for rogue tool calls.
+_OBSERVABLE_TRIGGER_WORDS = {
+    # display intent (unambiguous — not used for simulation setup)
+    "plot", "show", "display", "view", "visualize",
+    # specific observable names (never appear in simulation setup)
+    "observable", "entanglement", "magnetization", "correlation", "entropy",
+    "expectation value", "energy variance", "boson number", "boson distribution",
+    "boson field", "spin entanglement", "correlation matrix", "correlation function",
+    "single site", "all sites",
+}
+
+def _user_requested_observable(message: str) -> bool:
+    msg = message.lower()
+    return any(w in msg for w in _OBSERVABLE_TRIGGER_WORDS)
+
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """Send a user message to Claude and return its response + optional proposed config."""
@@ -405,42 +429,63 @@ async def chat(req: ChatRequest):
             reply_text += block["text"]
         elif "toolUse" in block and block["toolUse"]["name"] == "show_observable_results":
             tool = block["toolUse"]
-            show_obs_run_id = tool["input"].get("obs_run_id")
-            show_obs_summary = tool["input"].get("summary", "")
-            history.append({
-                "role": "user",
-                "content": [{"toolResult": {
-                    "toolUseId": tool["toolUseId"],
-                    "content": [{"text": "Observable results displayed to user."}],
-                }}],
-            })
-            ack = reply_text or f"Showing results for observable run {show_obs_run_id}."
-            history.append({"role": "assistant", "content": [{"text": ack}]})
-            reply_text = ack
+            if _user_requested_observable(req.message):
+                show_obs_run_id = tool["input"].get("obs_run_id")
+                show_obs_summary = tool["input"].get("summary", "")
+                history.append({
+                    "role": "user",
+                    "content": [{"toolResult": {
+                        "toolUseId": tool["toolUseId"],
+                        "content": [{"text": "Observable results displayed to user."}],
+                    }}],
+                })
+                ack = reply_text or f"Showing results for observable run {show_obs_run_id}."
+                history.append({"role": "assistant", "content": [{"text": ack}]})
+                reply_text = ack
+            else:
+                # User did not ask for an observable — silently discard this tool call
+                # and return a neutral tool result so history stays valid for Bedrock.
+                history.append({
+                    "role": "user",
+                    "content": [{"toolResult": {
+                        "toolUseId": tool["toolUseId"],
+                        "content": [{"text": "No observable request detected; call ignored."}],
+                    }}],
+                })
         elif "toolUse" in block and block["toolUse"]["name"] == "calculate_observable":
             tool = block["toolUse"]
-            obs_config = {
-                "run_id": tool["input"].get("run_id"),
-                "observable_type": tool["input"].get("observable_type"),
-                "params": tool["input"].get("params", {}),
-                "selection": tool["input"].get("selection", "all"),
-            }
-            obs_summary = tool["input"].get("summary", "")
-            history.append({
-                "role": "user",
-                "content": [{"toolResult": {
-                    "toolUseId": tool["toolUseId"],
-                    "content": [{"text": "Observable config shown to user for review."}],
-                }}],
-            })
-            ack = (
-                reply_text
-                or "I've prepared the observable calculation config. "
-                   "Review it on the right and click Confirm to calculate, "
-                   "or let me know what you'd like to change."
-            )
-            history.append({"role": "assistant", "content": [{"text": ack}]})
-            reply_text = ack
+            if _user_requested_observable(req.message):
+                obs_config = {
+                    "run_id": tool["input"].get("run_id"),
+                    "observable_type": tool["input"].get("observable_type"),
+                    "params": tool["input"].get("params", {}),
+                    "selection": tool["input"].get("selection", "all"),
+                }
+                obs_summary = tool["input"].get("summary", "")
+                history.append({
+                    "role": "user",
+                    "content": [{"toolResult": {
+                        "toolUseId": tool["toolUseId"],
+                        "content": [{"text": "Observable config shown to user for review."}],
+                    }}],
+                })
+                ack = (
+                    reply_text
+                    or "I've prepared the observable calculation config. "
+                       "Review it on the right and click Confirm to calculate, "
+                       "or let me know what you'd like to change."
+                )
+                history.append({"role": "assistant", "content": [{"text": ack}]})
+                reply_text = ack
+            else:
+                # User did not ask for an observable — silently discard this tool call.
+                history.append({
+                    "role": "user",
+                    "content": [{"toolResult": {
+                        "toolUseId": tool["toolUseId"],
+                        "content": [{"text": "No observable request detected; call ignored."}],
+                    }}],
+                })
         elif "toolUse" in block and block["toolUse"]["name"] == "submit_config":
             tool = block["toolUse"]
             proposed_config = tool["input"].get("config")
@@ -589,7 +634,7 @@ async def get_obs_results(obs_run_id: str):
 @app.get("/api/status/{tracking_id}")
 async def poll_status(tracking_id: str):
     """Proxy a status poll to the Julia pipeline server."""
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             r = await client.get(f"{JULIA_URL}/api/status/{tracking_id}")
         except httpx.ConnectError:
