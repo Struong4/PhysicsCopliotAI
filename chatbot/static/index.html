@@ -276,6 +276,14 @@
     #obs-card { display: none; }
     #obs-results-card { display: none; }
 
+    /* ── Registry card ── */
+    #registry-card { display: none; }
+    .badge-registered { background: #e3fcef; color: #006644; }
+    .reg-info { padding: 0.85rem 1rem; font-size: 0.88rem; line-height: 1.8; color: #2a2d4a; }
+    .reg-row { display: flex; gap: 0.5rem; margin-bottom: 0.2rem; align-items: center; }
+    .reg-label { font-weight: 700; color: #6b6f8a; min-width: 110px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .btn-delete { background: #de350b; color: #fff; }
+
     .obs-config-display {
       padding: 0.85rem 1rem;
       font-size: 0.85rem;
@@ -397,6 +405,16 @@
       </div>
     </div>
 
+    <!-- Registry card -->
+    <div class="card" id="registry-card">
+      <div class="card-header" id="registry-card-header">Registered</div>
+      <div class="reg-info" id="registry-info"></div>
+      <div class="action-row">
+        <button class="btn btn-delete" id="btn-reg-delete" onclick="deleteRegistration()">✕ Delete</button>
+        <button class="btn btn-cancel" onclick="dismissRegistryCard()">Dismiss</button>
+      </div>
+    </div>
+
     <!-- Status card -->
     <div class="card" id="status-card">
       <div class="card-header">Pipeline Status</div>
@@ -425,6 +443,7 @@
   let pollTimer = null;
   let currentObsConfig = null;
   let obsPolTimer = null;
+  let lastRegisteredInfo = null;
 
   // ── Chat helpers ──────────────────────────────────────────────────────────
   // creates bubble for the message
@@ -496,6 +515,11 @@
       if (data.show_obs_run_id) {
         addBubble("Loading observable results…", "info");
         await fetchAndRenderObsResults(data.show_obs_run_id);
+      }
+
+      if (data.registered) {
+        lastRegisteredInfo = data.registered;
+        showRegistryCard(data.registered);
       }
     } catch (e) {
       addBubble("Could not reach the server. Is it running on port 8000?", "info");
@@ -691,6 +715,69 @@
       } catch (_) { /* keep trying */ }
       finally { polling = false; }
     }, 2000);
+  }
+
+  // ── Registry card ─────────────────────────────────────────────────────────
+
+  function showRegistryCard(info) {
+    document.getElementById("placeholder").style.display = "none";
+    document.getElementById("config-card").style.display = "none";
+    document.getElementById("status-card").style.display = "none";
+    document.getElementById("obs-card").style.display = "none";
+    document.getElementById("obs-results-card").style.display = "none";
+    document.getElementById("registry-card").style.display = "block";
+    document.getElementById("registry-card-header").textContent =
+      info.type === "model" ? "Model Registered" : "State Registered";
+
+    const rows = [
+      ["Name",         info.name],
+      ["Display Name", info.display_name],
+      ["System Type",  info.system_type],
+    ];
+    if (info.type === "model" && info.backend) {
+      rows.push(["Backend", info.backend === "tn" ? "Tensor Networks (TN)" : "Exact Diagonalization (ED)"]);
+    }
+
+    const rowsHtml = rows.map(([label, val]) =>
+      `<div class="reg-row"><span class="reg-label">${label}</span><span>${val}</span></div>`
+    ).join("");
+
+    document.getElementById("registry-info").innerHTML =
+      rowsHtml +
+      `<div class="reg-row" style="margin-top:0.4rem;">
+         <span class="badge badge-registered">&#10003; Registered</span>
+       </div>`;
+
+    document.getElementById("btn-reg-delete").disabled = false;
+  }
+
+  function dismissRegistryCard() {
+    lastRegisteredInfo = null;
+    document.getElementById("registry-card").style.display = "none";
+    document.getElementById("placeholder").style.display = "block";
+  }
+
+  async function deleteRegistration() {
+    if (!lastRegisteredInfo) return;
+    document.getElementById("btn-reg-delete").disabled = true;
+
+    const { type, name } = lastRegisteredInfo;
+    const endpoint = type === "model" ? "models" : "states";
+
+    try {
+      const res = await fetch(`/api/registry/${endpoint}/${name}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        addBubble("Failed to delete: " + (err.detail || res.statusText), "info");
+        document.getElementById("btn-reg-delete").disabled = false;
+        return;
+      }
+      addBubble(`${type === "model" ? "Model" : "State"} "${name}" deleted from registry.`, "info");
+      dismissRegistryCard();
+    } catch (e) {
+      addBubble("Network error: " + e.message, "info");
+      document.getElementById("btn-reg-delete").disabled = false;
+    }
   }
 
   // ── Observable card ────────────────────────────────────────────────────────

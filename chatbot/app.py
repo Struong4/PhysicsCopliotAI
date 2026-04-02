@@ -239,10 +239,20 @@ CALCULATE_OBSERVABLE_TOOL = {
                     "description": (
                         "Observable parameters. Required keys by type: "
                         "single_site_expectation: {site, operator}. "
+                        "expectation_all_sites: {operator}. "
+                        "subsystem_expectation_sum: {operator, l, m} — l and m are 1-based start/end site indices of the subsystem (both required). "
                         "correlation_function: {site_i, site_j, operator} — SAME operator at both sites (e.g. ZZ, XX). "
                         "connected_correlation: {site_i, site_j, operator} — same as correlation_function but subtracted. "
                         "two_site_expectation: {site_i, site_j, operator_i, operator_j} — DIFFERENT operators at each site (e.g. XZ). "
-                        "entanglement_entropy: {bond}. energy_expectation: {}. "
+                        "correlation_matrix: {operator}. "
+                        "entanglement_entropy: {bond, alpha} — alpha optional, default 1 (von Neumann). "
+                        "entanglement_spectrum: {bond, n_values} — n_values optional. "
+                        "energy_expectation: {}. energy_variance: {}. "
+                        "inner_product: {}. state_norm: {}. "
+                        "fidelity: {reference} — reference is 'initial' or 'ground_state'. "
+                        "survival_probability: {}. loschmidt_echo: {}. "
+                        "boson_number: {}. boson_distribution: {}. boson_field: {}. "
+                        "boson_spin_entanglement: {alpha} — alpha optional, default 1. "
                         "IMPORTANT: use correlation_function (not two_site_expectation) when the user asks for "
                         "spin-spin correlation, ZZ/XX/YY correlation, or any same-operator two-point function. "
                         "Only use two_site_expectation when user explicitly wants two DIFFERENT operators. "
@@ -260,6 +270,104 @@ CALCULATE_OBSERVABLE_TOOL = {
                 },
             },
             "required": ["run_id", "observable_type", "params", "summary"],
+        }
+    },
+}
+
+REGISTER_MODEL_TOOL = {
+    "name": "register_model",
+    "description": (
+        "Call this ONLY when the user explicitly asks to register, save, or add a new custom model "
+        "to the registry. Gather ALL required fields through conversation first, then call this tool. "
+        "Do NOT call this during simulation setup, observable calculations, or catalog queries."
+    ),
+    "inputSchema": {
+        "json": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Unique identifier key for the model (lowercase, underscores, e.g. my_ising_model)",
+                },
+                "display_name": {
+                    "type": "string",
+                    "description": "Human-readable label shown in the GUI (e.g. My Ising Model)",
+                },
+                "system_type": {
+                    "type": "string",
+                    "description": "System type: 'spin' or 'spinboson'",
+                },
+                "backend": {
+                    "type": "string",
+                    "description": "Simulation backend: 'tn' (tensor networks, DMRG/TDVP) or 'ed' (exact diagonalization)",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Optional plain-English description of what this model represents",
+                },
+                "channels": {
+                    "type": "array",
+                    "description": (
+                        "Required when backend='tn'. Array of channel objects defining the Hamiltonian. "
+                        "Each object is one of: "
+                        "{\"type\": \"FiniteRangeCoupling\", \"op1\": \"Z\", \"op2\": \"Z\", \"range\": 1, \"strength\": 1.0} "
+                        "or {\"type\": \"Field\", \"op\": \"X\", \"strength\": 0.5}"
+                    ),
+                },
+                "terms": {
+                    "type": "array",
+                    "description": (
+                        "Required when backend='ed'. Array of term objects defining the Hamiltonian. "
+                        "Same format as channels: FiniteRangeCoupling or Field objects."
+                    ),
+                },
+            },
+            "required": ["name", "display_name", "system_type", "backend"],
+        }
+    },
+}
+
+REGISTER_STATE_TOOL = {
+    "name": "register_state",
+    "description": (
+        "Call this ONLY when the user explicitly asks to register, save, or add a new custom state "
+        "to the registry. Gather ALL required fields through conversation first, then call this tool. "
+        "Do NOT call this during simulation setup, observable calculations, or catalog queries."
+    ),
+    "inputSchema": {
+        "json": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Unique identifier key for the state (lowercase, underscores, e.g. my_neel_state)",
+                },
+                "display_name": {
+                    "type": "string",
+                    "description": "Human-readable label shown in the GUI (e.g. My Neel State)",
+                },
+                "system_type": {
+                    "type": "string",
+                    "description": "System type: 'spin' or 'spinboson'",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Optional plain-English description of what this state represents physically",
+                },
+                "site_configs": {
+                    "type": "array",
+                    "description": (
+                        "Array of N entries (one per spin site), each a [direction, eigenstate] pair. "
+                        "direction: 'X', 'Y', or 'Z'. eigenstate: integer (for spin-1/2 Z: 1=down, 2=up). "
+                        "Example for 4-site Neel: [[\"Z\",2],[\"Z\",1],[\"Z\",2],[\"Z\",1]]"
+                    ),
+                },
+                "boson_level": {
+                    "type": "integer",
+                    "description": "Spinboson systems only. Initial Fock occupation of the boson site (0=vacuum).",
+                },
+            },
+            "required": ["name", "display_name", "system_type", "site_configs"],
         }
     },
 }
@@ -325,15 +433,62 @@ _OBSERVABLE_TRIGGER_WORDS = {
     # display intent (unambiguous — not used for simulation setup)
     "plot", "show", "display", "view", "visualize",
     # specific observable names (never appear in simulation setup)
-    "observable", "entanglement", "magnetization", "correlation", "entropy",
-    "expectation value", "energy variance", "boson number", "boson distribution",
+    "observable", "observation",
+    "entanglement", "magnetization", "correlation", "entropy",
+    "expectation", "expectation value", "energy variance", "boson number", "boson distribution",
     "boson field", "spin entanglement", "correlation matrix", "correlation function",
-    "single site", "all sites",
+    "single site", "all sites", "subsystem",
 }
 
 def _user_requested_observable(message: str) -> bool:
     msg = message.lower()
     return any(w in msg for w in _OBSERVABLE_TRIGGER_WORDS)
+
+
+_REGISTRY_TRIGGER_WORDS = {
+    "register", "register model", "register state",
+    "add a model", "add a state", "add model", "add state",
+    "save a model", "save a state", "new user model", "new user state",
+}
+
+def _user_requested_registration(message: str, history: list | None = None) -> bool:
+    # Check current message first
+    if any(w in message.lower() for w in _REGISTRY_TRIGGER_WORDS):
+        return True
+    # Also scan recent conversation history — the trigger may have been in an earlier turn
+    if history:
+        for turn in history[-20:]:
+            for block in turn.get("content", []):
+                text = block.get("text", "")
+                if isinstance(text, str) and any(w in text.lower() for w in _REGISTRY_TRIGGER_WORDS):
+                    return True
+    return False
+
+
+def _refresh_system_prompt() -> None:
+    """Reload registries from the Julia server and rebuild the system prompt in-memory."""
+    global _registries, SYSTEM_PROMPT
+    try:
+        _registries = _load_registries()
+        SYSTEM_PROMPT = build_system_prompt(_registries, _keywords)
+    except Exception:
+        pass  # keep the existing prompt if the reload fails
+
+
+async def _execute_registration(tool_name: str, inputs: dict) -> str:
+    """POST to the Julia server's registry endpoint and return a result string for Claude."""
+    endpoint = "models" if tool_name == "register_model" else "states"
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            r = await client.post(f"{JULIA_URL}/api/registry/{endpoint}", json=inputs)
+            if r.status_code == 201:
+                _refresh_system_prompt()
+                return r.json().get("message", "Registered successfully.")
+            return f"Registration failed ({r.status_code}): {r.text}"
+        except httpx.ConnectError:
+            return "Cannot reach Julia pipeline server at port 8080. Make sure it is running."
+        except httpx.ReadTimeout:
+            return "Julia server took too long to respond. The model may have been registered — check with 'what models can you use?' before trying again."
 
 
 @app.post("/api/chat")
@@ -360,6 +515,8 @@ async def chat(req: ChatRequest):
                 {"toolSpec": CALCULATE_OBSERVABLE_TOOL},
                 {"toolSpec": QUERY_OBS_CATALOG_TOOL},
                 {"toolSpec": SHOW_OBSERVABLE_RESULTS_TOOL},
+                {"toolSpec": REGISTER_MODEL_TOOL},
+                {"toolSpec": REGISTER_STATE_TOOL},
             ]},
             inferenceConfig={"maxTokens": 2048, "temperature": 0.5},
         )
@@ -370,8 +527,9 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=502, detail=f"Bedrock error: {e}")
 
     # Tool execution loop: handle executable tools before final response parsing.
-    EXECUTABLE_TOOLS = {"query_catalog", "query_obs_catalog"}
+    EXECUTABLE_TOOLS = {"query_catalog", "query_obs_catalog", "register_model", "register_state"}
     MAX_TOOL_ROUNDS = 5
+    registered_info = None
     for _ in range(MAX_TOOL_ROUNDS):
         content = response["output"]["message"]["content"]
 
@@ -391,12 +549,25 @@ async def chat(req: ChatRequest):
                 json.dumps(results, indent=2)
                 if results else "No matching runs found in the catalog."
             )
-        else:  # query_obs_catalog
+        elif exec_tool["name"] == "query_obs_catalog":
             results = await _read_obs_catalog(exec_tool["input"])
             result_text = (
                 json.dumps(results, indent=2)
                 if results else "No matching observable calculations found in the catalog."
             )
+        else:  # register_model or register_state
+            if not _user_requested_registration(req.message, history):
+                result_text = "No explicit registration request detected; call ignored."
+            else:
+                result_text = await _execute_registration(exec_tool["name"], exec_tool["input"])
+                if not result_text.startswith("Registration failed") and not result_text.startswith("Cannot reach"):
+                    registered_info = {
+                        "type": "model" if exec_tool["name"] == "register_model" else "state",
+                        "name": exec_tool["input"].get("name"),
+                        "display_name": exec_tool["input"].get("display_name"),
+                        "system_type": exec_tool["input"].get("system_type"),
+                        "backend": exec_tool["input"].get("backend"),
+                    }
 
         history.append({
             "role": "user",
@@ -536,6 +707,7 @@ async def chat(req: ChatRequest):
         "obs_summary": obs_summary,
         "show_obs_run_id": show_obs_run_id,
         "show_obs_summary": show_obs_summary,
+        "registered": registered_info,
     }
 
 
@@ -617,6 +789,34 @@ async def start_obs_calculation(req: ObsRequest):
         return r.json()
 
 
+@app.delete("/api/registry/models/{name}")
+async def delete_registry_model(name: str):
+    """Proxy a model deletion to the Julia pipeline server."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            r = await client.delete(f"{JULIA_URL}/api/registry/models/{name}")
+        except httpx.ConnectError:
+            raise HTTPException(status_code=503, detail="Julia pipeline server unreachable")
+        if r.status_code not in (200, 204):
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        _refresh_system_prompt()
+        return r.json()
+
+
+@app.delete("/api/registry/states/{name}")
+async def delete_registry_state(name: str):
+    """Proxy a state deletion to the Julia pipeline server."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            r = await client.delete(f"{JULIA_URL}/api/registry/states/{name}")
+        except httpx.ConnectError:
+            raise HTTPException(status_code=503, detail="Julia pipeline server unreachable")
+        if r.status_code not in (200, 204):
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        _refresh_system_prompt()
+        return r.json()
+
+
 @app.get("/api/obs_results/{obs_run_id}")
 async def get_obs_results(obs_run_id: str):
     """Fetch observable results from the Julia pipeline server."""
@@ -634,9 +834,12 @@ async def get_obs_results(obs_run_id: str):
 @app.get("/api/status/{tracking_id}")
 async def poll_status(tracking_id: str):
     """Proxy a status poll to the Julia pipeline server."""
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=120.0) as client:
         try:
             r = await client.get(f"{JULIA_URL}/api/status/{tracking_id}")
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Julia pipeline server unreachable")
+        except httpx.ReadTimeout:
+            # Julia server is under load from the running simulation — treat as still running
+            return {"status": "running", "tracking_id": tracking_id, "message": "Server busy; simulation still in progress."}
         return r.json()
