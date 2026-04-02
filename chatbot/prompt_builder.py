@@ -34,6 +34,7 @@ def build_system_prompt(registries: dict, keywords: dict) -> str:
         _result_interpretation_section(),
         _catalog_section(),
         _observable_tools_section(),
+        _registration_tools_section(),
     ]
     return "\n\n".join(sections)
 
@@ -307,12 +308,13 @@ def _conversation_rules_section(keywords: dict) -> str:
         "",
         "  ed_spectrum:        N, model name, model params (J, h, g, delta, etc.)",
         "  ed_time_evolution:  N, model name, model params, dt, total_time, initial state",
-        "  dmrg:               N, model name, model params (J, h, g, delta, etc.)",
+        "  dmrg:               N, model name, model params (J, h, g, delta, etc.), initial state",
         "  tdvp:               N, model name, model params, dt, total_time, initial state",
         "  long_range_ising:   also ask alpha (and n_exp for TN/dmrg/tdvp)",
         "",
-        "For initial state (ed_time_evolution / tdvp): always ask the user.",
-        "  Suggest the common default: 'polarized state (all spins up)' as an option,",
+        "For initial state (dmrg / ed_time_evolution / tdvp): always ask the user.",
+        "  Suggest the common default: 'random state (bond_dim=10)' for dmrg,",
+        "  'polarized state (all spins up)' for ed_time_evolution/tdvp as an option,",
         "  but wait for the user to confirm or choose something else.",
         "For coupling_dir / field_dir (TFIM, long_range_ising): always ask the user.",
         "  Suggest the common default: 'coupling_dir=Z, field_dir=X' as an option,",
@@ -363,7 +365,7 @@ def _conversation_rules_section(keywords: dict) -> str:
         "  * ed_time_evolution: requires state block.",
         "  * dmrg/tdvp: include 'N' in model params equal to system.N (derive from system block, do NOT ask).",
         "  * ed_spectrum/ed_time_evolution: do NOT include 'N' in model params.",
-        "  * dmrg: state requires bond_dim. local_dim=floor(2*S+1).",
+        "  * dmrg: ALWAYS include a state block. state requires bond_dim. local_dim=floor(2*S+1).",
         "  * tdvp: state requires bond_dim. local_dim=floor(2*S+1). n_sweeps = total_time / dt.",
         "  * long_range_ising with ED: n_exp and N must be OMITTED from model params.",
     ]
@@ -541,6 +543,64 @@ def _observable_tools_section() -> str:
         "Use this path when the user says 'show', 'plot', 'display', or 'view' an observable, "
         "or asks about a previous calculation. "
         "Only use calculate_observable if no existing result matches what the user wants."
+    )
+
+
+def _registration_tools_section() -> str:
+    return (
+        "=== REGISTERING CUSTOM MODELS AND STATES ===\n"
+        "CRITICAL — WHEN TO CALL REGISTRATION TOOLS:\n"
+        "register_model and register_state are ONLY allowed when the user's message contains an\n"
+        "explicit registration intent. Look for: 'register', 'add a model', 'add a state',\n"
+        "'save a model', 'save a state', 'new user model', 'new user state'.\n"
+        "Do NOT call these tools during simulation setup, observable calculations, catalog queries,\n"
+        "or any other task. Never call them proactively.\n\n"
+        "--- MODEL REGISTRATION WORKFLOW ---\n"
+        "STEP 0 — ALWAYS REQUIRED: When the user first expresses registration intent, DO NOT call\n"
+        "register_model yet. Instead, ask what kind of model they want to create. For example:\n"
+        "'I'd be happy to help you register a new model! What type of Hamiltonian would you like\n"
+        "to define? (e.g. Ising, Heisenberg, custom coupling)'\n"
+        "Then gather the remaining fields one by one through conversation.\n"
+        "NEVER invent, assume, or fill in any field values — always ask the user explicitly.\n\n"
+        "Gather these fields through conversation before calling register_model:\n"
+        "  1. name        — unique key (lowercase, underscores, e.g. my_xxz_model)\n"
+        "  2. display_name — human-readable label (e.g. My XXZ Model)\n"
+        "  3. system_type  — 'spin' or 'spinboson'\n"
+        "  4. backend      — 'tn' (DMRG/TDVP) or 'ed' (exact diagonalization)\n"
+        "  5. description  — optional plain-English description\n"
+        "  6. channels (if backend=tn) OR terms (if backend=ed) — Hamiltonian definition\n\n"
+        "Channel/term format — each entry in the array is one Hamiltonian interaction:\n"
+        "  Two-site coupling: {\"type\": \"FiniteRangeCoupling\", \"op1\": \"Z\", \"op2\": \"Z\", \"range\": 1, \"strength\": 1.0}\n"
+        "    op1/op2: operator on each site (X, Y, Z, Sp, Sm). range: site distance (1=nearest-neighbour).\n"
+        "  Single-site field: {\"type\": \"Field\", \"op\": \"X\", \"strength\": 0.5}\n"
+        "    op: operator applied at every site.\n"
+        "Example — Heisenberg XXZ (J=1, delta=0.5, no field):\n"
+        "  channels: [\n"
+        "    {\"type\": \"FiniteRangeCoupling\", \"op1\": \"X\", \"op2\": \"X\", \"range\": 1, \"strength\": 1.0},\n"
+        "    {\"type\": \"FiniteRangeCoupling\", \"op1\": \"Y\", \"op2\": \"Y\", \"range\": 1, \"strength\": 1.0},\n"
+        "    {\"type\": \"FiniteRangeCoupling\", \"op1\": \"Z\", \"op2\": \"Z\", \"range\": 1, \"strength\": 0.5}\n"
+        "  ]\n\n"
+        "After calling register_model and receiving a success message, tell the user the model\n"
+        "was registered and note that a chatbot server restart is needed for it to appear in the\n"
+        "known model list (the system prompt is built once at startup).\n\n"
+        "--- STATE REGISTRATION WORKFLOW ---\n"
+        "Gather these fields through conversation before calling register_state:\n"
+        "  1. name        — unique key (lowercase, underscores, e.g. my_neel_state)\n"
+        "  2. display_name — human-readable label\n"
+        "  3. system_type  — 'spin' or 'spinboson'\n"
+        "  4. description  — optional\n"
+        "  5. site_configs — array of N [direction, eigenstate] pairs, one per spin site\n"
+        "     direction: 'X', 'Y', or 'Z'. eigenstate: integer (spin-1/2 Z: 1=down|↓>, 2=up|↑>)\n"
+        "     Example 4-site Neel: [[\"Z\",2],[\"Z\",1],[\"Z\",2],[\"Z\",1]]\n"
+        "  6. boson_level (spinboson only) — initial Fock occupation of the boson site (0=vacuum)\n\n"
+        "Ask the user for N (number of sites) so you know how many site_configs entries to collect.\n"
+        "For small N, ask for the full site_configs explicitly. For large N, ask for a pattern\n"
+        "(e.g. 'alternating up/down') and construct the array yourself.\n\n"
+        "After calling register_state and receiving a success message, tell the user the state\n"
+        "was registered and is now available in the GUI state builder immediately.\n"
+        "If registration fails with a 409 error, tell the user that name is already taken and ask\n"
+        "them to choose a different name.\n"
+        "If registration fails with a 503 error, tell the user the Julia server is not running."
     )
 
 
