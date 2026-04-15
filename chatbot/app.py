@@ -35,6 +35,9 @@ from pydantic import BaseModel
 
 from chatbot.registry_loader import load_all as _load_registries
 from chatbot.prompt_builder import build_system_prompt
+from chatbot.observable_loader import find_obs_run_dir, load_obs_run, list_obs_runs
+
+OBS_BASE_DIR = str(Path(__file__).parent.parent / "data_obs")
 
 # Path to the simulation run catalog
 CATALOG_PATH = Path(__file__).parent.parent / "data" / "run_catalog.jsonl"
@@ -123,9 +126,11 @@ SUBMIT_CONFIG_TOOL = {
     "name": "submit_config",
     "description": (
         "Call this ONLY when you have gathered all required information and are "
-        "ready to propose a complete, valid ED simulation config to the user. "
-        "Do not call for partial configs. The config will be shown to the user "
-        "for review before running."
+        "ready to propose a complete, valid simulation config to the user. "
+        "Do not call for partial configs. "
+        "Set auto_run to true ONLY when the user has clearly confirmed they want to "
+        "execute immediately (e.g. 'run it', 'go ahead', 'I\\'m ready', 'yes execute it'). "
+        "Leave auto_run false (default) when proposing a config for the user to review first."
     ),
     "inputSchema": {
         "json": {
@@ -146,6 +151,14 @@ SUBMIT_CONFIG_TOOL = {
                 "summary": {
                     "type": "string",
                     "description": "One plain-English sentence describing what this simulation does",
+                },
+                "auto_run": {
+                    "type": "boolean",
+                    "description": (
+                        "If true, execute the simulation immediately without waiting for "
+                        "the user to click Confirm. Only set true when the user explicitly "
+                        "says to run now (e.g. 'run it', 'go ahead', 'I\\'m ready')."
+                    ),
                 },
             },
             "required": ["config", "summary"],
@@ -214,7 +227,9 @@ CALCULATE_OBSERVABLE_TOOL = {
     "description": (
         "Call this when the user wants to compute or analyze an observable on a past simulation run. "
         "Use query_catalog first to find the run_id if not already known. "
-        "The config will be shown to the user for review before submitting."
+        "Set auto_run to true ONLY when the user has clearly confirmed they want to calculate immediately "
+        "(e.g. 'run it', 'go ahead', 'yes calculate it'). "
+        "Leave auto_run false (default) to show the config for review first."
     ),
     "inputSchema": {
         "json": {
@@ -267,6 +282,14 @@ CALCULATE_OBSERVABLE_TOOL = {
                 "summary": {
                     "type": "string",
                     "description": "One plain-English sentence describing what this observable calculation will compute.",
+                },
+                "auto_run": {
+                    "type": "boolean",
+                    "description": (
+                        "If true, execute the observable calculation immediately without waiting "
+                        "for the user to click Confirm. Only set true when the user explicitly "
+                        "says to calculate now."
+                    ),
                 },
             },
             "required": ["run_id", "observable_type", "params", "summary"],
@@ -593,6 +616,8 @@ async def chat(req: ChatRequest):
     obs_summary = ""
     show_obs_run_id = None
     show_obs_summary = ""
+    tracking_id = None
+    obs_tracking_id = None
 
     # extracts user response if it is text or a config file
     for block in content:
@@ -625,7 +650,8 @@ async def chat(req: ChatRequest):
                 })
         elif "toolUse" in block and block["toolUse"]["name"] == "calculate_observable":
             tool = block["toolUse"]
-            if _user_requested_observable(req.message):
+            obs_auto_run_check = tool["input"].get("auto_run", False)
+            if _user_requested_observable(req.message) or obs_auto_run_check:
                 obs_config = {
                     "run_id": tool["input"].get("run_id"),
                     "observable_type": tool["input"].get("observable_type"),
@@ -633,19 +659,38 @@ async def chat(req: ChatRequest):
                     "selection": tool["input"].get("selection", "all"),
                 }
                 obs_summary = tool["input"].get("summary", "")
+
+                obs_auto_run = obs_auto_run_check
+                if obs_auto_run:
+                    try:
+                        async with httpx.AsyncClient(timeout=60.0) as client:
+                            r = await client.post(
+                                f"{JULIA_URL}/api/observables/calculate",
+                                json=obs_config,
+                            )
+                        if r.status_code in (200, 202):
+                            obs_tracking_id = r.json().get("tracking_id")
+                    except (httpx.ConnectError, httpx.ReadTimeout):
+                        obs_tracking_id = None
+
+                tool_result_text = "Observable calculation started." if (obs_auto_run and obs_tracking_id) else "Observable config shown to user for review."
                 history.append({
                     "role": "user",
                     "content": [{"toolResult": {
                         "toolUseId": tool["toolUseId"],
-                        "content": [{"text": "Observable config shown to user for review."}],
+                        "content": [{"text": tool_result_text}],
                     }}],
                 })
-                ack = (
-                    reply_text
-                    or "I've prepared the observable calculation config. "
-                       "Review it on the right and click Confirm to calculate, "
-                       "or let me know what you'd like to change."
-                )
+                if obs_auto_run and obs_tracking_id:
+                    ack = reply_text or f"Calculating now — {obs_summary}"
+                    obs_config = None  # don't show the confirm card
+                else:
+                    ack = (
+                        reply_text
+                        or "I've prepared the observable calculation config. "
+                           "Review it on the right and click Confirm to calculate, "
+                           "or let me know what you'd like to change."
+                    )
                 history.append({"role": "assistant", "content": [{"text": ack}]})
                 reply_text = ack
             else:
@@ -677,34 +722,63 @@ async def chat(req: ChatRequest):
                     model_params.pop("N", None)
             SESSIONS[sid]["last_config"] = proposed_config
 
+            # If auto_run is set, fire the simulation directly without waiting for button click
+            auto_run = tool["input"].get("auto_run", False)
+            tracking_id = None
+
+            if auto_run and proposed_config:
+                try:
+                    async with httpx.AsyncClient(timeout=60.0) as client:
+                        r = await client.post(
+                            f"{JULIA_URL}/api/run",
+                            json={"config": proposed_config, "mode": "simulation"},
+                        )
+                    if r.status_code in (200, 202):
+                        tracking_id = r.json().get("tracking_id")
+                except (httpx.ConnectError, httpx.ReadTimeout):
+                    pass  # Julia down or slow — fall through, frontend shows confirm card as fallback
+
             # Append tool result so the next user turn stays valid
             # Bedrock requires every toolUse to get a toolResult appended to history
             # or next API call will result in validation errors, so this takes care of it
+            tool_result_text = "Simulation started." if tracking_id else "Config shown to user for review."
             history.append({
                 "role": "user",
                 "content": [{"toolResult": {
                     "toolUseId": tool["toolUseId"],
-                    "content": [{"text": "Config shown to user for review."}],
+                    "content": [{"text": tool_result_text}],
                 }}],
             })
             # Synthetic assistant acknowledgment keeps conversation history valid
             # Bedrock expects the next turn to be the model so keep a flowing conversation
-            ack = (
-                reply_text
-                or "I've prepared your simulation config. "
-                   "Review it on the right and click Confirm to run, "
-                   "or let me know what you'd like to change."
-            )
+            if tracking_id:
+                ack = reply_text or f"Running now — {summary}"
+            elif auto_run:
+                # auto_run was requested but Julia didn't accept in time — show confirm card as fallback
+                ack = (
+                    reply_text
+                    or "Julia took a moment to respond, so the config is ready for you to confirm manually. "
+                       "Click Confirm & Run on the right when ready."
+                )
+            else:
+                ack = (
+                    reply_text
+                    or "I've prepared your simulation config. "
+                       "Review it on the right and click Confirm to run, "
+                       "or let me know what you'd like to change."
+                )
             history.append({"role": "assistant", "content": [{"text": ack}]})
             reply_text = ack
 
     return {
         "session_id": sid,
         "text": reply_text,
-        "config": proposed_config,
+        "config": proposed_config if not tracking_id else None,
         "summary": summary,
+        "tracking_id": tracking_id,
         "obs_config": obs_config,
         "obs_summary": obs_summary,
+        "obs_tracking_id": obs_tracking_id,
         "show_obs_run_id": show_obs_run_id,
         "show_obs_summary": show_obs_summary,
         "registered": registered_info,
@@ -819,15 +893,42 @@ async def delete_registry_state(name: str):
 
 @app.get("/api/obs_results/{obs_run_id}")
 async def get_obs_results(obs_run_id: str):
-    """Fetch observable results from the Julia pipeline server."""
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
+    """Fetch observable results: tries Julia server first, falls back to local disk loader."""
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             r = await client.get(f"{JULIA_URL}/api/results/observables/{obs_run_id}")
-        except httpx.ConnectError:
-            raise HTTPException(status_code=503, detail="Julia pipeline server unreachable")
-        if r.status_code == 404:
-            raise HTTPException(status_code=404, detail="Observable results not found.")
-        return r.json()
+            if r.status_code == 200:
+                return r.json()
+            if r.status_code == 404:
+                raise HTTPException(status_code=404, detail="Observable results not found.")
+    except httpx.ConnectError:
+        pass  # Julia not running — fall through to local loader
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Other Julia errors — try local
+
+    try:
+        obs_run_dir = find_obs_run_dir(OBS_BASE_DIR, obs_run_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    result = await asyncio.to_thread(load_obs_run, obs_run_dir)
+    return result
+
+
+@app.get("/api/local/obs_data/{obs_run_id}")
+async def get_local_obs_data(obs_run_id: str):
+    """Read observable results directly from disk (no Julia dependency).
+    Returns the same JSON shape as /api/obs_results/.
+    """
+    try:
+        obs_run_dir = find_obs_run_dir(OBS_BASE_DIR, obs_run_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    result = await asyncio.to_thread(load_obs_run, obs_run_dir)
+    return result
 
 
 # checks status of the run to see if the endpoint is done yet
