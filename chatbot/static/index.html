@@ -685,10 +685,10 @@
   <!-- ── Config panel ── -->
   <div class="config-panel">
 
-    <!-- Config builder iframe — lazy loaded on first open to avoid hitting Julia at startup -->
+    <!-- Config builder iframe — loaded on page open so it's ready immediately -->
     <iframe
       id="config-builder-frame"
-      data-src="http://localhost:8080"
+      src="http://localhost:8080"
       title="Config Builder"
     ></iframe>
 
@@ -793,12 +793,6 @@
   let currentObsData = null;
 
   // ── Drawer helpers ────────────────────────────────────────────────────────
-  function _loadBuilderIfNeeded() {
-    const frame = document.getElementById("config-builder-frame");
-    if (!frame.src || frame.src === window.location.href) {
-      frame.src = frame.dataset.src;  // load on first access only
-    }
-  }
   function openDrawer() {
     document.getElementById("card-drawer").classList.add("open");
     document.getElementById("drawer-chevron").textContent = "▶";
@@ -806,13 +800,11 @@
   function closeDrawer() {
     document.getElementById("card-drawer").classList.remove("open");
     document.getElementById("drawer-chevron").textContent = "◀";
-    _loadBuilderIfNeeded();  // load iframe when drawer closes (builder becomes visible)
   }
   function toggleDrawer() {
     if (document.getElementById("card-drawer").classList.contains("open")) {
       closeDrawer();
     } else {
-      _loadBuilderIfNeeded();  // also load if user manually opens and closes
       openDrawer();
     }
   }
