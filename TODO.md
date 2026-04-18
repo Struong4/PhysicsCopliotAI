@@ -21,3 +21,10 @@ Co-Pilot – Molecular Dynamics").
   generalize.
 - **Registry-driven**: new models/algorithms/observables should be added to
   the existing registry files rather than to the chatbot or engine code.
+
+## Architecture plan
+
+A detailed design for the module abstraction (contract, manifest format,
+phased refactor, validation against a dynamical-systems module) is in
+[docs/module-architecture.md](docs/module-architecture.md). Execution is
+planned for after the 2026-04-23 demo.
