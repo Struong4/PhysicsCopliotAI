@@ -496,7 +496,8 @@
           <div class="analysis-box" id="obs-analysis-box" style="display:none;"></div>
           <div class="action-row">
             <button class="btn btn-cancel" onclick="dismissObsResults()">✕ Dismiss</button>
-            <button class="btn btn-confirm" onclick="downloadObsJson()" style="background:#4a6fa5;">⬇ Download JSON</button>
+            <button class="btn btn-confirm" onclick="downloadObsMetadata()" style="background:#4a6fa5;">⬇ Metadata</button>
+            <button class="btn btn-confirm" onclick="downloadObsNumpy()" style="background:#4a6fa5;">⬇ Numpy (.npz)</button>
             <button class="btn btn-confirm" onclick="downloadObsPlot()" style="background:#4a6fa5;">⬇ Download Plot</button>
           </div>
         </div>
@@ -646,6 +647,7 @@
         lastSubmittedConfig = data.config;
         // New config replaces any existing obs or registry card
         document.getElementById("obs-card").style.display = "none";
+        document.getElementById("obs-results-card").style.display = "none";
         document.getElementById("registry-card").style.display = "none";
         showConfigCard(data.config, data.summary);
       }
@@ -665,6 +667,7 @@
 
       if (data.tracking_id) {
         document.getElementById("config-card").style.display = "none";
+        document.getElementById("obs-results-card").style.display = "none";
         document.getElementById("placeholder").style.display = "none";
         showStatusCard("queued", "Pipeline queued…");
         document.getElementById("msg-input").disabled = true;
@@ -999,13 +1002,30 @@
     Plotly.downloadImage(container, { format: "png", filename, width: 900, height: 500 });
   }
 
-  function downloadObsJson() {
+  function downloadObsMetadata() {
     if (!currentObsData || !currentObsRunId) return;
-    const blob = new Blob([JSON.stringify(currentObsData, null, 2)], { type: "application/json" });
+    const { obs_run_id, sim_run_id, algorithm, observable_type, observable_params,
+            config, status, sweeps_processed, metadata } = currentObsData;
+    const meta = { obs_run_id, sim_run_id, algorithm, observable_type,
+                   observable_params, config, status, sweeps_processed, metadata };
+    const blob = new Blob([JSON.stringify(meta, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${currentObsRunId}.json`;
+    a.download = `${currentObsRunId}_metadata.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadObsNumpy() {
+    if (!currentObsRunId) return;
+    const resp = await fetch(`/api/obs_results/${currentObsRunId}/numpy`);
+    if (!resp.ok) { alert("Failed to generate numpy download."); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentObsRunId}.npz`;
     a.click();
     URL.revokeObjectURL(url);
   }

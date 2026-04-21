@@ -27,10 +27,13 @@ from pathlib import Path
 import boto3
 from dotenv import load_dotenv
 load_dotenv()
+import io
+
 import httpx
+import numpy as np
 import yaml
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
 from chatbot.registry_loader import load_all as _load_registries
@@ -937,6 +940,39 @@ async def get_local_obs_data(obs_run_id: str):
 
     result = await asyncio.to_thread(load_obs_run, obs_run_dir)
     return result
+
+
+@app.get("/api/obs_results/{obs_run_id}/numpy")
+async def download_obs_numpy(obs_run_id: str):
+    """Return sweep numerical data as a compressed .npz file."""
+    try:
+        obs_run_dir = find_obs_run_dir(OBS_BASE_DIR, obs_run_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    result = await asyncio.to_thread(load_obs_run, obs_run_dir)
+    data = result.get("data", {})
+
+    arrays = {}
+    for key in ("indices", "energies", "bond_dims", "times"):
+        if data.get(key):
+            arrays[key] = np.array(data[key])
+
+    if data.get("values"):
+        try:
+            arrays["values"] = np.array(data["values"])
+        except ValueError:
+            arrays["values"] = np.array(data["values"], dtype=object)
+
+    buf = io.BytesIO()
+    np.savez_compressed(buf, **arrays)
+    buf.seek(0)
+
+    return StreamingResponse(
+        buf,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{obs_run_id}.npz"'},
+    )
 
 
 # checks status of the run to see if the endpoint is done yet
