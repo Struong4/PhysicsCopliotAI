@@ -455,6 +455,17 @@ def index():
 # Deliberately excludes "calculate" and "compute" — those also appear in simulation requests
 # (e.g. "calculate the ground state with DMRG") and would cause false positives.
 # The LLM handles that distinction; this guard is only a safety net for rogue tool calls.
+_CATALOG_TRIGGER_WORDS = {
+    "existing", "previous", "past", "history", "catalog",
+    "already", "have run", "been calculated", "been computed",
+    "show", "plot", "display", "view", "list", "find", "search",
+}
+
+def _user_wants_catalog_lookup(message: str) -> bool:
+    msg = message.lower()
+    return any(w in msg for w in _CATALOG_TRIGGER_WORDS)
+
+
 _OBSERVABLE_TRIGGER_WORDS = {
     # display intent (unambiguous — not used for simulation setup)
     "plot", "show", "display", "view", "visualize",
@@ -527,6 +538,27 @@ async def chat(req: ChatRequest):
 
     # Append user turn (Bedrock format)
     history.append({"role": "user", "content": [{"text": req.message}]})
+
+    # Pre-fetch catalog data when the user asks about existing runs or observables.
+    # Haiku does not reliably call query_catalog/query_obs_catalog on its own, so we
+    # inject the results directly into the message context before the Bedrock call.
+    if _user_wants_catalog_lookup(req.message):
+        sim_results = _read_catalog({"limit": 10})
+        obs_results = await _read_obs_catalog({"limit": 10})
+        context_parts = []
+        if sim_results:
+            context_parts.append(
+                "<simulation_catalog>\n" + json.dumps(sim_results, indent=2) + "\n</simulation_catalog>"
+            )
+        if obs_results:
+            context_parts.append(
+                "<observable_catalog>\n" + json.dumps(obs_results, indent=2) + "\n</observable_catalog>"
+            )
+        if context_parts:
+            catalog_block = "\n\n".join(context_parts)
+            history[-1]["content"][0]["text"] = (
+                f"[Pre-fetched catalog data for this request:]\n{catalog_block}\n\n[User]: {req.message}"
+            )
 
     # Call Bedrock in a thread so we don't block the event loop
     # tells Bedrock what tools are available to LLM
