@@ -1473,7 +1473,11 @@
                     <div class="btn-group">
                         <button class="btn btn-secondary" onclick="copyConfig()">Copy</button>
                         <button class="btn btn-primary" onclick="downloadConfig()">Download</button>
+                        <button class="btn btn-primary" id="btn-send-to-chat" onclick="sendToChat()" title="Send this config to the chatbot confirm card">↗ Send to Chat</button>
                     </div>
+                </div>
+                <div id="chatbot-config-indicator" style="display:none; padding:0.35rem 0.75rem; font-size:0.78rem; background:#e8f0fe; color:#1a56db; border-bottom:1px solid #c3d7fd;">
+                    ↩ Config loaded from chatbot — editing the form will reset to form values
                 </div>
                 <pre id="json-preview"></pre>
             </div>
@@ -3276,13 +3280,37 @@
         // PREVIEW & EXPORT
         // ════════════════════════════════════════════════════════════════════════
         
+        // Config received from the parent chatbot window via postMessage
+        let _chatbotConfig = null;
+
         function updatePreview() {
+            // If a config was pushed from the chatbot, clear it — user is now editing the form
+            if (_chatbotConfig !== null) {
+                _chatbotConfig = null;
+                const indicator = document.getElementById('chatbot-config-indicator');
+                if (indicator) indicator.style.display = 'none';
+            }
             const config = buildConfig();
             document.getElementById('json-preview').textContent = JSON.stringify(config, null, 2);
         }
-        
+
+        function sendToChat() {
+            const config = _chatbotConfig || buildConfig();
+            const summary = 'Config from builder';
+            window.parent.postMessage({ type: 'tn_config_ready', config, summary }, '*');
+        }
+
+        // Listen for configs pushed from the parent chatbot window
+        window.addEventListener('message', function(e) {
+            if (!e.data || e.data.type !== 'tn_load_config') return;
+            _chatbotConfig = e.data.config;
+            document.getElementById('json-preview').textContent = JSON.stringify(_chatbotConfig, null, 2);
+            const indicator = document.getElementById('chatbot-config-indicator');
+            if (indicator) indicator.style.display = 'block';
+        });
+
         function downloadConfig() {
-            const config = buildConfig();
+            const config = _chatbotConfig || buildConfig();
             const json = JSON.stringify(config, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -3299,7 +3327,7 @@
         }
         
         function copyConfig() {
-            const config = buildConfig();
+            const config = _chatbotConfig || buildConfig();
             navigator.clipboard.writeText(JSON.stringify(config, null, 2)).then(() => {
                 alert('Copied to clipboard!');
             });

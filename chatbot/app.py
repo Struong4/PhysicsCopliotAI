@@ -663,10 +663,18 @@ async def chat(req: ChatRequest):
                 obs_auto_run = obs_auto_run_check
                 if obs_auto_run:
                     try:
+                        julia_payload = {
+                            "run_id": obs_config["run_id"],
+                            "observable": {
+                                "type": obs_config["observable_type"],
+                                "params": obs_config["params"],
+                            },
+                            "selection": {"selection": obs_config["selection"]},
+                        }
                         async with httpx.AsyncClient(timeout=60.0) as client:
                             r = await client.post(
                                 f"{JULIA_URL}/api/observables/calculate",
-                                json=obs_config,
+                                json=julia_payload,
                             )
                         if r.status_code in (200, 202):
                             obs_tracking_id = r.json().get("tracking_id")

@@ -195,7 +195,8 @@
     .card-drawer.open { transform: translateX(0); }
 
     .card-drawer-body {
-      height: 100%;
+      position: absolute;
+      inset: 0;
       overflow-y: auto;
       padding: 1.25rem;
       display: flex;
@@ -248,7 +249,8 @@
       padding: 1rem;
       overflow: auto;
       max-height: 340px;
-      white-space: pre;
+      white-space: pre-wrap;
+      word-break: break-word;
       margin: 0;
     }
 
@@ -323,6 +325,8 @@
       font-size: 0.78rem;
       color: #333;
       line-height: 1.7;
+      word-break: break-all;
+      overflow-wrap: anywhere;
     }
 
     .spinner {
@@ -344,8 +348,9 @@
     #registry-card { display: none; }
     .badge-registered { background: #e3fcef; color: #006644; }
     .reg-info { padding: 0.85rem 1rem; font-size: 0.88rem; line-height: 1.8; color: #2a2d4a; }
-    .reg-row { display: flex; gap: 0.5rem; margin-bottom: 0.2rem; align-items: center; }
-    .reg-label { font-weight: 700; color: #6b6f8a; min-width: 110px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .reg-row { display: flex; gap: 0.5rem; margin-bottom: 0.2rem; align-items: flex-start; flex-wrap: wrap; }
+    .reg-label { font-weight: 700; color: #6b6f8a; min-width: 110px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+    .reg-row > span:last-child { word-break: break-word; overflow-wrap: anywhere; min-width: 0; }
     .btn-delete { background: #de350b; color: #fff; }
 
     .obs-config-display {
@@ -358,6 +363,7 @@
       display: flex;
       gap: 0.5rem;
       margin-bottom: 0.2rem;
+      flex-wrap: wrap;
     }
     .obs-config-display .obs-label {
       font-weight: 700;
@@ -366,6 +372,12 @@
       font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .obs-config-display .obs-row > span:last-child {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      min-width: 0;
     }
 
     .analysis-box {
@@ -479,11 +491,13 @@
         <!-- Observable results card -->
         <div class="card" id="obs-results-card">
           <div class="card-header" id="obs-results-header">Observable Results</div>
+          <div id="obs-results-params" style="padding:0.3rem 1rem 0; font-size:0.75rem; color:#6b6f8a; font-family:monospace; word-break:break-word;"></div>
           <div id="obs-plot-container" style="padding: 0.75rem 0.5rem; min-height: 340px;"></div>
           <div class="analysis-box" id="obs-analysis-box" style="display:none;"></div>
           <div class="action-row">
             <button class="btn btn-cancel" onclick="dismissObsResults()">✕ Dismiss</button>
             <button class="btn btn-confirm" onclick="downloadObsJson()" style="background:#4a6fa5;">⬇ Download JSON</button>
+            <button class="btn btn-confirm" onclick="downloadObsPlot()" style="background:#4a6fa5;">⬇ Download Plot</button>
           </div>
         </div>
 
@@ -537,6 +551,13 @@
     const frame = document.getElementById("config-builder-frame");
     if (!frame.src || frame.src === window.location.href) {
       frame.src = frame.dataset.src;  // load on first access only
+      frame.onload = function() {
+        if (_pendingBuilderConfig && frame.contentWindow) {
+          frame.contentWindow.postMessage(_pendingBuilderConfig, "*");
+          _pendingBuilderConfig = null;
+        }
+        frame.onload = null;
+      };
     }
   }
   function openDrawer() {
@@ -676,6 +697,9 @@
     document.getElementById("status-card").style.display = "none";
     document.getElementById("config-card").style.display = "block";
     openDrawer(); _updateBadge();
+
+    // Push config to the config builder iframe so both stay in sync
+    _pushConfigToBuilder(config, summary);
     document.getElementById("summary-text").textContent = summary || "Review the config below.";
     document.getElementById("config-json").textContent = JSON.stringify(config, null, 2);
 
@@ -861,7 +885,7 @@
         }
       } catch (_) { /* keep trying */ }
       finally { polling = false; }
-    }, 2000);
+    }, 5000);
   }
 
   // ── Registry card ─────────────────────────────────────────────────────────
@@ -969,6 +993,12 @@
     _updateBadge();
   }
 
+  function downloadObsPlot() {
+    const container = document.getElementById("obs-plot-container");
+    const filename = currentObsRunId ? `${currentObsRunId}_plot` : "observable_plot";
+    Plotly.downloadImage(container, { format: "png", filename, width: 900, height: 500 });
+  }
+
   function downloadObsJson() {
     if (!currentObsData || !currentObsRunId) return;
     const blob = new Blob([JSON.stringify(currentObsData, null, 2)], { type: "application/json" });
@@ -1047,7 +1077,7 @@
         }
       } catch (_) { /* keep trying */ }
       finally { polling = false; }
-    }, 2000);
+    }, 5000);
   }
 
   async function fetchAndRenderObsResults(obsRunId) {
@@ -1068,6 +1098,16 @@
 
       const obsType = data.metadata?.observable_type || currentObsConfig?.observable_type || "Observable";
       document.getElementById("obs-results-header").textContent = `Results: ${obsType}`;
+
+      // Show params used so the user can spot bad values (e.g. boundary bond)
+      const paramsEl = document.getElementById("obs-results-params");
+      const params = data.metadata?.params || {};
+      if (paramsEl) {
+        const entries = Object.entries(params);
+        paramsEl.textContent = entries.length > 0
+          ? entries.map(([k, v]) => `${k}: ${v}`).join("  |  ")
+          : "";
+      }
 
       renderObsPlot(data, obsType);
       renderObsAnalysis(data, obsType);
@@ -1319,6 +1359,34 @@
       document.getElementById("msg-input").focus();
     }
   }
+  // Pending config to push to the builder once the iframe loads
+  let _pendingBuilderConfig = null;
+
+  // Push config into the iframe — never force-loads the iframe to avoid
+  // competing with the Julia pipeline server during simulation startup
+  function _pushConfigToBuilder(config, summary) {
+    const frame = document.getElementById("config-builder-frame");
+    const msg = { type: "tn_load_config", config, summary: summary || "" };
+    if (!frame.src || frame.src === window.location.href) {
+      // Iframe not loaded yet — store and send when it naturally loads
+      _pendingBuilderConfig = msg;
+    } else if (frame.contentWindow) {
+      frame.contentWindow.postMessage(msg, "*");
+    }
+  }
+
+  // Receive configs sent from the config builder iframe via "Send to Chat"
+  window.addEventListener("message", function(e) {
+    if (!e.data || e.data.type !== "tn_config_ready") return;
+    currentConfig = e.data.config;
+    lastSubmittedConfig = e.data.config;
+    // Clear all existing cards so the new config card is the only thing showing
+    document.getElementById("obs-card").style.display = "none";
+    document.getElementById("obs-results-card").style.display = "none";
+    document.getElementById("registry-card").style.display = "none";
+    document.getElementById("status-card").style.display = "none";
+    showConfigCard(e.data.config, e.data.summary || "Config from builder");
+  });
 </script>
 </body>
 </html>
