@@ -7,24 +7,73 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Design tokens */
+    :root {
+      --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px;
+      --text-xs: 12px; --text-sm: 13px; --text-base: 14px; --text-md: 15px; --text-lg: 17px;
+
+      --primary: #4f6ef7;
+      --primary-hover: #3a57d4;
+      --primary-ring: rgba(79, 110, 247, 0.15);
+
+      --neutral-50:  #f8fafc;
+      --neutral-100: #f1f5f9;
+      --neutral-200: #e2e8f0;
+      --neutral-300: #cbd5e1;
+      --neutral-400: #94a3b8;
+      --neutral-500: #64748b;
+      --neutral-600: #475569;
+      --neutral-700: #334155;
+      --neutral-800: #1e293b;
+      --neutral-900: #0f172a;
+
+      --success: #16a34a;
+      --success-bg: #dcfce7;
+      --success-fg: #166534;
+      --warning: #d97706;
+      --warning-bg: #fef3c7;
+      --warning-fg: #92400e;
+      --danger:  #dc2626;
+      --danger-bg: #fee2e2;
+      --danger-fg: #991b1b;
+      --info-bg: #dbeafe;
+      --info-fg: #1e40af;
+
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 2px 8px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 4px 18px rgba(15, 23, 42, 0.12);
+
+      --r-sm: 6px;
+      --r: 10px;
+      --r-lg: 14px;
+      --r-pill: 999px;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", sans-serif;
+      --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", Consolas, monospace;
+    }
+
     /* Index.html uses CSS for appearance, HTML for content, and JS for the logic, state, and interactivity */
     body {
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       height: 100vh;
       display: flex;
       flex-direction: column;
-      background: #f4f5f7;
-      color: #1a1a2e;
+      background: var(--neutral-100);
+      color: var(--neutral-900);
+      font-size: var(--text-base);
     }
 
     /* ── Header ── */
     header {
-      background: #1a1a2e;
+      background: var(--neutral-900);
       color: #e0e0f0;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
+      padding: var(--s-3) var(--s-5);
+      font-size: var(--text-md);
       font-weight: 600;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
       flex-shrink: 0;
     }
     header span { color: #7c86ff; }
@@ -42,32 +91,91 @@
       display: flex;
       flex-direction: column;
       background: #fff;
-      border-right: 1px solid #dde1ea;
+      border-right: 1px solid var(--neutral-200);
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--neutral-200);
+      background: #fff;
+      flex-shrink: 0;
+      height: 44px;
+    }
+    .chat-header-title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--neutral-700);
+      letter-spacing: 0.01em;
+    }
+    .chat-header-status {
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+    }
+    .chat-header-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
     }
 
     .messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1.25rem 1rem;
+      padding: var(--s-5) var(--s-4);
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      gap: var(--s-4);
+      background: var(--neutral-50);
+    }
+
+    /* Subtle scrollbars (WebKit) */
+    .messages::-webkit-scrollbar,
+    .config-json::-webkit-scrollbar,
+    .card-drawer-body::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .messages::-webkit-scrollbar-track,
+    .config-json::-webkit-scrollbar-track,
+    .card-drawer-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .messages::-webkit-scrollbar-thumb,
+    .card-drawer-body::-webkit-scrollbar-thumb {
+      background: var(--neutral-300);
+      border-radius: 4px;
+    }
+    .messages::-webkit-scrollbar-thumb:hover,
+    .card-drawer-body::-webkit-scrollbar-thumb:hover {
+      background: var(--neutral-400);
+    }
+    .config-json::-webkit-scrollbar-thumb {
+      background: var(--neutral-700);
+      border-radius: 4px;
     }
 
     .bubble {
       max-width: 82%;
-      padding: 0.6rem 1rem;
-      border-radius: 1.1rem;
-      line-height: 1.5;
-      font-size: 1rem;
+      padding: var(--s-3) var(--s-4);
+      border-radius: var(--r-lg);
+      line-height: 1.55;
+      font-size: var(--text-base);
       white-space: pre-wrap;
       word-break: break-word;
+      box-shadow: var(--shadow-sm);
     }
     .bubble.user {
-      background: #4f6ef7;
+      background: var(--primary);
       color: #fff;
-      margin-left: auto;
-      border-radius: 1.1rem 1.1rem 0.25rem 1.1rem;
+      align-self: flex-end;
+      border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-lg);
     }
     .bubble.assistant {
       white-space: normal;
@@ -84,59 +192,108 @@
     .bubble.assistant code { background: #e4e6ed; border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.88rem; }
     .bubble.assistant hr { border: none; border-top: 1px solid #d0d2de; margin: 0.5rem 0; }
     .bubble.info {
-      background: #fffbe6;
-      color: #7a5c00;
-      margin: 0 auto;
-      font-size: 0.82rem;
-      border-radius: 0.5rem;
-      border: 1px solid #ffe97a;
+      background: var(--warning-bg);
+      color: var(--warning-fg);
+      align-self: center;
       max-width: 96%;
+      font-size: var(--text-sm);
+      border-radius: var(--r);
+      border: 1px solid #fde68a;
+      text-align: center;
     }
 
     .typing-indicator {
-      padding: 0.3rem 1rem;
-      font-size: 0.82rem;
-      color: #9a9db0;
-      font-style: italic;
-      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+      padding: var(--s-2) var(--s-4);
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+      height: 24px;
+    }
+    .typing-indicator:empty { padding: 0; height: 0; }
+    .typing-indicator .dots {
+      display: inline-flex;
+      gap: 3px;
+    }
+    .typing-indicator .dots span {
+      width: 5px;
+      height: 5px;
+      background: var(--primary);
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: dot-pulse 1.1s ease-in-out infinite;
+    }
+    .typing-indicator .dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-indicator .dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes dot-pulse {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+      40% { opacity: 1; transform: scale(1.15); }
     }
 
     .input-row {
       display: flex;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border-top: 1px solid #dde1ea;
+      gap: var(--s-2);
+      padding: var(--s-3) var(--s-4);
+      border-top: 1px solid var(--neutral-200);
       background: #fff;
     }
     .input-row textarea {
       flex: 1;
       resize: none;
-      border: 1px solid #c8ccd8;
-      border-radius: 0.6rem;
-      padding: 0.55rem 0.85rem;
+      border: 1px solid var(--neutral-300);
+      border-radius: var(--r);
+      padding: var(--s-3) var(--s-4);
       font-family: inherit;
-      font-size: 0.92rem;
+      font-size: var(--text-base);
       line-height: 1.4;
-      height: 44px;
+      min-height: 44px;
+      max-height: 140px;
+      color: var(--neutral-900);
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .input-row textarea:focus { border-color: #4f6ef7; }
-    .input-row textarea:disabled { background: #f4f5f7; }
+    .input-row textarea::placeholder { color: var(--neutral-400); }
+    .input-row textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+    .input-row textarea:disabled {
+      background: var(--neutral-100);
+      color: var(--neutral-500);
+    }
     .input-row button {
-      padding: 0 1.2rem;
-      background: #4f6ef7;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 var(--s-5);
+      background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 0.6rem;
-      font-size: 0.92rem;
+      border-radius: var(--r);
+      font-size: var(--text-sm);
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
       white-space: nowrap;
+      box-shadow: var(--shadow-sm);
     }
-    .input-row button:hover { background: #3a57d4; }
-    .input-row button:disabled { background: #b0b8d8; cursor: not-allowed; }
+    .input-row button:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .input-row button:active:not(:disabled) { transform: translateY(0); }
+    .input-row button:disabled {
+      background: var(--neutral-300);
+      color: var(--neutral-500);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .input-row button .send-icon {
+      font-size: var(--text-md);
+      line-height: 1;
+    }
 
     /* ── Config panel ── */
     .config-panel {
@@ -207,11 +364,14 @@
       position: absolute;
       inset: 0;
       overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
+    /* Keep flex children from shrinking so the drawer scrolls when content overflows */
+    .card-drawer-body > * { flex-shrink: 0; }
 
     .placeholder-msg {
       text-align: center;
@@ -226,36 +386,68 @@
 
     .card {
       background: #fff;
-      border: 1px solid #dde1ea;
-      border-radius: 0.75rem;
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--r-lg);
       overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
     .card-header {
-      background: #f0f1f8;
-      padding: 0.6rem 1rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #6b6f8a;
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+      background: var(--neutral-50);
+      padding: var(--s-3) var(--s-4);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0;
+      color: var(--neutral-700);
+      text-transform: none;
+      border-bottom: 1px solid var(--neutral-200);
+    }
+    .card-header::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-ring);
     }
 
     .summary-text {
-      padding: 0.75rem 1rem;
-      font-size: 0.9rem;
-      color: #2a2d4a;
-      background: #f7f8ff;
-      border-bottom: 1px solid #dde1ea;
-      line-height: 1.5;
+      padding: var(--s-3) var(--s-4);
+      font-size: var(--text-sm);
+      color: var(--neutral-700);
+      background: #fff;
+      border-bottom: 1px solid var(--neutral-200);
+      line-height: 1.55;
     }
 
+    .config-json-wrap {
+      position: relative;
+      background: var(--neutral-900);
+    }
+    .config-json-wrap::before {
+      content: "config.json";
+      position: absolute;
+      top: var(--s-2);
+      right: var(--s-3);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--neutral-400);
+      background: rgba(255,255,255,0.06);
+      padding: 2px 8px;
+      border-radius: var(--r-pill);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
     .config-json {
-      background: #1e1e2e;
-      color: #cdd6f4;
-      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', monospace;
-      font-size: 0.78rem;
+      background: transparent;
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
       line-height: 1.6;
-      padding: 1rem;
+      padding: var(--s-4);
       overflow: auto;
       max-height: clamp(200px, 40vh, 360px);
       white-space: pre-wrap;
@@ -266,12 +458,12 @@
     /* Edit textarea replaces the JSON display */
     #edit-area {
       display: none;
-      background: #1e1e2e;
-      color: #cdd6f4;
-      font-family: 'Consolas', 'Cascadia Code', monospace;
-      font-size: 0.78rem;
+      background: var(--neutral-900);
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
       line-height: 1.6;
-      padding: 1rem;
+      padding: var(--s-4);
       border: none;
       width: 100%;
       min-height: 280px;
@@ -280,28 +472,71 @@
     }
 
     .edit-error {
-      padding: 0.5rem 1rem;
-      font-size: 0.8rem;
-      color: #c0392b;
-      background: #fdf0ef;
+      padding: var(--s-2) var(--s-4);
+      font-size: var(--text-xs);
+      color: var(--danger-fg);
+      background: var(--danger-bg);
       display: none;
     }
 
     .action-row {
       display: flex;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border-top: 1px solid #dde1ea;
-      background: #fafbff;
+      gap: var(--s-2);
+      padding: var(--s-3) var(--s-4);
+      border-top: 1px solid var(--neutral-200);
+      background: #fff;
     }
-    .btn { padding: 0.45rem 1.1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: opacity 0.15s; }
-    .btn:hover { opacity: 0.87; }
+    .btn {
+      padding: var(--s-2) var(--s-4);
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-confirm  { background: #22a06b; color: #fff; }
-    .btn-edit     { background: #4f6ef7; color: #fff; }
-    .btn-save     { background: #22a06b; color: #fff; display: none; }
-    .btn-discard  { background: #6c757d; color: #fff; display: none; }
-    .btn-cancel   { background: #6c757d; color: #fff; }
+
+    /* Primary — confirm & run */
+    .btn-confirm {
+      background: var(--success);
+      color: #fff;
+      padding: var(--s-3) var(--s-5);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-confirm:hover:not(:disabled) { background: #15803d; box-shadow: var(--shadow-md); }
+
+    /* Secondary — edit (outline) */
+    .btn-edit {
+      background: #fff;
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .btn-edit:hover:not(:disabled) { background: var(--primary-ring); }
+
+    /* Save (primary save state) */
+    .btn-save {
+      background: var(--success);
+      color: #fff;
+      display: none;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-save:hover:not(:disabled) { background: #15803d; }
+
+    /* Tertiary — cancel / discard (ghost) */
+    .btn-discard {
+      background: transparent;
+      color: var(--neutral-600);
+      display: none;
+    }
+    .btn-discard:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-800); }
+    .btn-cancel {
+      background: transparent;
+      color: var(--neutral-600);
+    }
+    .btn-cancel:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-800); }
 
     /* ── Status card ── */
     #status-card { display: none; }
@@ -309,18 +544,33 @@
     .status-inner { padding: 0.85rem 1rem; }
     .status-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
     .badge {
-      display: inline-block;
-      padding: 0.2rem 0.65rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--r-pill);
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
     }
-    .badge-queued   { background: #fff0b3; color: #7a5700; }
-    .badge-running  { background: #deebff; color: #0747a6; }
-    .badge-completed{ background: #e3fcef; color: #006644; }
-    .badge-failed   { background: #ffebe6; color: #bf2600; }
+    .badge-queued   { background: var(--warning-bg); color: var(--warning-fg); }
+    .badge-running  { background: var(--info-bg); color: var(--info-fg); }
+    .badge-completed{ background: var(--success-bg); color: var(--success-fg); }
+    .badge-failed   { background: var(--danger-bg); color: var(--danger-fg); }
+
+    .badge-running::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--info-fg);
+      animation: badge-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes badge-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
 
     .status-msg { font-size: 0.85rem; color: #5a5d72; }
 
@@ -421,12 +671,19 @@
 </head>
 <body>
 
-<header>TNCodebase &nbsp;<span>ED</span>&nbsp; Simulation Assistant</header>
+<header>Physics Co-Pilot <span>–</span> TensorNetwork</header>
 
 <div class="main">
 
   <!-- ── Chat panel ── -->
   <div class="chat-panel">
+    <div class="chat-header">
+      <span class="chat-header-title">Chat</span>
+      <span class="chat-header-status">
+        <span class="chat-header-dot"></span>
+        Claude · Haiku
+      </span>
+    </div>
     <div class="messages" id="messages">
       <div class="bubble assistant">
         Hi! I can help you set up and run quantum many-body simulations using exact diagonalization (ED) or tensor network (TN) methods.<br><br>
@@ -439,9 +696,9 @@
     </div>
     <div class="typing-indicator" id="typing"></div>
     <div class="input-row">
-      <textarea id="msg-input" placeholder="Describe your simulation…" rows="1"
+      <textarea id="msg-input" placeholder="Ask about a simulation, observable, or result…" rows="1"
                 onkeydown="handleKey(event)"></textarea>
-      <button id="send-btn" onclick="sendMessage()">Send</button>
+      <button id="send-btn" onclick="sendMessage()">Send <span class="send-icon">↗</span></button>
     </div>
   </div>
 
@@ -474,7 +731,9 @@
         <div class="card" id="config-card">
           <div class="card-header">Simulation Config</div>
           <div class="summary-text" id="summary-text"></div>
-          <pre class="config-json" id="config-json"></pre>
+          <div class="config-json-wrap">
+            <pre class="config-json" id="config-json"></pre>
+          </div>
           <textarea id="edit-area" spellcheck="false"></textarea>
           <div class="edit-error" id="edit-error"></div>
           <div class="action-row">
@@ -596,7 +855,9 @@
   // when claude is thinking to disable input and send button while its creating response
   function setThinking(on) {
     const t = document.getElementById("typing");
-    t.textContent = on ? "Claude is thinking…" : "";
+    t.innerHTML = on
+      ? 'Thinking <span class="dots"><span></span><span></span><span></span></span>'
+      : "";
     document.getElementById("msg-input").disabled = on;
     document.getElementById("send-btn").disabled = on;
   }
