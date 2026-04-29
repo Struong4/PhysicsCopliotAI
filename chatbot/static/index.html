@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TNCodebase — ED Assistant</title>
+  <title>Physics Co-Pilot - Tensor Network</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -681,7 +681,7 @@
       <span class="chat-header-title">Chat</span>
       <span class="chat-header-status">
         <span class="chat-header-dot"></span>
-        Claude · Haiku
+        Claude · Sonnet
       </span>
     </div>
     <div class="messages" id="messages">
@@ -1527,11 +1527,15 @@
   }
 
   function _plotVectorHeatmap(container, values, x, xLabel, obsType) {
+    // z has shape (n_sweeps × n_sites): z[i] is one sweep's site vector.
+    // Plotly places z[i][j] at (x[j], y[i]), so columns must match x (sites)
+    // and rows must match y (sweeps/times).
     Plotly.newPlot(container, [{
-      z: values, x,
-      y: values[0].map((_, i) => i + 1),
+      z: values,
+      x: values[0].map((_, i) => i + 1),  // site numbers → x-axis (columns)
+      y: x,                                 // sweep/time indices → y-axis (rows)
       type: "heatmap", colorscale: "RdBu", reversescale: true,
-    }], _plotLayout(xLabel, "Site"), { responsive: true, displayModeBar: false });
+    }], _plotLayout("Site", xLabel), { responsive: true, displayModeBar: false });
   }
 
   function _plotMatrix(container, matrix, obsType) {

@@ -15,6 +15,7 @@ import httpx
 
 JULIA_URL = os.environ.get("JULIA_URL", "http://127.0.0.1:8080")
 CATALOG_PATH = Path(__file__).parent.parent / "data" / "run_catalog.jsonl"
+OBS_CATALOG_PATH = Path(__file__).parent.parent / "data_obs" / "observables_catalog.jsonl"
 
 
 # ── Catalog helpers ───────────────────────────────────────────────────────────
@@ -49,20 +50,55 @@ def _read_catalog(filters: dict) -> list[dict]:
 
 
 async def _read_obs_catalog(filters: dict) -> list[dict]:
-    """Query the Julia pipeline server's observable catalog."""
+    """Query observable catalog: tries Julia server first, falls back to local file."""
     limit = filters.get("limit")
     params = {k: v for k, v in filters.items() if v is not None and k in
               ("observable_type", "sim_algorithm", "sim_model_name")}
+    url = f"{JULIA_URL}/api/query/observables"
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.get(f"{JULIA_URL}/api/query/observables", params=params)
+            r = await client.get(url, params=params)
+            print(f"[OBS_CATALOG] GET {url} params={params} → {r.status_code}", flush=True)
             if r.status_code == 200:
                 results = r.json().get("results", [])
-                if limit is not None:
-                    results = results[:int(limit)]
-                return results
-    except Exception:
-        pass
+                print(f"[OBS_CATALOG] Julia returned {len(results)} entries", flush=True)
+                if results:
+                    if limit is not None:
+                        results = results[:int(limit)]
+                    return results
+    except Exception as exc:
+        print(f"[OBS_CATALOG] Julia query failed: {exc}", flush=True)
+
+    # Local file fallback: read data_obs/observables_catalog.jsonl directly
+    if OBS_CATALOG_PATH.exists():
+        print(f"[OBS_CATALOG] Falling back to local {OBS_CATALOG_PATH}", flush=True)
+        obs_type_filter = params.get("observable_type", "").lower().strip()
+        alg_filter = params.get("sim_algorithm", "").lower().strip()
+        model_filter = params.get("sim_model_name", "").lower().strip()
+        _limit = min(int(limit), 50) if limit is not None else 10
+        entries = []
+        with OBS_CATALOG_PATH.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if obs_type_filter and entry.get("observable", {}).get("type", "").lower() != obs_type_filter:
+                    continue
+                if alg_filter and entry.get("simulation", {}).get("core", {}).get("algorithm", "").lower() != alg_filter:
+                    continue
+                if model_filter and entry.get("simulation", {}).get("model", {}).get("name", "").lower() != model_filter:
+                    continue
+                entries.append(entry)
+        entries.reverse()
+        result = entries[:_limit]
+        print(f"[OBS_CATALOG] Local fallback found {len(result)} entries", flush=True)
+        return result
+
+    print(f"[OBS_CATALOG] No local catalog at {OBS_CATALOG_PATH}", flush=True)
     return []
 
 

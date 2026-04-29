@@ -150,6 +150,14 @@ async def _stream_chat_response(req: ChatRequest) -> AsyncGenerator[str, None]:
         "get_available_models", "get_available_algorithms",
     }
     registered_info = None
+    proposed_config = None
+    summary = ""
+    obs_config = None
+    obs_summary = ""
+    show_obs_run_id = None
+    show_obs_summary = ""
+    tracking_id = None
+    obs_tracking_id = None
     completed_tool_uses: list = []
 
     # Single loop: every round uses converse_stream() so the first token arrives
@@ -225,12 +233,11 @@ async def _stream_chat_response(req: ChatRequest) -> AsyncGenerator[str, None]:
         tool_blocks = [{"toolUse": t} for t in completed_tool_uses]
         history.append({"role": "assistant", "content": text_blocks + tool_blocks})
 
-        # Check whether this round contained executable tool calls
+        # Execute executable tools and immediately process non-executable tools from
+        # this same round so every tool_use block gets a paired tool_result before
+        # any subsequent message is appended.
         exec_tools = [t for t in completed_tool_uses if t["name"] in EXECUTABLE_TOOLS]
-        if not exec_tools:
-            break  # Final response — exit the loop
 
-        # Execute tools and feed results back for the next round
         for exec_tool in exec_tools:
             tool_name = exec_tool["name"]
             tool_args = exec_tool["input"]
@@ -281,73 +288,83 @@ async def _stream_chat_response(req: ChatRequest) -> AsyncGenerator[str, None]:
                 "content": [{"toolResult": {"toolUseId": exec_tool["toolUseId"], "content": [{"text": result_text}]}}],
             })
 
-    # ── Parse non-executable tool calls from the final round ─────────────────
-    proposed_config = None
-    summary = ""
-    obs_config = None
-    obs_summary = ""
-    show_obs_run_id = None
-    show_obs_summary = ""
-    tracking_id = None
-    obs_tracking_id = None
+        # Process non-executable tools from this same round immediately so that
+        # no tool_use block is left without a tool_result before the next append.
+        for tool in completed_tool_uses:
+            if tool["name"] in EXECUTABLE_TOOLS:
+                continue
+            tool_name = tool["name"]
+            tool_input = tool["input"]
 
-    for tool in completed_tool_uses:
-        tool_name = tool["name"]
-        tool_input = tool["input"]
+            if tool_name == "show_observable_results":
+                if _user_requested_observable(req.message):
+                    show_obs_run_id = tool_input.get("obs_run_id")
+                    show_obs_summary = tool_input.get("summary", "")
+                    result_text = "Observable results displayed to user."
+                else:
+                    result_text = "No observable request detected; call ignored."
 
-        if tool_name == "show_observable_results" and _user_requested_observable(req.message):
-            show_obs_run_id = tool_input.get("obs_run_id")
-            show_obs_summary = tool_input.get("summary", "")
-            history.append({"role": "user", "content": [{"toolResult": {"toolUseId": tool["toolUseId"], "content": [{"text": "Observable results displayed to user."}]}}]})
+            elif tool_name == "calculate_observable":
+                obs_auto_run = tool_input.get("auto_run", False)
+                if _user_requested_observable(req.message) or obs_auto_run:
+                    obs_config = {
+                        "run_id": tool_input.get("run_id"),
+                        "observable_type": tool_input.get("observable_type"),
+                        "params": tool_input.get("params", {}),
+                        "selection": tool_input.get("selection", "all"),
+                    }
+                    obs_summary = tool_input.get("summary", "")
+                    if obs_auto_run:
+                        try:
+                            julia_payload = {"run_id": obs_config["run_id"], "observable": {"type": obs_config["observable_type"], "params": obs_config["params"]}, "selection": {"selection": obs_config["selection"]}}
+                            async with httpx.AsyncClient(timeout=60.0) as client:
+                                r = await client.post(f"{JULIA_URL}/api/observables/calculate", json=julia_payload)
+                            if r.status_code in (200, 202):
+                                obs_tracking_id = r.json().get("tracking_id")
+                                obs_config = None
+                        except (httpx.ConnectError, httpx.ReadTimeout):
+                            obs_tracking_id = None
+                    result_text = "Observable calculation started." if obs_tracking_id else "Observable config shown to user for review."
+                else:
+                    result_text = "No observable request detected; call ignored."
 
-        elif tool_name == "calculate_observable":
-            obs_auto_run = tool_input.get("auto_run", False)
-            if _user_requested_observable(req.message) or obs_auto_run:
-                obs_config = {
-                    "run_id": tool_input.get("run_id"),
-                    "observable_type": tool_input.get("observable_type"),
-                    "params": tool_input.get("params", {}),
-                    "selection": tool_input.get("selection", "all"),
-                }
-                obs_summary = tool_input.get("summary", "")
-                if obs_auto_run:
-                    try:
-                        julia_payload = {"run_id": obs_config["run_id"], "observable": {"type": obs_config["observable_type"], "params": obs_config["params"]}, "selection": {"selection": obs_config["selection"]}}
-                        async with httpx.AsyncClient(timeout=60.0) as client:
-                            r = await client.post(f"{JULIA_URL}/api/observables/calculate", json=julia_payload)
-                        if r.status_code in (200, 202):
-                            obs_tracking_id = r.json().get("tracking_id")
-                            obs_config = None
-                    except (httpx.ConnectError, httpx.ReadTimeout):
-                        obs_tracking_id = None
-                history.append({"role": "user", "content": [{"toolResult": {"toolUseId": tool["toolUseId"], "content": [{"text": "Observable calculation started." if obs_tracking_id else "Observable config shown to user for review."}]}}]})
-
-        elif tool_name == "submit_config":
-            summary = tool_input.get("summary", "")
-            try:
-                proposed_config = build_config(
-                    _registries,
-                    system=tool_input.get("system", {}),
-                    model=tool_input.get("model", {}),
-                    algorithm=tool_input.get("algorithm", {}),
-                    state=tool_input.get("state"),
-                    description=summary,
-                )
-            except Exception as exc:
-                proposed_config = None
-                print(f"[build_config error] {exc}", flush=True)
-            SESSIONS[sid]["last_config"] = proposed_config
-            auto_run = tool_input.get("auto_run", False)
-            if auto_run and proposed_config:
+            elif tool_name == "submit_config":
+                summary = tool_input.get("summary", "")
                 try:
-                    async with httpx.AsyncClient(timeout=60.0) as client:
-                        r = await client.post(f"{JULIA_URL}/api/run", json={"config": proposed_config, "mode": "simulation"})
-                    if r.status_code in (200, 202):
-                        tracking_id = r.json().get("tracking_id")
-                        proposed_config = None
-                except (httpx.ConnectError, httpx.ReadTimeout):
-                    pass
-            history.append({"role": "user", "content": [{"toolResult": {"toolUseId": tool["toolUseId"], "content": [{"text": "Simulation started." if tracking_id else "Config shown to user for review."}]}}]})
+                    proposed_config = build_config(
+                        _registries,
+                        system=tool_input.get("system", {}),
+                        model=tool_input.get("model", {}),
+                        algorithm=tool_input.get("algorithm", {}),
+                        state=tool_input.get("state"),
+                        description=summary,
+                    )
+                except Exception as exc:
+                    proposed_config = None
+                    print(f"[build_config error] {exc}", flush=True)
+                SESSIONS[sid]["last_config"] = proposed_config
+                auto_run = tool_input.get("auto_run", False)
+                if auto_run and proposed_config:
+                    try:
+                        async with httpx.AsyncClient(timeout=60.0) as client:
+                            r = await client.post(f"{JULIA_URL}/api/run", json={"config": proposed_config, "mode": "simulation"})
+                        if r.status_code in (200, 202):
+                            tracking_id = r.json().get("tracking_id")
+                            proposed_config = None
+                    except (httpx.ConnectError, httpx.ReadTimeout):
+                        pass
+                result_text = "Simulation started." if tracking_id else "Config shown to user for review."
+
+            else:
+                result_text = f"Tool {tool_name} acknowledged."
+
+            history.append({
+                "role": "user",
+                "content": [{"toolResult": {"toolUseId": tool["toolUseId"], "content": [{"text": result_text}]}}],
+            })
+
+        if not exec_tools:
+            break  # No more executable tools; all non-exec tools handled above
 
     yield f"data: {json.dumps({'type': 'done', 'session_id': sid, 'config': proposed_config, 'summary': summary, 'tracking_id': tracking_id, 'obs_config': obs_config, 'obs_summary': obs_summary, 'obs_tracking_id': obs_tracking_id, 'show_obs_run_id': show_obs_run_id, 'show_obs_summary': show_obs_summary, 'registered': registered_info})}\n\n"
 
@@ -396,82 +413,107 @@ async def chat(req: ChatRequest):
     for _ in range(MAX_TOOL_ROUNDS):
         content = response["output"]["message"]["content"]
 
-        exec_tool = next(
-            (b["toolUse"] for b in content
-             if "toolUse" in b and b["toolUse"]["name"] in EXECUTABLE_TOOLS),
-            None,
-        )
-        if exec_tool is None:
+        exec_tools_in_round = [
+            b["toolUse"] for b in content
+            if "toolUse" in b and b["toolUse"]["name"] in EXECUTABLE_TOOLS
+        ]
+        if not exec_tools_in_round:
             break
 
         history.append({"role": "assistant", "content": content})
-        tool_name = exec_tool["name"]
-        tool_args = exec_tool["input"]
-        _log_tool_event("TOOL_CALL", tool_name, args=tool_args)
 
-        if tool_name == "query_catalog":
-            raw = _read_catalog(tool_args)
-            if raw:
-                trimmed = [_trim_catalog_entry(e) for e in raw]
-                result_text = json.dumps(trimmed, indent=2)
-                _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"count={len(trimmed)}")
+        for exec_tool in exec_tools_in_round:
+            tool_name = exec_tool["name"]
+            tool_args = exec_tool["input"]
+            _log_tool_event("TOOL_CALL", tool_name, args=tool_args)
+
+            if tool_name == "query_catalog":
+                raw = _read_catalog(tool_args)
+                if raw:
+                    trimmed = [_trim_catalog_entry(e) for e in raw]
+                    result_text = json.dumps(trimmed, indent=2)
+                    _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"count={len(trimmed)}")
+                else:
+                    result_text = "No matching runs found in the catalog."
+                    _log_tool_event("TOOL_RESULT", tool_name, result_summary="count=0")
+
+            elif tool_name == "query_obs_catalog":
+                raw = await _read_obs_catalog(tool_args)
+                if raw:
+                    trimmed = [_trim_obs_entry(e) for e in raw]
+                    result_text = json.dumps(trimmed, indent=2)
+                    _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"count={len(trimmed)}")
+                else:
+                    result_text = "No matching observable calculations found in the catalog."
+                    _log_tool_event("TOOL_RESULT", tool_name, result_summary="count=0")
+
+            elif tool_name == "get_simulation_details":
+                result_text = await _execute_get_simulation_details(tool_args.get("run_id", ""))
+                _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"run_id={tool_args.get('run_id')}")
+
+            elif tool_name == "get_observable_details":
+                result_text = await _execute_get_observable_details(tool_args.get("obs_run_id", ""))
+                _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"obs_run_id={tool_args.get('obs_run_id')}")
+
+            elif tool_name == "get_run_status":
+                result_text = await _execute_get_run_status(tool_args.get("tracking_id", ""))
+                _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"tracking_id={tool_args.get('tracking_id')}")
+
+            elif tool_name == "get_available_models":
+                result_text = _execute_get_available_models(_registries, tool_args.get("system_type"))
+                _log_tool_event("TOOL_RESULT", tool_name, result_summary="models listed")
+
+            elif tool_name == "get_available_algorithms":
+                result_text = _execute_get_available_algorithms(_registries)
+                _log_tool_event("TOOL_RESULT", tool_name, result_summary="algorithms listed")
+
+            else:  # register_model or register_state
+                if not _user_requested_registration(req.message, history):
+                    result_text = "No explicit registration request detected; call ignored."
+                    _log_tool_event("TOOL_SKIP", tool_name, result_summary="no registration intent")
+                else:
+                    result_text = await _execute_registration(tool_name, tool_args, on_success=_refresh_system_prompt)
+                    if not result_text.startswith("Registration failed") and not result_text.startswith("Cannot reach"):
+                        registered_info = {
+                            "type": "model" if tool_name == "register_model" else "state",
+                            "name": tool_args.get("name"),
+                            "display_name": tool_args.get("display_name"),
+                            "system_type": tool_args.get("system_type"),
+                            "backend": tool_args.get("backend"),
+                        }
+                    _log_tool_event("TOOL_RESULT", tool_name, result_summary=result_text[:80])
+
+            history.append({
+                "role": "user",
+                "content": [{"toolResult": {
+                    "toolUseId": exec_tool["toolUseId"],
+                    "content": [{"text": result_text}],
+                }}],
+            })
+
+        # Append tool_results for any non-executable tools in this intermediate round
+        # to prevent orphaned tool_use blocks when mixed with executable tools.
+        for block in content:
+            if "toolUse" not in block or block["toolUse"]["name"] in EXECUTABLE_TOOLS:
+                continue
+            tool = block["toolUse"]
+            tool_name = tool["name"]
+            tool_input = tool["input"]
+            if tool_name == "show_observable_results":
+                result_text = "Observable results queued for display." if _user_requested_observable(req.message) else "No observable request detected; call ignored."
+            elif tool_name == "calculate_observable":
+                result_text = "Observable config queued for review." if (_user_requested_observable(req.message) or tool_input.get("auto_run", False)) else "No observable request detected; call ignored."
+            elif tool_name == "submit_config":
+                result_text = "Config queued for review."
             else:
-                result_text = "No matching runs found in the catalog."
-                _log_tool_event("TOOL_RESULT", tool_name, result_summary="count=0")
-
-        elif tool_name == "query_obs_catalog":
-            raw = await _read_obs_catalog(tool_args)
-            if raw:
-                trimmed = [_trim_obs_entry(e) for e in raw]
-                result_text = json.dumps(trimmed, indent=2)
-                _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"count={len(trimmed)}")
-            else:
-                result_text = "No matching observable calculations found in the catalog."
-                _log_tool_event("TOOL_RESULT", tool_name, result_summary="count=0")
-
-        elif tool_name == "get_simulation_details":
-            result_text = await _execute_get_simulation_details(tool_args.get("run_id", ""))
-            _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"run_id={tool_args.get('run_id')}")
-
-        elif tool_name == "get_observable_details":
-            result_text = await _execute_get_observable_details(tool_args.get("obs_run_id", ""))
-            _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"obs_run_id={tool_args.get('obs_run_id')}")
-
-        elif tool_name == "get_run_status":
-            result_text = await _execute_get_run_status(tool_args.get("tracking_id", ""))
-            _log_tool_event("TOOL_RESULT", tool_name, result_summary=f"tracking_id={tool_args.get('tracking_id')}")
-
-        elif tool_name == "get_available_models":
-            result_text = _execute_get_available_models(_registries, tool_args.get("system_type"))
-            _log_tool_event("TOOL_RESULT", tool_name, result_summary="models listed")
-
-        elif tool_name == "get_available_algorithms":
-            result_text = _execute_get_available_algorithms(_registries)
-            _log_tool_event("TOOL_RESULT", tool_name, result_summary="algorithms listed")
-
-        else:  # register_model or register_state
-            if not _user_requested_registration(req.message, history):
-                result_text = "No explicit registration request detected; call ignored."
-                _log_tool_event("TOOL_SKIP", tool_name, result_summary="no registration intent")
-            else:
-                result_text = await _execute_registration(tool_name, tool_args, on_success=_refresh_system_prompt)
-                if not result_text.startswith("Registration failed") and not result_text.startswith("Cannot reach"):
-                    registered_info = {
-                        "type": "model" if tool_name == "register_model" else "state",
-                        "name": tool_args.get("name"),
-                        "display_name": tool_args.get("display_name"),
-                        "system_type": tool_args.get("system_type"),
-                        "backend": tool_args.get("backend"),
-                    }
-                _log_tool_event("TOOL_RESULT", tool_name, result_summary=result_text[:80])
-
-        history.append({
-            "role": "user",
-            "content": [{"toolResult": {
-                "toolUseId": exec_tool["toolUseId"],
-                "content": [{"text": result_text}],
-            }}],
-        })
+                result_text = f"Tool {tool_name} acknowledged."
+            history.append({
+                "role": "user",
+                "content": [{"toolResult": {
+                    "toolUseId": tool["toolUseId"],
+                    "content": [{"text": result_text}],
+                }}],
+            })
 
         try:
             response = await asyncio.to_thread(_call_bedrock)
