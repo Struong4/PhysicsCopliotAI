@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 REGISTRY_DIR = Path(__file__).parent.parent / "registry"
-_REGISTRY_NAMES = ["models", "algorithms", "states", "systems"]
+_REGISTRY_NAMES = ["models", "algorithms", "states", "systems", "config_schema"]
 
 # returns the Information from the registry for the LLM to work with
 def load_all() -> dict:

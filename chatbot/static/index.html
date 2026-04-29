@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TNCodebase — ED Assistant</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     /* Index.html uses CSS for appearance, HTML for content, and JS for the logic, state, and interactivity */
@@ -69,11 +70,19 @@
       border-radius: 1.1rem 1.1rem 0.25rem 1.1rem;
     }
     .bubble.assistant {
+      white-space: normal;
       background: #f0f1f5;
       color: #1a1a2e;
       margin-right: auto;
       border-radius: 1.1rem 1.1rem 1.1rem 0.25rem;
     }
+    .bubble.assistant p { margin: 0.4rem 0; }
+    .bubble.assistant h1, .bubble.assistant h2, .bubble.assistant h3 { margin: 0.6rem 0 0.3rem; font-size: 1rem; }
+    .bubble.assistant ul, .bubble.assistant ol { margin: 0.3rem 0 0.3rem 1.2rem; }
+    .bubble.assistant table { border-collapse: collapse; font-size: 0.9rem; margin: 0.4rem 0; }
+    .bubble.assistant th, .bubble.assistant td { border: 1px solid #ccc; padding: 0.25rem 0.5rem; }
+    .bubble.assistant code { background: #e4e6ed; border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.88rem; }
+    .bubble.assistant hr { border: none; border-top: 1px solid #d0d2de; margin: 0.5rem 0; }
     .bubble.info {
       background: #fffbe6;
       color: #7a5c00;
@@ -575,7 +584,11 @@
   function addBubble(text, role) {
     const el = document.createElement("div");
     el.className = `bubble ${role}`;
-    el.textContent = text;
+    if (role === "assistant") {
+      el.innerHTML = marked.parse(text);
+    } else {
+      el.textContent = text;
+    }
     document.getElementById("messages").appendChild(el);
     el.scrollIntoView({ behavior: "smooth" });
   }
@@ -596,8 +609,7 @@
     }
   }
 
-  // reads the users text and sends the message by making a POST Api call to
-  // the chat andf adds claude's reply text as a assistant bubble.
+  // reads the users text and sends the message via streaming SSE to /api/chat/stream
   async function sendMessage() {
     const input = document.getElementById("msg-input");
     const text = input.value.trim();
@@ -607,9 +619,16 @@
     addBubble(text, "user");
     setThinking(true);
 
+    // Create assistant bubble immediately so tokens appear in place
+    const bubbleEl = document.createElement("div");
+    bubbleEl.className = "bubble assistant";
+    document.getElementById("messages").appendChild(bubbleEl);
+    bubbleEl.scrollIntoView({ behavior: "smooth" });
+
+    let accumulatedText = "";
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId, message: text }),
@@ -617,64 +636,109 @@
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
+        bubbleEl.remove();
         addBubble("Error: " + (err.detail || res.statusText), "info");
         return;
       }
 
-      const data = await res.json();
-      sessionId = data.session_id;
-      localStorage.setItem("tn_ed_session", sessionId);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      if (data.text) addBubble(data.text, "assistant");
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      if (data.config) {
-        currentConfig = data.config;
-        lastSubmittedConfig = data.config;
-        // New config replaces any existing obs or registry card
-        document.getElementById("obs-card").style.display = "none";
-        document.getElementById("obs-results-card").style.display = "none";
-        document.getElementById("registry-card").style.display = "none";
-        showConfigCard(data.config, data.summary);
-      }
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop(); // last fragment may be incomplete
 
-      if (data.obs_config) {
-        currentObsConfig = data.obs_config;
-        // New obs config replaces any existing sim config or registry card
-        document.getElementById("config-card").style.display = "none";
-        document.getElementById("registry-card").style.display = "none";
-        showObsCard(data.obs_config, data.obs_summary);
-      }
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          const jsonStr = part.slice(6).trim();
+          if (!jsonStr) continue;
 
-      if (data.show_obs_run_id) {
-        addBubble("Loading observable results…", "info");
-        await fetchAndRenderObsResults(data.show_obs_run_id);
-      }
+          let event;
+          try { event = JSON.parse(jsonStr); } catch { continue; }
 
-      if (data.tracking_id) {
-        document.getElementById("config-card").style.display = "none";
-        document.getElementById("obs-results-card").style.display = "none";
-        document.getElementById("placeholder").style.display = "none";
-        showStatusCard("queued", "Pipeline queued…");
-        document.getElementById("msg-input").disabled = true;
-        document.getElementById("send-btn").disabled = true;
-        startPolling(data.tracking_id);
-      }
+          if (event.type === "session") {
+            sessionId = event.session_id;
+            localStorage.setItem("tn_ed_session", sessionId);
 
-      if (data.obs_tracking_id) {
-        document.getElementById("obs-card").style.display = "none";
-        document.getElementById("placeholder").style.display = "none";
-        showStatusCard("queued", "Observable calculation queued…");
-        startObsPolling(data.obs_tracking_id);
-      }
+          } else if (event.type === "token") {
+            accumulatedText += event.text;
+            bubbleEl.textContent = accumulatedText;
 
-      if (data.registered) {
-        lastRegisteredInfo = data.registered;
-        showRegistryCard(data.registered);
+          } else if (event.type === "thinking") {
+            document.getElementById("typing").textContent = event.text;
+
+          } else if (event.type === "error") {
+            bubbleEl.textContent = "Error: " + event.detail;
+
+          } else if (event.type === "done") {
+            // Re-render accumulated text with markdown now that it's complete
+            if (accumulatedText) {
+              bubbleEl.innerHTML = marked.parse(accumulatedText);
+            } else {
+              // Claude only emitted a tool call with no text — use summary as fallback
+              const fallback = event.summary || event.obs_summary || "";
+              if (fallback) {
+                bubbleEl.textContent = fallback;
+              } else {
+                bubbleEl.remove();
+              }
+            }
+
+            if (event.config) {
+              currentConfig = event.config;
+              lastSubmittedConfig = event.config;
+              document.getElementById("obs-card").style.display = "none";
+              document.getElementById("obs-results-card").style.display = "none";
+              document.getElementById("registry-card").style.display = "none";
+              showConfigCard(event.config, event.summary);
+            }
+
+            if (event.obs_config) {
+              currentObsConfig = event.obs_config;
+              document.getElementById("config-card").style.display = "none";
+              document.getElementById("registry-card").style.display = "none";
+              showObsCard(event.obs_config, event.obs_summary);
+            }
+
+            if (event.show_obs_run_id) {
+              addBubble("Loading observable results…", "info");
+              await fetchAndRenderObsResults(event.show_obs_run_id);
+            }
+
+            if (event.tracking_id) {
+              document.getElementById("config-card").style.display = "none";
+              document.getElementById("obs-results-card").style.display = "none";
+              document.getElementById("placeholder").style.display = "none";
+              showStatusCard("queued", "Pipeline queued…");
+              document.getElementById("msg-input").disabled = true;
+              document.getElementById("send-btn").disabled = true;
+              startPolling(event.tracking_id);
+            }
+
+            if (event.obs_tracking_id) {
+              document.getElementById("obs-card").style.display = "none";
+              document.getElementById("placeholder").style.display = "none";
+              showStatusCard("queued", "Observable calculation queued…");
+              startObsPolling(event.obs_tracking_id);
+            }
+
+            if (event.registered) {
+              lastRegisteredInfo = event.registered;
+              showRegistryCard(event.registered);
+            }
+          }
+        }
       }
     } catch (e) {
       addBubble("Could not reach the server. Is it running on port 8000?", "info");
     } finally {
       setThinking(false);
+      document.getElementById("typing").textContent = "";
       document.getElementById("msg-input").focus();
     }
   }
