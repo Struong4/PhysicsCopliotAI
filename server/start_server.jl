@@ -75,6 +75,10 @@ using LinearAlgebra
 using SparseArrays
 using Printf
 
+# Pin BLAS to a single thread so OpenBLAS doesn't spawn its own thread pool
+# and compete with Julia's async scheduler during simulations.
+BLAS.set_num_threads(1)
+
 # ============================================================================
 # LOAD TNCodebase MODULE
 # ============================================================================

@@ -460,8 +460,10 @@ function updateStatus(status, message, details = null) {
  */
 async function runPipeline() {
     try {
-        // Get current config from the GUI
-        const config = buildConfig();  // This function exists in config_builder.html
+        // Use chatbot-loaded config if present, otherwise fall back to form values
+        const config = (typeof _chatbotConfig !== 'undefined' && _chatbotConfig)
+            ? _chatbotConfig
+            : buildConfig();
 
         updateStatus('queued', 'Sending request to server...');
 

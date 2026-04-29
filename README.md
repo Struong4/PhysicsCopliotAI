@@ -12,17 +12,17 @@ TNCodebase is a quantum many-body simulation framework (DMRG, TDVP, Exact Diagon
 
 ```
 Browser (port 8000)
-  ↕ HTTP
+  ↕ HTTP (streaming SSE)
 FastAPI chatbot server  (chatbot/app.py)
-  ↕ AWS Bedrock API
-Claude 3 Haiku  ←  generates simulation configs from natural language
+  ↕ AWS Bedrock API (converse_stream)
+Claude Sonnet 4.6  ←  tools + natural language → simulation configs, observables, registry
   ↕ HTTP
 Julia pipeline server  (port 8080)
   ↕ in-process
 TNCodebase.run_simulation_from_config(...)
 ```
 
-You chat with Claude 3 Haiku, which builds a JSON simulation config from your description and sends it to the Julia backend to execute. Once a simulation completes, you can ask the chatbot to compute and plot observables on the saved results — also through conversation.
+You chat with Claude Sonnet 4.6, which uses a structured **tool-based architecture** to handle your requests: it builds simulation configs, queries the run catalog, computes observables, registers custom models and states, and polls job status — all through conversation. Responses stream word-by-word via Server-Sent Events so you see output immediately. Once a simulation completes, you can ask the chatbot to compute and plot observables on the saved results.
 
 ---
 
@@ -84,11 +84,11 @@ The easiest way to run everything is with Docker Compose — it builds and start
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 - AWS credentials with Amazon Bedrock access (see below)
 
-### 2. Enable Claude 3 Haiku in AWS Bedrock
+### 2. Enable Claude Sonnet 4.6 in AWS Bedrock
 
 1. Sign in to the [AWS Console](https://console.aws.amazon.com)
 2. Navigate to **Amazon Bedrock → Model access → Manage model access**
-3. Enable **Anthropic → Claude 3 Haiku**
+3. Enable **Anthropic → Claude Sonnet 4.6** (model ID: `us.anthropic.claude-sonnet-4-6`)
 4. Your IAM user needs the `bedrock:InvokeModel` permission in `us-east-1`
 
 ### 3. Configure Your AWS Credentials
@@ -135,6 +135,29 @@ docker compose up --build
 
 ---
 
+## Chatbot Tools
+
+The chatbot uses a set of structured tools to handle requests — it does not guess what exists in the catalog or registry. When you ask a question, it calls the appropriate tool behind the scenes:
+
+| Tool | What it does |
+|------|-------------|
+| `submit_config` | Proposes a complete simulation config (optionally auto-runs immediately) |
+| `query_catalog` | Searches past simulation runs by algorithm, model, or date |
+| `query_obs_catalog` | Searches past observable calculations |
+| `calculate_observable` | Computes a new observable on a saved simulation state |
+| `show_observable_results` | Displays an already-computed observable from the catalog |
+| `get_simulation_details` | Fetches full config and metadata for a specific run |
+| `get_observable_details` | Fetches details and a data preview for a specific observable result |
+| `get_run_status` | Polls the status of a running simulation or observable job |
+| `get_available_models` | Lists all available Hamiltonians with example parameters |
+| `get_available_algorithms` | Lists all algorithms with use-case guidance |
+| `register_model` | Registers a new custom Hamiltonian model via conversation |
+| `register_state` | Registers a new custom initial state via conversation |
+
+When the user confirms a simulation or observable calculation, it either shows a config panel for review or submits it immediately (`auto_run`) depending on the phrasing. Observable results can also be downloaded as `.npz` files from the right panel.
+
+---
+
 ## What to Ask the Chatbot
 
 **Running simulations:**
@@ -143,13 +166,25 @@ docker compose up --build
 - *"Run an ED spectrum of the Heisenberg model with 10 sites"*
 - *"Simulate exact time evolution of the long-range Ising model, N=8, for 100 steps"*
 
-**Computing observables on past runs:**
+**Computing and viewing observables:**
 - *"Show the ZZ correlation function between sites 1 and 25 for my last DMRG run"*
 - *"Plot the entanglement entropy at every bond for the Heisenberg ground state"*
 - *"Calculate the magnetization profile ⟨Zᵢ⟩ at all sites"*
-- *"What's the energy variance for run from yesterday?"*
+- *"What's the energy variance for the run from yesterday?"*
+- *"Show me the correlation function I computed last time"*
 
-The chatbot will ask for any missing parameters before running, and will show you the config for review before submitting.
+**Querying the catalog:**
+- *"What simulations have I run?"*
+- *"Show me past DMRG runs on the Heisenberg model"*
+- *"Have I run TFIM with h=1.0 before?"*
+- *"Is my simulation done yet?"*
+
+**Registering custom models and states:**
+- *"Register a new XXZ model with J=1, delta=0.5"*
+- *"Add a custom Néel state for 10 sites"*
+- *"What models are available?"*
+
+The chatbot will ask for any missing parameters before running, and will show you the config for review before submitting. Phrases like *"run it"* or *"go ahead"* trigger immediate execution without the confirmation step.
 
 ---
 
@@ -165,7 +200,7 @@ Simulation results are saved to `./data/` and observable results to `./data_obs/
 The chatbot container connects to the Julia server at `http://julia-server:8080` (Docker internal networking). Make sure both containers started successfully: `docker compose ps`.
 
 **AWS credentials error**
-Double-check your `.env` file has the correct `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, and that the Claude 3 Haiku model is enabled in Bedrock for `us-east-1`.
+Double-check your `.env` file has the correct `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, and that Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6`) is enabled in Bedrock for `us-east-1`.
 
 **Julia server slow to start**
 The Julia container precompiles TNCodebase on first startup — this can take a few minutes. Wait for the log line `Listening on http://0.0.0.0:8080` before sending requests.
